@@ -1,13 +1,99 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Caja POS - Agrovet Campo Alto</title>
+    <title>Punto de Venta (POS) - Agrovet Campo Alto</title>
+    
+    <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', '"Inter"', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+                    },
+                    colors: {
+                        forest: {
+                            950: '#020906',
+                            900: '#051810',
+                            800: '#0a2c1e',
+                            700: '#0f442e',
+                            600: '#156142',
+                            500: '#10b981',
+                            400: '#34d399',
+                            300: '#6ee7b7',
+                        }
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(8px) scale(0.99)' },
+                            '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+                        },
+                        popIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.95)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' },
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'pop-in': 'popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(3, 9, 7, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(16, 185, 129, 0.25);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(16, 185, 129, 0.45);
+        }
+        
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(16, 185, 129, 0.14);
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+        
+        .glass-card:hover {
+            border-color: rgba(16, 185, 129, 0.3);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px 0 rgba(16, 185, 129, 0.08);
+        }
+
+        .active-nav-item {
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0.03) 100%);
+            border-left: 3px solid #34d399;
+            color: #6ee7b7;
+            box-shadow: inset 8px 0 16px -6px rgba(16, 185, 129, 0.3);
+        }
 
         /* Estilos de Impresión Térmica (80mm / 58mm) */
         @media print {
@@ -35,143 +121,283 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 h-screen flex flex-col overflow-hidden">
+<body class="bg-forest-950 text-slate-100 font-sans min-h-screen flex overflow-x-hidden antialiased bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-forest-900/30 via-forest-950 to-[#010403] selection:bg-emerald-500 selection:text-white">
 
-    <!-- Header Principal -->
-    <header class="bg-green-800 text-white px-6 py-3 flex justify-between items-center shadow-md z-10 shrink-0 no-print">
-        <div class="flex items-center gap-3">
-            <h1 class="text-xl font-bold tracking-wide">Agrovet Campo Alto</h1>
-            <span class="bg-green-700 text-green-100 text-xs px-2.5 py-1 rounded-full font-semibold uppercase">Punto de Venta / Caja</span>
-            <span id="status-conexion" class="bg-emerald-600 text-white text-xs px-2.5 py-1 rounded-full font-semibold uppercase">🟢 En Línea</span>
-        </div>
+    <!-- Ambient background glows -->
+    <div class="fixed top-0 left-1/3 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[150px] pointer-events-none no-print"></div>
+    <div class="fixed bottom-0 right-1/4 w-[400px] h-[400px] bg-amber-500/5 rounded-full blur-[140px] pointer-events-none no-print"></div>
+
+    <!-- SIDEBAR RETRÁCTIL -->
+    <aside id="main-sidebar" 
+           class="group/sidebar fixed top-0 left-0 bottom-0 z-40 w-20 hover:w-64 transition-all duration-300 ease-in-out glass-panel border-r border-emerald-500/10 flex flex-col justify-between py-6 px-3 shadow-2xl overflow-hidden no-print">
         
-        <div class="flex items-center gap-4">
-            <div class="text-sm text-green-100 hidden sm:block">
-                <span>Cajero: </span>
-                <strong id="cajero-email" class="text-white">Cargando...</strong>
+        <!-- Top Section: Brand & Navigation -->
+        <div class="space-y-8">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3 px-2">
+                <div class="relative flex-shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-forest-700 flex items-center justify-center shadow-lg shadow-emerald-900/40 border border-emerald-400/30">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                    <span class="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-forest-950 shadow-sm animate-pulse"></span>
+                </div>
+                
+                <div class="opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 whitespace-nowrap overflow-hidden">
+                    <h2 class="text-base font-bold text-white tracking-wide leading-none">Campo Alto</h2>
+                    <span class="text-[10px] font-semibold text-emerald-400 tracking-wider uppercase">Agroveterinaria</span>
+                </div>
             </div>
-            <a href="cierre.html" class="bg-green-700 hover:bg-green-600 text-white text-xs font-semibold py-2 px-3 rounded-lg transition shadow flex items-center gap-1">
-                🔒 <span>Cierre de Caja</span>
-            </a>
-            <button id="btn-logout" class="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold py-2 px-3 rounded-lg transition shadow">
-                Cerrar Sesión
+
+            <!-- Navigation Links -->
+            <nav class="space-y-1.5">
+                <!-- Resumen General -->
+                <a href="admin.html" class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
+                    <div class="w-6 flex justify-center">
+                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Resumen General</span>
+                </a>
+
+                <!-- Inventario -->
+                <a href="inventario.html" class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
+                    <div class="w-6 flex justify-center">
+                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Inventario y Costos</span>
+                </a>
+
+                <!-- POS (Activo) -->
+                <a href="pos.html" class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl transition-all duration-200 active-nav-item group/item">
+                    <div class="w-6 flex justify-center text-emerald-400">
+                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Punto de Venta (POS)</span>
+                </a>
+
+                <!-- Facturación -->
+                <a href="facturacion.html" class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
+                    <div class="w-6 flex justify-center">
+                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Facturación Manual</span>
+                </a>
+
+                <!-- Kardex -->
+                <a href="kardex.html" class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
+                    <div class="w-6 flex justify-center">
+                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Kardex y Auditoría</span>
+                </a>
+
+                <!-- Clientes -->
+                <a href="clientes.html" class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
+                    <div class="w-6 flex justify-center">
+                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Clientes y Fincas</span>
+                </a>
+
+                <!-- Compras -->
+                <a href="compras.html" class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
+                    <div class="w-6 flex justify-center">
+                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0 0l3-3m-3 3L9 8m-5 5h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293h3.172a1 1 0 00.707-.293l2.414-2.414a1 1 0 01.707-.293H20"></path>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Compras y Proveedores</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Bottom Section: Logout -->
+        <div class="pt-4 border-t border-emerald-500/10">
+            <button id="btn-logout" 
+                    class="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-rose-400 hover:text-rose-200 hover:bg-rose-500/10 transition-all duration-200 group/btn">
+                <div class="w-6 flex justify-center">
+                    <svg class="w-5 h-5 transition-transform duration-200 group-hover/btn:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                    </svg>
+                </div>
+                <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Cerrar Sesión</span>
             </button>
         </div>
-    </header>
+    </aside>
 
-    <!-- Layout Principal POS (2 Columnas) -->
-    <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden no-print">
-        
-        <!-- Columna Izquierda: Buscador y Catálogo (Desktop 7 cols / ~60%) -->
-        <section class="lg:col-span-7 flex flex-col border-r border-gray-200 bg-gray-50 overflow-hidden">
-            <!-- Barra de Búsqueda -->
-            <div class="p-4 bg-white border-b border-gray-200 shadow-sm shrink-0">
-                <div class="relative">
-                    <input type="text" id="input-busqueda" autofocus 
-                           placeholder="🔍 Buscar por nombre de producto o código de barras..." 
-                           class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-gray-800 text-base shadow-sm">
-                    <span class="absolute left-3.5 top-3.5 text-gray-400 text-lg">🔍</span>
-                </div>
-            </div>
+    <!-- ÁREA DE CONTENIDO PRINCIPAL -->
+    <div class="pl-20 flex-1 min-h-screen flex flex-col no-print">
 
-            <!-- Grid de Tarjetas de Productos/Presentaciones -->
-            <div class="flex-1 overflow-y-auto p-4">
-                <div id="grid-productos" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                    <div class="col-span-full text-center py-12 text-gray-500 font-medium">
-                        Cargando catálogo de productos...
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Columna Derecha: Carrito y Cobro (Desktop 5 cols / ~40%) -->
-        <section class="lg:col-span-5 flex flex-col bg-white overflow-hidden shadow-inner">
-            <!-- Título del Carrito -->
-            <div class="p-4 border-b border-gray-200 bg-white flex justify-between items-center shrink-0">
-                <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                    🛒 Carrito de Compra
-                </h2>
-                <button id="btn-vaciar-carrito" class="text-xs text-gray-500 hover:text-red-600 transition font-medium">
-                    Vaciar Carrito
-                </button>
-            </div>
-
-            <!-- Lista de Items en Carrito -->
-            <div class="flex-1 overflow-y-auto p-4 divide-y divide-gray-100" id="lista-carrito">
-                <div class="text-center py-16 text-gray-400">
-                    <span class="text-4xl block mb-2">🛒</span>
-                    <p class="text-sm font-medium">El carrito está vacío</p>
-                    <p class="text-xs text-gray-400 mt-1">Haz clic en "+ Agregar" en los productos del catálogo</p>
-                </div>
-            </div>
-
-            <!-- Footer con Resumen, Selección de Cliente/Finca y Botón de Cobro -->
-            <div class="p-4 border-t border-gray-200 bg-gray-50 shrink-0 space-y-3 shadow-lg">
-                <!-- Selección de Cliente y Finca -->
-                <div class="space-y-2">
-                    <div>
-                        <div class="flex justify-between items-center mb-1">
-                            <label for="select-cliente" class="text-xs font-bold text-gray-700 uppercase">Cliente / Comprador:</label>
-                            <span id="badge-credito-cliente" class="hidden text-[11px] font-bold px-2 py-0.5 rounded"></span>
-                        </div>
-                        <select id="select-cliente" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-xs bg-white font-semibold">
-                            <option value="">Consumidor Final (CF)</option>
-                        </select>
-                    </div>
-
-                    <!-- Selector de Finca (Condicional) -->
-                    <div id="container-finca" class="hidden">
-                        <label for="select-finca" class="text-xs font-bold text-gray-700 uppercase block mb-1">Finca / Destino:</label>
-                        <select id="select-finca" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-xs bg-white">
-                            <option value="">Sin finca específica</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Método de Pago -->
+        <!-- HEADER FLOATING GLASS -->
+        <header class="sticky top-0 z-30 p-4 sm:p-6 pb-2">
+            <div class="glass-panel rounded-3xl p-4 sm:px-6 sm:py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
                 <div>
-                    <label class="text-xs font-bold text-gray-700 uppercase block mb-1">Método de Pago:</label>
-                    <div class="grid grid-cols-3 gap-1.5 bg-gray-200 p-1 rounded-lg text-xs font-bold">
-                        <button type="button" class="btn-pago-opt py-1.5 px-2 rounded-md transition text-center bg-white text-green-800 shadow-sm" data-tipo="EFECTIVO">
-                            💵 Efectivo
-                        </button>
-                        <button type="button" class="btn-pago-opt py-1.5 px-2 rounded-md transition text-center text-gray-600 hover:text-gray-900" data-tipo="TRANSFERENCIA">
-                            🏦 Transf.
-                        </button>
-                        <button type="button" class="btn-pago-opt py-1.5 px-2 rounded-md transition text-center text-gray-600 hover:text-gray-900" data-tipo="CREDITO">
-                            💳 Crédito
-                        </button>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            Punto de Venta / Caja
+                        </span>
+                        <span class="text-xs text-slate-500">•</span>
+                        <span id="status-conexion" class="text-xs text-emerald-400 font-semibold">🟢 En Línea</span>
+                    </div>
+                    <h1 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight">Caja Registradora POS</h1>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2.5 px-3.5 py-2 rounded-full bg-forest-950/80 border border-emerald-500/20 text-xs">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="text-slate-400">Cajero:</span>
+                        <strong id="cajero-email" class="text-white font-medium">Cargando...</strong>
+                    </div>
+
+                    <a href="cierre.html" class="px-3.5 py-2 rounded-2xl bg-forest-800/80 hover:bg-forest-700 border border-emerald-500/20 text-xs text-emerald-300 font-bold transition flex items-center gap-1.5 shadow">
+                        🔒 <span>Cierre Caja</span>
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENT MAIN WRAPPER: 2 COLUMNS POS -->
+        <main class="p-4 sm:p-6 flex-1 max-w-[1700px] w-full mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- LEFT COLUMN: Buscador y Catálogo de Productos (7 cols / 60%) -->
+                <div class="lg:col-span-7 space-y-5">
+                    
+                    <!-- Search & Filter Bar -->
+                    <div class="glass-panel rounded-3xl p-4 flex items-center gap-3 shadow-xl">
+                        <div class="relative flex-1 w-full">
+                            <svg class="w-5 h-5 absolute left-4 top-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <input type="text" id="input-busqueda" autofocus 
+                                   placeholder="🔍 Buscar por nombre de producto o código de barras..." 
+                                   class="w-full bg-forest-950/90 border border-emerald-500/30 rounded-2xl pl-12 pr-4 py-3 text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-400 transition shadow-inner font-medium">
+                        </div>
+                    </div>
+
+                    <!-- Grid de Tarjetas de Productos/Presentaciones -->
+                    <div id="grid-productos" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                        <div class="col-span-full glass-card rounded-3xl p-8 text-center text-slate-400">
+                            Cargando catálogo de productos...
+                        </div>
                     </div>
                 </div>
 
-                <!-- Total y Registrar Venta -->
-                <div class="flex justify-between items-baseline pt-1">
-                    <span class="text-gray-600 font-semibold text-sm">Total a Cobrar:</span>
-                    <span id="total-carrito" class="text-3xl font-extrabold text-green-700">Q0.00</span>
+                <!-- RIGHT COLUMN: Carrito y Cobro (5 cols / 40%) -->
+                <div class="lg:col-span-5">
+                    <div class="glass-panel rounded-3xl p-6 shadow-2xl flex flex-col justify-between space-y-6 sticky top-28">
+                        
+                        <!-- Cart Header -->
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between border-b border-emerald-500/10 pb-3">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="text-xl">🛒</span>
+                                    <h2 class="text-lg font-bold text-white">Carrito de Venta</h2>
+                                </div>
+                                <button id="btn-vaciar-carrito" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-300 border border-rose-500/20 hover:bg-rose-500/20 transition">
+                                    Vaciar Carrito
+                                </button>
+                            </div>
+
+                            <!-- Lista de Items en Carrito -->
+                            <div id="lista-carrito" class="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                                <div class="glass-card rounded-2xl p-6 text-center text-slate-400">
+                                    <span class="text-3xl block mb-2">🛒</span>
+                                    <p class="text-xs font-bold text-slate-300">El carrito está vacío</p>
+                                    <p class="text-[11px] text-slate-400 mt-1">Haz clic en "+ Agregar" en los productos del catálogo</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer con Resumen, Selección de Cliente/Finca y Método de Pago -->
+                        <div class="space-y-4 pt-3 border-t border-slate-800/80">
+                            
+                            <!-- Selección de Cliente / Finca -->
+                            <div class="space-y-2 text-xs">
+                                <div>
+                                    <div class="flex justify-between items-center mb-1">
+                                        <label for="select-cliente" class="font-bold text-slate-300 uppercase">Cliente / Comprador:</label>
+                                        <span id="badge-credito-cliente" class="hidden text-[11px] font-bold px-2 py-0.5 rounded"></span>
+                                    </div>
+                                    <select id="select-cliente" class="w-full bg-forest-950/90 border border-slate-700/80 text-slate-200 text-xs font-medium rounded-2xl px-3.5 py-2.5 outline-none cursor-pointer focus:border-emerald-500">
+                                        <option value="">Consumidor Final (CF)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Selector de Finca (Condicional) -->
+                                <div id="container-finca" class="hidden">
+                                    <label for="select-finca" class="font-bold text-slate-300 uppercase block mb-1">Finca / Destino:</label>
+                                    <select id="select-finca" class="w-full bg-forest-950/90 border border-slate-700/80 text-slate-200 text-xs font-medium rounded-2xl px-3.5 py-2.5 outline-none cursor-pointer focus:border-emerald-500">
+                                        <option value="">Sin finca específica</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Método de Pago Selector Buttons -->
+                            <div class="space-y-1.5">
+                                <label class="block text-[11px] font-bold text-slate-400 uppercase">Método de Pago:</label>
+                                <div class="grid grid-cols-3 gap-1.5 bg-forest-950/90 p-1.5 rounded-2xl border border-slate-800 text-xs font-bold">
+                                    <button type="button" class="btn-pago-opt py-2 px-2 rounded-xl transition text-center bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-md" data-tipo="EFECTIVO">
+                                        💵 Efectivo
+                                    </button>
+                                    <button type="button" class="btn-pago-opt py-2 px-2 rounded-xl transition text-center text-slate-400 hover:text-white" data-tipo="TRANSFERENCIA">
+                                        🏦 Transf.
+                                    </button>
+                                    <button type="button" class="btn-pago-opt py-2 px-2 rounded-xl transition text-center text-slate-400 hover:text-white" data-tipo="CREDITO">
+                                        💳 Crédito
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Total Display -->
+                            <div class="p-4 rounded-3xl bg-forest-950/90 border border-amber-500/20 text-center shadow-inner">
+                                <span class="text-[11px] font-extrabold text-amber-400 uppercase tracking-widest">Total a Cobrar</span>
+                                <h2 id="total-carrito" class="text-4xl font-extrabold text-white tracking-tight font-sans mt-1">
+                                    Q0.00
+                                </h2>
+                            </div>
+
+                            <!-- Botón Completar Venta -->
+                            <button id="btn-completar-venta" disabled 
+                                    class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-extrabold text-sm shadow-xl shadow-emerald-900/50 transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                                <span>💳 REGISTRAR VENTA</span>
+                            </button>
+                        </div>
+
+                    </div>
                 </div>
 
-                <button id="btn-completar-venta" disabled 
-                        class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition duration-200 text-lg flex items-center justify-center gap-2">
-                    <span>💳 Registrar Venta</span>
-                </button>
             </div>
-        </section>
+        </main>
     </div>
 
-    <!-- Modal Exitoso tras Venta -->
-    <div id="modal-exito" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print">
-        <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full text-center space-y-4 border border-green-100">
-            <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold">
+    <!-- ========================================== -->
+    <!-- MODAL EXITOSO TRAS VENTA                   -->
+    <!-- ========================================== -->
+    <div id="modal-exito" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md items-center justify-center p-4 no-print">
+        <div class="glass-panel rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-emerald-500/30 animate-pop-in">
+            <div class="w-16 h-16 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-full flex items-center justify-center mx-auto text-3xl font-extrabold shadow-lg">
                 ✓
             </div>
-            <h3 class="text-xl font-bold text-gray-800">¡Venta Registrada Exitosamente!</h3>
-            <p class="text-sm text-gray-600" id="mensaje-exito-detalle">La venta se completó y el stock fue actualizado.</p>
+            <h3 class="text-xl font-extrabold text-white tracking-tight">¡Venta Registrada Exitosamente!</h3>
+            <p id="mensaje-exito-detalle" class="text-xs text-slate-300 leading-relaxed">La venta se completó y el stock fue actualizado.</p>
             
             <div class="flex flex-col gap-2 pt-2">
-                <button id="btn-imprimir-ticket" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-4 rounded-xl shadow transition flex items-center justify-center gap-2">
+                <button id="btn-imprimir-ticket" class="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-700 transition flex items-center justify-center gap-2 shadow">
                     <span>🖨️ Imprimir Ticket</span>
                 </button>
-                <button id="btn-nueva-venta" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-4 rounded-xl transition">
+                <button id="btn-nueva-venta" class="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-900/40 transition">
                     ⚡ Nueva Venta
                 </button>
             </div>
