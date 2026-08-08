@@ -31,10 +31,14 @@ async function validarAccesoAdmin() {
         return
     }
 
-    // Mostrar usuario
+    // Mostrar usuario e iniciales
     const userInfoEl = document.getElementById('usuario-info')
     if (userInfoEl) {
-        userInfoEl.textContent = `Conectado como: ${session.user.email}`
+        userInfoEl.textContent = session.user.email
+    }
+    const avatarInitialsEl = document.getElementById('user-avatar-initials')
+    if (avatarInitialsEl && session.user.email) {
+        avatarInitialsEl.textContent = session.user.email.substring(0, 2).toUpperCase()
     }
     
     // Cargar información inicial
@@ -81,7 +85,7 @@ async function cargarVentasYGanancias() {
         console.error("Error al cargar ventas y ganancias:", err)
         const tbody = document.getElementById('tabla-ventas-recientes')
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-red-500 font-semibold">Error al cargar métricas: ${err.message}</td></tr>`
+            tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-400 font-semibold">Error al cargar métricas: ${err.message}</td></tr>`
         }
     }
 }
@@ -195,7 +199,10 @@ function procesarYRenderizarDashboard() {
     renderTablaVentasRecientes(ventasProcesadas)
 }
 
-// 6. Renderizar Tabla de Ventas Recientes
+// Globalizar función para permitir toggle interactivo de demo
+window.procesarYRenderizarDashboard = procesarYRenderizarDashboard
+
+// 6. Renderizar Tabla de Ventas Recientes (Filas flotantes Glassmorphic + Empty State)
 function renderTablaVentasRecientes(ventasProcesadas) {
     const tbody = document.getElementById('tabla-ventas-recientes')
     if (!tbody) return
@@ -203,7 +210,31 @@ function renderTablaVentasRecientes(ventasProcesadas) {
     tbody.innerHTML = ''
 
     if (ventasProcesadas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-500 italic">No hay ventas registradas en este periodo.</td></tr>'
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="p-0">
+                    <div class="py-14 px-6 rounded-3xl bg-forest-950/40 border border-dashed border-emerald-500/20 text-center flex flex-col items-center justify-center my-2 animate-fade-in">
+                        <div class="relative w-24 h-24 mb-5 flex items-center justify-center">
+                            <div class="absolute inset-0 rounded-full bg-emerald-500/5 blur-xl"></div>
+                            <svg class="w-20 h-20 text-emerald-400/80 stroke-[1.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                <circle cx="18" cy="18" r="3" class="stroke-amber-400 fill-forest-950" stroke-width="1.5"/>
+                                <path d="M17 18h2" stroke="#f59e0b" stroke-linecap="round" stroke-width="1.5"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-base font-bold text-white mb-1 tracking-wide">Sin Ventas Registradas</h3>
+                        <p class="text-xs text-slate-400 max-w-sm mb-6 leading-relaxed">
+                            No se encontraron transacciones para el periodo seleccionado. Comienza una nueva venta en el POS o cambia la fecha.
+                        </p>
+                        <div class="flex items-center gap-3">
+                            <a href="pos.html" class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs shadow-lg shadow-emerald-900/40 transition-all transform hover:-translate-y-0.5 flex items-center gap-2">
+                                <span>🛒 Registrar Venta en POS</span>
+                            </a>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `
         return
     }
 
@@ -222,17 +253,21 @@ function renderTablaVentasRecientes(ventasProcesadas) {
 
         const esPendiente = v.estado_factura === 'pendiente'
         const badgeEstado = esPendiente
-            ? '<span class="inline-block bg-orange-100 text-orange-800 text-xs px-2.5 py-1 rounded-full font-bold">⏳ Pendiente</span>'
-            : '<span class="inline-block bg-green-100 text-green-800 text-xs px-2.5 py-1 rounded-full font-bold">✓ Facturada</span>'
+            ? '<span class="inline-flex items-center gap-1 bg-amber-500/10 text-amber-300 border border-amber-500/20 text-[11px] px-3 py-1 rounded-full font-bold">⏳ Pendiente SAT</span>'
+            : '<span class="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[11px] px-3 py-1 rounded-full font-bold">✓ Facturada</span>'
 
         tbody.innerHTML += `
-            <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
-                <td class="p-4 font-mono text-xs font-bold text-gray-700">#${shortId}</td>
-                <td class="p-4 text-xs font-medium text-gray-600">${fechaFormat}</td>
-                <td class="p-4 text-center font-bold text-gray-700">${v.metricas.cantidadItemsTotal}</td>
-                <td class="p-4 font-extrabold text-gray-900">Q${totalForm}</td>
-                <td class="p-4 font-extrabold text-emerald-600">Q${gananciaForm}</td>
-                <td class="p-4">${badgeEstado}</td>
+            <tr class="glass-panel glass-panel-hover rounded-2xl transition-all duration-200 shadow-sm text-slate-200 group">
+                <td class="py-4 pl-6 font-mono text-xs font-bold text-emerald-400 group-hover:text-emerald-300">#${shortId}</td>
+                <td class="py-4 text-xs font-medium text-slate-300">${fechaFormat}</td>
+                <td class="py-4 text-center">
+                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-forest-950/80 text-slate-200 border border-slate-700">
+                        ${v.metricas.cantidadItemsTotal}
+                    </span>
+                </td>
+                <td class="py-4 font-extrabold text-amber-400 text-base tracking-tight">Q${totalForm}</td>
+                <td class="py-4 font-extrabold text-violet-400 text-base tracking-tight">Q${gananciaForm}</td>
+                <td class="py-4 pr-6">${badgeEstado}</td>
             </tr>
         `
     })

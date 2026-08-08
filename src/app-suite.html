@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS Agroveterinario Ultra-Premium | Agrovet Campo Alto</title>
+    
+    <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', '"Inter"', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+                    },
+                    colors: {
+                        forest: {
+                            950: '#020906',
+                            900: '#051810',
+                            800: '#0a2c1e',
+                            700: '#0f442e',
+                            600: '#156142',
+                            500: '#10b981',
+                            400: '#34d399',
+                            300: '#6ee7b7',
+                        }
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(8px) scale(0.99)' },
+                            '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+                        },
+                        popIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.95)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' },
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'pop-in': 'popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(3, 9, 7, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(16, 185, 129, 0.25);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(16, 185, 129, 0.45);
+        }
+        
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(16, 185, 129, 0.14);
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+        
+        .glass-card:hover {
+            border-color: rgba(16, 185, 129, 0.3);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px 0 rgba(16, 185, 129, 0.08);
+        }
+
+        .active-tab-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 20px -2px rgba(16, 185, 129, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-forest-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-forest-900/30 via-forest-950 to-[#010403] selection:bg-emerald-500 selection:text-white overflow-x-hidden">
+
+    <!-- Ambient background glows -->
+    <div class="fixed top-0 left-1/3 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[150px] pointer-events-none"></div>
+    <div class="fixed bottom-0 right-1/4 w-[400px] h-[400px] bg-amber-500/5 rounded-full blur-[140px] pointer-events-none"></div>
+
+    <!-- MAIN HEADER & NAVIGATION -->
+    <header class="sticky top-0 z-40 p-4 sm:p-5 pb-2 backdrop-blur-md">
+        <div class="glass-panel rounded-3xl px-4 py-3 sm:px-6 flex flex-col xl:flex-row justify-between items-center gap-4 shadow-2xl">
+            
+            <!-- Brand emblem -->
+            <div class="flex items-center gap-3 w-full xl:w-auto justify-between xl:justify-start">
+                <div class="flex items-center gap-3">
+                    <div class="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-400 to-forest-700 flex items-center justify-center shadow-lg shadow-emerald-900/50 border border-emerald-300/30">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        </svg>
+                        <span class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-forest-950 shadow-sm animate-pulse"></span>
+                    </div>
+                    <div>
+                        <h1 class="text-base font-extrabold text-white tracking-wide leading-none">Agrovet Campo Alto</h1>
+                        <p class="text-[11px] font-semibold text-emerald-400 tracking-wider uppercase mt-0.5">Sistema Agroveterinario POS</p>
+                    </div>
+                </div>
+
+                <!-- User status pill -->
+                <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-forest-950/80 border border-emerald-500/20 text-xs">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-slate-300 font-medium">Dr. Aroldo Morales</span>
+                </div>
+            </div>
+
+            <!-- MODULE TABS NAVIGATION -->
+            <nav class="flex items-center gap-1.5 p-1.5 rounded-2xl bg-forest-950/90 border border-emerald-500/20 overflow-x-auto max-w-full shadow-inner">
+                <button onclick="switchTab('inventario')" id="nav-inventario" class="nav-tab-btn active-tab-btn flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap">
+                    <span>📦 Inventario & Costos</span>
+                </button>
+                <button onclick="switchTab('pos')" id="nav-pos" class="nav-tab-btn flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-all whitespace-nowrap">
+                    <span>🛒 Punto de Venta (POS)</span>
+                </button>
+                <button onclick="switchTab('facturacion')" id="nav-facturacion" class="nav-tab-btn flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-all whitespace-nowrap">
+                    <span>🧾 Facturación SAT</span>
+                </button>
+                <button onclick="switchTab('kardex')" id="nav-kardex" class="nav-tab-btn flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-all whitespace-nowrap">
+                    <span>📋 Kardex & Lotes</span>
+                </button>
+                <button onclick="switchTab('clientes')" id="nav-clientes" class="nav-tab-btn flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-all whitespace-nowrap">
+                    <span>👥 Clientes & Fincas</span>
+                </button>
+                <button onclick="switchTab('compras')" id="nav-compras" class="nav-tab-btn flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-all whitespace-nowrap">
+                    <span>📥 Compras & Proveedores</span>
+                </button>
+            </nav>
+
+        </div>
+    </header>
+
+    <!-- CONTENT MODULES WRAPPER -->
+    <main class="p-4 sm:p-6 flex-1 max-w-[1700px] w-full mx-auto space-y-6">
+
+        <!-- ========================================== -->
+        <!-- MÓDULO 1: INVENTARIO Y COSTOS              -->
+        <!-- ========================================== -->
+        <section id="module-inventario" class="module-section animate-fade-in space-y-6">
+            
+            <!-- Controls Bar -->
+            <div class="glass-panel rounded-3xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
+                <div>
+                    <h2 class="text-xl font-extrabold text-white tracking-tight">Inventario, Fraccionamiento y Costos</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Control de catálogo, factores de conversión y alertas de medicamentos</p>
+                </div>
+                
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <!-- Search Input -->
+                    <div class="relative flex-1 md:w-72">
+                        <svg class="w-4 h-4 absolute left-3.5 top-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <input type="text" placeholder="Buscar por producto, lote o ingrediente..." class="w-full bg-forest-950/80 border border-slate-700/70 rounded-2xl pl-10 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition shadow-inner">
+                    </div>
+                    
+                    <!-- New Product Button -->
+                    <button onclick="openModal('modal-nuevo-producto')" class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs shadow-lg shadow-emerald-900/40 transition transform hover:-translate-y-0.5 flex items-center gap-2 whitespace-nowrap">
+                        <span class="text-base leading-none">+</span>
+                        <span>Nuevo Producto</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Floating Row Data Table -->
+            <div class="glass-panel rounded-3xl p-6 shadow-2xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-separate border-spacing-y-2.5">
+                        <thead>
+                            <tr class="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-4">
+                                <th class="pb-2 pl-6">SKU / Producto</th>
+                                <th class="pb-2">Presentación & Factor</th>
+                                <th class="pb-2 text-center">Stock Base</th>
+                                <th class="pb-2">Precio Costo</th>
+                                <th class="pb-2">Precio Venta</th>
+                                <th class="pb-2 text-center">Margen</th>
+                                <th class="pb-2 text-center">Indicadores</th>
+                                <th class="pb-2 pr-6 text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-inventario-body" class="text-sm">
+                            <!-- Floating Row 1 -->
+                            <tr class="glass-card rounded-2xl transition duration-200 text-slate-200">
+                                <td class="py-4 pl-6">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-lg">
+                                            💉
+                                        </div>
+                                        <div>
+                                            <p class="font-bold text-white leading-tight">Ivermectina 1% L.A.</p>
+                                            <span class="font-mono text-[10px] text-emerald-400">SKU-IVM-500ML</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-4 text-xs font-medium text-slate-300">
+                                    Frasco 500 mL
+                                    <p class="text-[10px] text-slate-400 font-mono">1 Frasco = 500 mL</p>
+                                </td>
+                                <td class="py-4 text-center">
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                        42 Frascos
+                                    </span>
+                                </td>
+                                <td class="py-4 font-mono font-bold text-slate-300">Q 110.00</td>
+                                <td class="py-4 font-mono font-extrabold text-amber-400">Q 185.00</td>
+                                <td class="py-4 text-center">
+                                    <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-violet-500/10 text-violet-300 border border-violet-500/20">
+                                        40.5%
+                                    </span>
+                                </td>
+                                <td class="py-4 text-center">
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <span title="Producto Controlado / Receta" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">📋 Receta</span>
+                                    </div>
+                                </td>
+                                <td class="py-4 pr-6 text-right">
+                                    <button class="text-xs px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Editar</button>
+                                </td>
+                            </tr>
+
+                            <!-- Floating Row 2 -->
+                            <tr class="glass-card rounded-2xl transition duration-200 text-slate-200">
+                                <td class="py-4 pl-6">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-lg">
+                                            🧪
+                                        </div>
+                                        <div>
+                                            <p class="font-bold text-white leading-tight">Vacuna Bovino Triple-B</p>
+                                            <span class="font-mono text-[10px] text-emerald-400">SKU-VAC-TRP</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-4 text-xs font-medium text-slate-300">
+                                    Frasco 50 Dosis
+                                    <p class="text-[10px] text-slate-400 font-mono">1 Frasco = 50 Dosis</p>
+                                </td>
+                                <td class="py-4 text-center">
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                                        8 Frascos
+                                    </span>
+                                </td>
+                                <td class="py-4 font-mono font-bold text-slate-300">Q 240.00</td>
+                                <td class="py-4 font-mono font-extrabold text-amber-400">Q 350.00</td>
+                                <td class="py-4 text-center">
+                                    <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-violet-500/10 text-violet-300 border border-violet-500/20">
+                                        31.4%
+                                    </span>
+                                </td>
+                                <td class="py-4 text-center">
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <span title="Cadena de Frío Requerida" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">❄️ Frío (2-8°C)</span>
+                                    </div>
+                                </td>
+                                <td class="py-4 pr-6 text-right">
+                                    <button class="text-xs px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Editar</button>
+                                </td>
+                            </tr>
+
+                            <!-- Floating Row 3 -->
+                            <tr class="glass-card rounded-2xl transition duration-200 text-slate-200">
+                                <td class="py-4 pl-6">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-lg">
+                                            🌾
+                                        </div>
+                                        <div>
+                                            <p class="font-bold text-white leading-tight">Alimento Engorde Bovino Pro</p>
+                                            <span class="font-mono text-[10px] text-emerald-400">SKU-ALM-ENG-100</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-4 text-xs font-medium text-slate-300">
+                                    Saco 100 Lbs (Fraccionable)
+                                    <p class="text-[10px] text-slate-400 font-mono">1 Saco = 100 Lbs</p>
+                                </td>
+                                <td class="py-4 text-center">
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                        125 Sacos
+                                    </span>
+                                </td>
+                                <td class="py-4 font-mono font-bold text-slate-300">Q 185.00</td>
+                                <td class="py-4 font-mono font-extrabold text-amber-400">Q 240.00</td>
+                                <td class="py-4 text-center">
+                                    <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-violet-500/10 text-violet-300 border border-violet-500/20">
+                                        22.9%
+                                    </span>
+                                </td>
+                                <td class="py-4 text-center">
+                                    <span class="text-xs text-slate-500">—</span>
+                                </td>
+                                <td class="py-4 pr-6 text-right">
+                                    <button class="text-xs px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Editar</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ========================================== -->
+        <!-- MÓDULO 2: PUNTO DE VENTA (POS)             -->
+        <!-- ========================================== -->
+        <section id="module-pos" class="module-section hidden animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- LEFT COLUMN: Search + Quick Product Grid (65% width on desktop -> 7 cols) -->
+                <div class="lg:col-span-7 space-y-5">
+                    
+                    <!-- Search & Filter Bar -->
+                    <div class="glass-panel rounded-3xl p-4 flex flex-col sm:flex-row items-center gap-3 shadow-xl">
+                        <div class="relative flex-1 w-full">
+                            <svg class="w-5 h-5 absolute left-4 top-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            <input type="text" placeholder="🔍 Buscar por nombre, código de barras o ingrediente..." class="w-full bg-forest-950/90 border border-emerald-500/30 rounded-2xl pl-12 pr-4 py-3 text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-400 transition shadow-inner font-medium">
+                        </div>
+                        
+                        <select class="bg-forest-950/90 border border-slate-700 text-slate-200 text-xs rounded-2xl px-4 py-3 outline-none cursor-pointer">
+                            <option>Todas las categorías</option>
+                            <option>💉 Farmacéuticos</option>
+                            <option>🧪 Vacunas</option>
+                            <option>🌾 Alimentos & Nutrición</option>
+                            <option>🌱 Agrícolas</option>
+                        </select>
+                    </div>
+
+                    <!-- Products Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                        
+                        <!-- Product Card 1 -->
+                        <div class="glass-card rounded-3xl p-4 flex flex-col justify-between group hover:border-emerald-400/40 transition-all duration-300">
+                            <div>
+                                <div class="flex justify-between items-start mb-3">
+                                    <span class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                                        💉
+                                    </span>
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                        Stock: 42
+                                    </span>
+                                </div>
+                                <h4 class="font-bold text-white text-sm line-clamp-1">Ivermectina 1% L.A. 500ml</h4>
+                                <p class="text-xs text-slate-400 mt-0.5">Antiparasitario bovino</p>
+                            </div>
+                            
+                            <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                                <div>
+                                    <span class="text-[10px] text-slate-400 uppercase font-bold">Precio</span>
+                                    <p class="text-base font-extrabold text-amber-400">Q 185.00</p>
+                                </div>
+                                <button onclick="addToCart('Ivermectina 1% L.A.', 185.00)" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow transition active:scale-95">
+                                    + Agregar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Product Card 2 -->
+                        <div class="glass-card rounded-3xl p-4 flex flex-col justify-between group hover:border-emerald-400/40 transition-all duration-300">
+                            <div>
+                                <div class="flex justify-between items-start mb-3">
+                                    <span class="w-12 h-12 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                                        🧪
+                                    </span>
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                                        ❄️ Frío (8)
+                                    </span>
+                                </div>
+                                <h4 class="font-bold text-white text-sm line-clamp-1">Vacuna Bovino Triple-B</h4>
+                                <p class="text-xs text-slate-400 mt-0.5">Frasco 50 Dosis</p>
+                            </div>
+                            
+                            <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                                <div>
+                                    <span class="text-[10px] text-slate-400 uppercase font-bold">Precio</span>
+                                    <p class="text-base font-extrabold text-amber-400">Q 350.00</p>
+                                </div>
+                                <button onclick="addToCart('Vacuna Bovino Triple-B', 350.00)" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow transition active:scale-95">
+                                    + Agregar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Product Card 3 -->
+                        <div class="glass-card rounded-3xl p-4 flex flex-col justify-between group hover:border-emerald-400/40 transition-all duration-300">
+                            <div>
+                                <div class="flex justify-between items-start mb-3">
+                                    <span class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                                        🌾
+                                    </span>
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                        Stock: 125
+                                    </span>
+                                </div>
+                                <h4 class="font-bold text-white text-sm line-clamp-1">Alimento Engorde Bovino Pro</h4>
+                                <p class="text-xs text-slate-400 mt-0.5">Saco 100 Lbs</p>
+                            </div>
+                            
+                            <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                                <div>
+                                    <span class="text-[10px] text-slate-400 uppercase font-bold">Precio</span>
+                                    <p class="text-base font-extrabold text-amber-400">Q 240.00</p>
+                                </div>
+                                <button onclick="addToCart('Alimento Engorde Bovino', 240.00)" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow transition active:scale-95">
+                                    + Agregar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Product Card 4 -->
+                        <div class="glass-card rounded-3xl p-4 flex flex-col justify-between group hover:border-emerald-400/40 transition-all duration-300">
+                            <div>
+                                <div class="flex justify-between items-start mb-3">
+                                    <span class="w-12 h-12 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                                        💊
+                                    </span>
+                                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                                        📋 Receta (19)
+                                    </span>
+                                </div>
+                                <h4 class="font-bold text-white text-sm line-clamp-1">Penicilina G Compuesta</h4>
+                                <p class="text-xs text-slate-400 mt-0.5">Antibiótico inyectable 100ml</p>
+                            </div>
+                            
+                            <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                                <div>
+                                    <span class="text-[10px] text-slate-400 uppercase font-bold">Precio</span>
+                                    <p class="text-base font-extrabold text-amber-400">Q 125.00</p>
+                                </div>
+                                <button onclick="addToCart('Penicilina G Compuesta', 125.00)" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow transition active:scale-95">
+                                    + Agregar
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN: Cart Glassmorphism Panel (35% width -> 5 cols) -->
+                <div class="lg:col-span-5">
+                    <div class="glass-panel rounded-3xl p-6 shadow-2xl flex flex-col justify-between space-y-6 sticky top-28">
+                        
+                        <!-- Cart Header & Client Selection -->
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between border-b border-emerald-500/10 pb-3">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="text-xl">🛒</span>
+                                    <h3 class="text-lg font-bold text-white">Carrito de Venta</h3>
+                                </div>
+                                <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" id="cart-item-count">
+                                    2 Ítems
+                                </span>
+                            </div>
+
+                            <!-- Client selector -->
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Cliente / Finca:</label>
+                                <select class="w-full bg-forest-950/90 border border-slate-700/80 text-slate-200 text-xs font-medium rounded-2xl px-3.5 py-2.5 outline-none cursor-pointer focus:border-emerald-500">
+                                    <option>🐄 Finca La Providencia — Juan Pérez (NIT: 1049281-5)</option>
+                                    <option>🌽 Agropecuaria San José — Don Carlos Mendoza</option>
+                                    <option>👤 Cliente General (Consumidor Final)</option>
+                                </select>
+                            </div>
+
+                            <!-- Items List -->
+                            <div id="cart-items-list" class="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                                <!-- Item 1 -->
+                                <div class="glass-card rounded-2xl p-3 flex items-center justify-between gap-3 text-xs">
+                                    <div class="flex-1">
+                                        <p class="font-bold text-white">Ivermectina 1% L.A. 500ml</p>
+                                        <p class="text-[10px] text-slate-400 font-mono">Q 185.00 x 2</p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-extrabold text-amber-400 font-mono">Q 370.00</span>
+                                        <button class="text-slate-400 hover:text-rose-400 font-bold px-1.5 py-0.5">✕</button>
+                                    </div>
+                                </div>
+
+                                <!-- Item 2 -->
+                                <div class="glass-card rounded-2xl p-3 flex items-center justify-between gap-3 text-xs">
+                                    <div class="flex-1">
+                                        <p class="font-bold text-white">Alimento Engorde Bovino Pro</p>
+                                        <p class="text-[10px] text-slate-400 font-mono">Q 240.00 x 3</p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-extrabold text-amber-400 font-mono">Q 720.00</span>
+                                        <button class="text-slate-400 hover:text-rose-400 font-bold px-1.5 py-0.5">✕</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Totals Breakdown & Huge Stylized Amount -->
+                        <div class="space-y-4 pt-3 border-t border-slate-800/80">
+                            <div class="space-y-1 text-xs text-slate-400">
+                                <div class="flex justify-between">
+                                    <span>Subtotal:</span>
+                                    <span class="font-mono font-semibold text-slate-200">Q 1,090.00</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>IVA Incluido (12%):</span>
+                                    <span class="font-mono text-slate-400">Q 130.80</span>
+                                </div>
+                            </div>
+
+                            <!-- Huge Total -->
+                            <div class="p-4 rounded-3xl bg-forest-950/90 border border-amber-500/20 text-center shadow-inner">
+                                <span class="text-[11px] font-extrabold text-amber-400 uppercase tracking-widest">Total a Cobrar</span>
+                                <h2 class="text-4xl font-extrabold text-white tracking-tight font-sans mt-1" id="cart-total-amount">
+                                    Q 1,090.00
+                                </h2>
+                            </div>
+
+                            <!-- Payment Modals Buttons -->
+                            <div class="space-y-2">
+                                <label class="block text-[11px] font-bold text-slate-400 uppercase">Método de Pago / Pago Mixto:</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button class="py-2 px-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center justify-center gap-1.5">
+                                        💵 Efectivo
+                                    </button>
+                                    <button class="py-2 px-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center justify-center gap-1.5">
+                                        💳 Tarjeta POS
+                                    </button>
+                                    <button class="py-2 px-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center justify-center gap-1.5">
+                                        🌾 Crédito Finca
+                                    </button>
+                                    <button class="py-2 px-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 flex items-center justify-center gap-1.5">
+                                        🏦 Transferencia
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Main Process Ticket Button -->
+                            <button onclick="alert('Venta procesada con éxito. Imprimiendo comprobante...')" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-extrabold text-sm shadow-xl shadow-emerald-900/50 transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                                <span>🧾 PROCESAR VENTA E IMPRIMIR TICKET</span>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- MÓDULO 3: FACTURACIÓN MANUAL (SAT FEL)     -->
+        <!-- ========================================== -->
+        <section id="module-facturacion" class="module-section hidden animate-fade-in space-y-6">
+            
+            <!-- Segmented Filter Bar -->
+            <div class="glass-panel rounded-3xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
+                <div>
+                    <h2 class="text-xl font-extrabold text-white tracking-tight">Facturación Electrónica SAT (FEL)</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Certificación directa de comprobantes fiscales y correlativos DTE</p>
+                </div>
+
+                <div class="bg-forest-950/80 p-1 rounded-full border border-emerald-500/20 flex items-center shadow-inner">
+                    <button onclick="filterFacturas('pendientes')" id="btn-factura-pending" class="px-5 py-2 rounded-full text-xs font-bold bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow">
+                        ⏳ Pendientes (2)
+                    </button>
+                    <button onclick="filterFacturas('facturadas')" id="btn-factura-done" class="px-5 py-2 rounded-full text-xs font-medium text-slate-400 hover:text-white">
+                        ✓ Certificadas FEL (18)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sales Cards Grid for Facturación -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                
+                <!-- Card 1 (Pendiente) -->
+                <div class="glass-panel rounded-3xl p-5 space-y-4 relative overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start border-b border-slate-800/80 pb-3">
+                            <div>
+                                <span class="font-mono text-xs font-bold text-emerald-400">#VNT-2026-894</span>
+                                <p class="text-xs text-slate-400">Hoy, 10:45 AM</p>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                                ⏳ Pendiente SAT
+                            </span>
+                        </div>
+
+                        <div class="mt-3 space-y-1.5 text-xs">
+                            <p class="font-bold text-white">Finca La Providencia — Juan Pérez</p>
+                            <p class="text-slate-400 font-mono">NIT: 1049281-5</p>
+                            <p class="text-slate-300 mt-2">2 Ítems (Ivermectina, Alimento Bovino)</p>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] text-slate-400 uppercase font-bold">Monto Total</span>
+                            <p class="text-lg font-extrabold text-amber-400 font-mono">Q 1,090.00</p>
+                        </div>
+                        <button onclick="openSATPopover('VNT-2026-894', 'Q 1,090.00')" class="px-4 py-2 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs shadow-lg shadow-violet-900/40 transition">
+                            ⚡ Ingresar FEL
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Card 2 (Pendiente) -->
+                <div class="glass-panel rounded-3xl p-5 space-y-4 relative overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start border-b border-slate-800/80 pb-3">
+                            <div>
+                                <span class="font-mono text-xs font-bold text-emerald-400">#VNT-2026-893</span>
+                                <p class="text-xs text-slate-400">Hoy, 09:12 AM</p>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                                ⏳ Pendiente SAT
+                            </span>
+                        </div>
+
+                        <div class="mt-3 space-y-1.5 text-xs">
+                            <p class="font-bold text-white">Agropecuaria San José — Don Carlos</p>
+                            <p class="text-slate-400 font-mono">NIT: 839102-K</p>
+                            <p class="text-slate-300 mt-2">5 Ítems (Vacuna Triple-B, Jeringas)</p>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] text-slate-400 uppercase font-bold">Monto Total</span>
+                            <p class="text-lg font-extrabold text-amber-400 font-mono">Q 2,450.00</p>
+                        </div>
+                        <button onclick="openSATPopover('VNT-2026-893', 'Q 2,450.00')" class="px-4 py-2 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs shadow-lg shadow-violet-900/40 transition">
+                            ⚡ Ingresar FEL
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- MÓDULO 4: KARDEX Y AUDITORÍA DE LOTES      -->
+        <!-- ========================================== -->
+        <section id="module-kardex" class="module-section hidden animate-fade-in space-y-6">
+            
+            <div class="glass-panel rounded-3xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
+                <div>
+                    <h2 class="text-xl font-extrabold text-white tracking-tight">Kardex, Lotes & Semáforo de Caducidad</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Trazabilidad completa de movimientos y control de vencimientos agroveterinarios</p>
+                </div>
+
+                <!-- Expiration Status Pills -->
+                <div class="flex items-center gap-2">
+                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30">
+                        🔴 &lt; 30 días (2 Lotes)
+                    </span>
+                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                        🟡 &lt; 90 días (5 Lotes)
+                    </span>
+                </div>
+            </div>
+
+            <!-- Kardex Timeline / Advanced Table -->
+            <div class="glass-panel rounded-3xl p-6 shadow-2xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-separate border-spacing-y-2.5">
+                        <thead>
+                            <tr class="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-4">
+                                <th class="pb-2 pl-6">Fecha / Hora</th>
+                                <th class="pb-2">Producto & Lote</th>
+                                <th class="pb-2 text-center">Vencimiento (Semáforo)</th>
+                                <th class="pb-2 text-center">Tipo Movimiento</th>
+                                <th class="pb-2 text-center">Cantidad</th>
+                                <th class="pb-2 pr-6 text-right">Saldo Final</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm">
+                            
+                            <!-- Row 1: Alerta Roja -->
+                            <tr class="glass-card rounded-2xl transition text-slate-200">
+                                <td class="py-4 pl-6 text-xs text-slate-400 font-mono">07/08/2026 - 08:30 AM</td>
+                                <td class="py-4">
+                                    <p class="font-bold text-white">Oxitetraciclina L.A. 250ml</p>
+                                    <span class="font-mono text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">Lote: OXI-2026-X1</span>
+                                </td>
+                                <td class="py-4 text-center">
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm animate-pulse">
+                                        🔴 28/08/2026 (21 días)
+                                    </span>
+                                </td>
+                                <td class="py-4 text-center">
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-300 border border-rose-500/20">Salida Venta</span>
+                                </td>
+                                <td class="py-4 text-center font-mono font-bold text-rose-400">-5 Frascos</td>
+                                <td class="py-4 pr-6 text-right font-mono font-extrabold text-white">12 Frascos</td>
+                            </tr>
+
+                            <!-- Row 2: Alerta Amarilla -->
+                            <tr class="glass-card rounded-2xl transition text-slate-200">
+                                <td class="py-4 pl-6 text-xs text-slate-400 font-mono">06/08/2026 - 04:15 PM</td>
+                                <td class="py-4">
+                                    <p class="font-bold text-white">Vacuna Bovino Triple-B</p>
+                                    <span class="font-mono text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">Lote: VAX-2026-04</span>
+                                </td>
+                                <td class="py-4 text-center">
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                                        🟡 15/10/2026 (69 días)
+                                    </span>
+                                </td>
+                                <td class="py-4 text-center">
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">Entrada Compra</span>
+                                </td>
+                                <td class="py-4 text-center font-mono font-bold text-emerald-400">+20 Frascos</td>
+                                <td class="py-4 pr-6 text-right font-mono font-extrabold text-white">8 Frascos</td>
+                            </tr>
+
+                            <!-- Row 3: Verde Óptimo -->
+                            <tr class="glass-card rounded-2xl transition text-slate-200">
+                                <td class="py-4 pl-6 text-xs text-slate-400 font-mono">05/08/2026 - 11:00 AM</td>
+                                <td class="py-4">
+                                    <p class="font-bold text-white">Ivermectina 1% L.A. 500ml</p>
+                                    <span class="font-mono text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">Lote: IVM-LAB-99</span>
+                                </td>
+                                <td class="py-4 text-center">
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                                        🟢 12/12/2027 (&gt; 1 año)
+                                    </span>
+                                </td>
+                                <td class="py-4 text-center">
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">Entrada Compra</span>
+                                </td>
+                                <td class="py-4 text-center font-mono font-bold text-emerald-400">+50 Frascos</td>
+                                <td class="py-4 pr-6 text-right font-mono font-extrabold text-white">42 Frascos</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ========================================== -->
+        <!-- MÓDULO 5: CLIENTES Y FINCAS (CRM)          -->
+        <!-- ========================================== -->
+        <section id="module-clientes" class="module-section hidden animate-fade-in space-y-6">
+            
+            <div class="glass-panel rounded-3xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
+                <div>
+                    <h2 class="text-xl font-extrabold text-white tracking-tight">Clientes, Fincas y Límites de Crédito</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Gestión CRM agroveterinaria y control de cuentas por cobrar</p>
+                </div>
+
+                <button class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-900/40">
+                    + Registrar Nuevo Cliente
+                </button>
+            </div>
+
+            <!-- CRM Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <!-- Client Card 1 (Ganadería) -->
+                <div class="glass-panel rounded-3xl p-6 space-y-5 relative overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <!-- Header & Farm Type Badge -->
+                        <div class="flex justify-between items-start border-b border-slate-800/80 pb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-forest-700 flex items-center justify-center font-bold text-lg text-white shadow">
+                                    JP
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-white text-base">Juan Pérez</h3>
+                                    <p class="text-xs text-slate-400">Finca La Providencia</p>
+                                </div>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20 flex items-center gap-1">
+                                🐄 Ganadería
+                            </span>
+                        </div>
+
+                        <!-- Info details -->
+                        <div class="mt-4 space-y-2 text-xs text-slate-300">
+                            <p><strong class="text-slate-400">NIT:</strong> 1049281-5</p>
+                            <p><strong class="text-slate-400">Ubicación:</strong> Hutu, Escuintla (Bovino Carne)</p>
+                            <p><strong class="text-slate-400">Teléfono:</strong> +502 5544-3322</p>
+                        </div>
+                    </div>
+
+                    <!-- Credit Progress Line & Stats -->
+                    <div class="pt-4 border-t border-slate-800/80 space-y-2">
+                        <div class="flex justify-between text-xs font-semibold">
+                            <span class="text-slate-400">Límite Crédito Utillizado</span>
+                            <span class="text-amber-400 font-mono">Q 18,200.00 / Q 25,000.00</span>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="w-full bg-forest-950/80 rounded-full h-3 p-0.5 border border-slate-700">
+                            <div class="bg-gradient-to-r from-amber-500 to-rose-500 h-full rounded-full" style="width: 72.8%"></div>
+                        </div>
+                        <p class="text-[10px] text-right text-slate-400 font-medium">72.8% del límite alcanzado</p>
+
+                        <div class="pt-2 flex gap-2">
+                            <button class="flex-1 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700">
+                                📜 Estado Cuenta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Client Card 2 (Agrícola) -->
+                <div class="glass-panel rounded-3xl p-6 space-y-5 relative overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <!-- Header & Farm Type Badge -->
+                        <div class="flex justify-between items-start border-b border-slate-800/80 pb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-700 flex items-center justify-center font-bold text-lg text-white shadow">
+                                    CM
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-white text-base">Don Carlos Mendoza</h3>
+                                    <p class="text-xs text-slate-400">Agropecuaria San José</p>
+                                </div>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 flex items-center gap-1">
+                                🌽 Agrícola
+                            </span>
+                        </div>
+
+                        <!-- Info details -->
+                        <div class="mt-4 space-y-2 text-xs text-slate-300">
+                            <p><strong class="text-slate-400">NIT:</strong> 839102-K</p>
+                            <p><strong class="text-slate-400">Ubicación:</strong> Tecpán, Chimaltenango (Maíz/Hortalizas)</p>
+                            <p><strong class="text-slate-400">Teléfono:</strong> +502 4411-9988</p>
+                        </div>
+                    </div>
+
+                    <!-- Credit Progress Line & Stats -->
+                    <div class="pt-4 border-t border-slate-800/80 space-y-2">
+                        <div class="flex justify-between text-xs font-semibold">
+                            <span class="text-slate-400">Límite Crédito Utilizado</span>
+                            <span class="text-emerald-400 font-mono">Q 4,500.00 / Q 40,000.00</span>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="w-full bg-forest-950/80 rounded-full h-3 p-0.5 border border-slate-700">
+                            <div class="bg-emerald-500 h-full rounded-full" style="width: 11.25%"></div>
+                        </div>
+                        <p class="text-[10px] text-right text-slate-400 font-medium">11.2% crédito sano</p>
+
+                        <div class="pt-2 flex gap-2">
+                            <button class="flex-1 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700">
+                                📜 Estado Cuenta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- MÓDULO 6: COMPRAS Y PROVEEDORES            -->
+        <!-- ========================================== -->
+        <section id="module-compras" class="module-section hidden animate-fade-in space-y-6">
+            
+            <div class="glass-panel rounded-3xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
+                <div>
+                    <h2 class="text-xl font-extrabold text-white tracking-tight">Compras & Recepción de Mercadería</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Órdenes de compra y captura obligatoria de lote y caducidad</p>
+                </div>
+
+                <button onclick="openModal('modal-recepcion-compra')" class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-900/40 transition transform hover:-translate-y-0.5 flex items-center gap-2">
+                    <span class="text-base leading-none">📥</span>
+                    <span>Registrar Recepción Mercadería</span>
+                </button>
+            </div>
+
+            <!-- Suppliers List Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                
+                <!-- Supplier 1 -->
+                <div class="glass-panel rounded-3xl p-5 space-y-3 relative overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start border-b border-slate-800/80 pb-3">
+                            <div>
+                                <h3 class="font-bold text-white text-base">Laboratorios Diagnóvet S.A.</h3>
+                                <p class="text-xs text-emerald-400">Proveedor Principal Farmacéutico</p>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                Activo
+                            </span>
+                        </div>
+
+                        <div class="mt-3 space-y-1 text-xs text-slate-300">
+                            <p><strong class="text-slate-400">Contacto:</strong> Ing. Rony Girón</p>
+                            <p><strong class="text-slate-400">Teléfono:</strong> +502 2323-9000</p>
+                            <p><strong class="text-slate-400">Órdenes Activas:</strong> 2 facturas en tránsito</p>
+                        </div>
+                    </div>
+
+                    <button onclick="openModal('modal-recepcion-compra')" class="w-full py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700 transition">
+                        📥 Ingresar Factura de Mercadería
+                    </button>
+                </div>
+
+                <!-- Supplier 2 -->
+                <div class="glass-panel rounded-3xl p-5 space-y-3 relative overflow-hidden flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start border-b border-slate-800/80 pb-3">
+                            <div>
+                                <h3 class="font-bold text-white text-base">Bayer Animal Health GT</h3>
+                                <p class="text-xs text-emerald-400">Vacunas y Antiparasitarios</p>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                Activo
+                            </span>
+                        </div>
+
+                        <div class="mt-3 space-y-1 text-xs text-slate-300">
+                            <p><strong class="text-slate-400">Contacto:</strong> Licda. Sofía López</p>
+                            <p><strong class="text-slate-400">Teléfono:</strong> +502 2440-1122</p>
+                            <p><strong class="text-slate-400">Órdenes Activas:</strong> 1 orden pendiente</p>
+                        </div>
+                    </div>
+
+                    <button onclick="openModal('modal-recepcion-compra')" class="w-full py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700 transition">
+                        📥 Ingresar Factura de Mercadería
+                    </button>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ========================================== -->
+    <!-- MODALES Y POPOVERS INTERACTIVOS (BENTO)    -->
+    <!-- ========================================== -->
+
+    <!-- MODAL 1: NUEVO PRODUCTO (Bento Grid Layout) -->
+    <div id="modal-nuevo-producto" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="glass-panel rounded-3xl max-w-2xl w-full p-6 space-y-6 shadow-2xl animate-pop-in border border-emerald-500/30">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    📦 Registrar Nuevo Producto en Inventario
+                </h3>
+                <button onclick="closeModal('modal-nuevo-producto')" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+            </div>
+
+            <!-- Bento Modal Inputs -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-300 mb-1">Nombre del Producto</label>
+                    <input type="text" placeholder="ej. Oxitetraciclina L.A." class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-300 mb-1">Categoría</label>
+                    <select class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-emerald-500">
+                        <option>💉 Farmacéutico Inyectable</option>
+                        <option>🧪 Vacuna / Biológico</option>
+                        <option>🌾 Alimento Fraccionable</option>
+                        <option>🌱 Agrícola / Herbicida</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-300 mb-1">Precio Costo (Q)</label>
+                    <input type="number" step="0.01" placeholder="0.00" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-amber-400 font-bold outline-none focus:border-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-300 mb-1">Precio Venta (Q)</label>
+                    <input type="number" step="0.01" placeholder="0.00" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-amber-400 font-bold outline-none focus:border-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-300 mb-1">Presentación Comercial</label>
+                    <input type="text" placeholder="ej. Saco 100Lbs o Frasco 500ml" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-300 mb-1">Factor Fraccionamiento</label>
+                    <input type="number" placeholder="ej. 100 (1 Saco = 100 Lbs)" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-emerald-500">
+                </div>
+
+                <!-- Bento Toggles Cards -->
+                <div class="md:col-span-2 grid grid-cols-2 gap-3 pt-2">
+                    <label class="glass-card rounded-2xl p-3 flex items-center justify-between cursor-pointer hover:border-cyan-500/40">
+                        <span class="font-bold text-cyan-300">❄️ Cadena de Frío (Refrigeración 2-8°C)</span>
+                        <input type="checkbox" class="w-4 h-4 accent-cyan-500">
+                    </label>
+
+                    <label class="glass-card rounded-2xl p-3 flex items-center justify-between cursor-pointer hover:border-amber-500/40">
+                        <span class="font-bold text-amber-300">📋 Requiere Receta Médica</span>
+                        <input type="checkbox" class="w-4 h-4 accent-amber-500">
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                <button onclick="closeModal('modal-nuevo-producto')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold">
+                    Cancelar
+                </button>
+                <button onclick="alert('Producto guardado correctamente en inventario.'); closeModal('modal-nuevo-producto')" class="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-900/40">
+                    Guardar Producto
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: RECEPCIÓN DE MERCADERÍA (Con Lote y Vencimiento Obligatorio) -->
+    <div id="modal-recepcion-compra" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="glass-panel rounded-3xl max-w-2xl w-full p-6 space-y-6 shadow-2xl animate-pop-in border border-rose-500/30">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    📥 Recepción de Mercadería (Ingreso de Lote)
+                </h3>
+                <button onclick="closeModal('modal-recepcion-compra')" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div class="md:col-span-2">
+                    <label class="block font-bold text-slate-300 mb-1">Proveedor / Laboratorio</label>
+                    <select class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white outline-none">
+                        <option>Laboratorios Diagnóvet S.A.</option>
+                        <option>Bayer Animal Health GT</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-300 mb-1">Producto Recibido</label>
+                    <select class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white outline-none">
+                        <option>Ivermectina 1% L.A. 500ml</option>
+                        <option>Vacuna Bovino Triple-B 50 Dosis</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-300 mb-1">Cantidad Ingresada</label>
+                    <input type="number" placeholder="ej. 50 Frascos" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white outline-none">
+                </div>
+
+                <!-- Obligatorio Lote -->
+                <div class="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30">
+                    <label class="block font-bold text-rose-300 mb-1">🏷️ Número de Lote (OBLIGATORIO)</label>
+                    <input type="text" placeholder="ej. LOTE-2026-99B" class="w-full bg-forest-950 border border-rose-500/40 rounded-xl px-3.5 py-2.5 text-white font-mono outline-none focus:border-rose-400">
+                </div>
+
+                <!-- Obligatorio Vencimiento -->
+                <div class="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30">
+                    <label class="block font-bold text-rose-300 mb-1">📅 Fecha de Vencimiento (OBLIGATORIO)</label>
+                    <input type="date" class="w-full bg-forest-950 border border-rose-500/40 rounded-xl px-3.5 py-2.5 text-white font-mono outline-none focus:border-rose-400">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                <button onclick="closeModal('modal-recepcion-compra')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold">
+                    Cancelar
+                </button>
+                <button onclick="alert('Lote y vencimiento registrados. Stock ingresado correctamente a Kardex.'); closeModal('modal-recepcion-compra')" class="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-900/40">
+                    Confirmar e Ingresar a Kardex
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- POPOVER / MODAL SAT FEL -->
+    <div id="modal-sat-fel" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="glass-panel rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl animate-pop-in border border-violet-500/30">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    ⚡ Correlativo SAT (FEL)
+                </h3>
+                <button onclick="closeModal('modal-sat-fel')" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <p class="text-slate-300">Venta: <strong class="text-white font-mono" id="sat-venta-id">#VNT-2026-894</strong></p>
+                <p class="text-slate-300">Monto: <strong class="text-amber-400 font-mono text-sm" id="sat-venta-monto">Q 1,090.00</strong></p>
+
+                <div>
+                    <label class="block font-bold text-slate-300 mb-1">Autorización DTE (SAT FEL)</label>
+                    <input type="text" placeholder="ej. 89A2-9901-DTE-2026" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono outline-none focus:border-violet-500">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-300 mb-1">Número Correlativo / Serie</label>
+                    <input type="text" placeholder="ej. SERIE A - 100942" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono outline-none focus:border-violet-500">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+                <button onclick="closeModal('modal-sat-fel')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-bold">Cancelar</button>
+                <button onclick="alert('Factura certficada exitosamente ante SAT FEL.'); closeModal('modal-sat-fel')" class="px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold shadow-lg shadow-violet-900/40">
+                    Certificar SAT
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VANILLA JS TAB SWITCHER & MODAL LOGIC -->
+    <script>
+        // Tab switching function
+        function switchTab(tabId) {
+            // Hide all sections
+            document.querySelectorAll('.module-section').forEach(sec => {
+                sec.classList.add('hidden');
+            });
+            
+            // Show selected section
+            const target = document.getElementById('module-' + tabId);
+            if (target) {
+                target.classList.remove('hidden');
+            }
+
+            // Update nav tab styles
+            document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+                btn.classList.remove('active-tab-btn');
+                btn.classList.add('text-slate-400');
+            });
+
+            const activeBtn = document.getElementById('nav-' + tabId);
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-400');
+                activeBtn.classList.add('active-tab-btn');
+            }
+        }
+
+        // Modal Open / Close helper
+        function openModal(modalId) {
+            const m = document.getElementById(modalId);
+            if (m) {
+                m.classList.remove('hidden');
+                m.classList.add('flex');
+            }
+        }
+
+        function closeModal(modalId) {
+            const m = document.getElementById(modalId);
+            if (m) {
+                m.classList.add('hidden');
+                m.classList.remove('flex');
+            }
+        }
+
+        // Open SAT FEL Popover
+        function openSATPopover(ventaId, monto) {
+            document.getElementById('sat-venta-id').textContent = '#' + ventaId;
+            document.getElementById('sat-venta-monto').textContent = monto;
+            openModal('modal-sat-fel');
+        }
+
+        // Filter Facturas SAT (Pendientes vs Certificadas)
+        function filterFacturas(type) {
+            const btnPending = document.getElementById('btn-factura-pending');
+            const btnDone = document.getElementById('btn-factura-done');
+
+            if (type === 'pendientes') {
+                btnPending.className = 'px-5 py-2 rounded-full text-xs font-bold bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow';
+                btnDone.className = 'px-5 py-2 rounded-full text-xs font-medium text-slate-400 hover:text-white';
+            } else {
+                btnDone.className = 'px-5 py-2 rounded-full text-xs font-bold bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow';
+                btnPending.className = 'px-5 py-2 rounded-full text-xs font-medium text-slate-400 hover:text-white';
+            }
+        }
+
+        // Add to Cart interactive simulation
+        function addToCart(nombre, precio) {
+            const list = document.getElementById('cart-items-list');
+            const newElem = document.createElement('div');
+            newElem.className = 'glass-card rounded-2xl p-3 flex items-center justify-between gap-3 text-xs animate-pop-in';
+            newElem.innerHTML = `
+                <div class="flex-1">
+                    <p class="font-bold text-white">${nombre}</p>
+                    <p class="text-[10px] text-slate-400 font-mono">Q ${precio.toFixed(2)} x 1</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="font-extrabold text-amber-400 font-mono">Q ${precio.toFixed(2)}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="text-slate-400 hover:text-rose-400 font-bold px-1.5 py-0.5">✕</button>
+                </div>
+            `;
+            list.appendChild(newElem);
+        }
+    </script>
+</body>
+</html>

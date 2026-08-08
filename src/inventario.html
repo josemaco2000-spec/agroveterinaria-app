@@ -31,6 +31,15 @@
             <a href="facturacion.html" class="flex items-center gap-3 py-2.5 px-4 rounded-lg transition hover:bg-green-700 text-sm font-medium">
                 🧾 <span>Facturación Manual</span>
             </a>
+            <a href="kardex.html" class="flex items-center gap-3 py-2.5 px-4 rounded-lg transition hover:bg-green-700 text-sm font-medium">
+                📋 <span>Kardex y Auditoría</span>
+            </a>
+            <a href="clientes.html" class="flex items-center gap-3 py-2.5 px-4 rounded-lg transition hover:bg-green-700 text-sm font-medium">
+                👥 <span>Clientes y Fincas</span>
+            </a>
+            <a href="compras.html" class="flex items-center gap-3 py-2.5 px-4 rounded-lg transition hover:bg-green-700 text-sm font-medium">
+                📥 <span>Compras y Proveedores</span>
+            </a>
         </nav>
         <div class="p-4 border-t border-green-700">
             <button id="btn-logout" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition text-sm font-semibold shadow">
@@ -117,6 +126,16 @@
                         <input type="number" id="prod-stock" required min="0" step="0.01" class="w-full px-3.5 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-sm" placeholder="Ej. 100">
                     </div>
 
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">No. Lote Inicial</label>
+                        <input type="text" id="prod-lote" required class="w-full px-3.5 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-sm" placeholder="Ej. LOTE-2026-A">
+                    </div>
+
+                    <div class="col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Fecha de Vencimiento (FEFO)</label>
+                        <input type="date" id="prod-vencimiento" required class="w-full px-3.5 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-sm">
+                    </div>
+
                     <div class="col-span-2 border-t border-gray-200 pt-4 mt-2">
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Precio de Costo (Q) - <span class="text-xs text-red-500 font-normal">Privado (Solo Dueño)</span></label>
                         <input type="number" id="prod-costo" required min="0" step="0.01" class="w-full px-3.5 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-sm" placeholder="Ej. 150.00">
@@ -185,6 +204,66 @@
 
             <div class="flex justify-end mt-5 pt-3 border-t border-gray-100">
                 <button type="button" id="btn-cerrar-modal-pres" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-semibold transition">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Lotes y Kardex -->
+    <div id="modal-kardex" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-6 border border-gray-100 relative max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4 border-b pb-3 shrink-0">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800">Lotes y Kardex de Movimientos</h2>
+                    <p id="kardex-producto-nombre" class="text-sm font-semibold text-green-700 mt-0.5">Producto</p>
+                </div>
+                <button type="button" id="btn-cerrar-modal-kardex-x" class="text-gray-400 hover:text-gray-600 text-xl font-bold p-1">&times;</button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto space-y-6 pr-1">
+                <!-- Sección Lotes Activos (FEFO) -->
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">🏷️ Lotes de Inventario (Vencimientos FEFO)</h3>
+                    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead class="bg-gray-100 text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                                <tr>
+                                    <th class="p-3 font-semibold">No. Lote</th>
+                                    <th class="p-3 font-semibold">Fecha Vencimiento</th>
+                                    <th class="p-3 font-semibold">Stock Inicial</th>
+                                    <th class="p-3 font-semibold">Stock Actual</th>
+                                    <th class="p-3 font-semibold">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-lotes-producto" class="divide-y divide-gray-100">
+                                <tr><td colspan="5" class="p-4 text-center text-gray-500">Cargando lotes...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Sección Kardex de Movimientos -->
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">📋 Historial de Movimientos (Kardex)</h3>
+                    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead class="bg-gray-100 text-gray-600 uppercase tracking-wider border-b border-gray-200">
+                                <tr>
+                                    <th class="p-3 font-semibold">Fecha / Hora</th>
+                                    <th class="p-3 font-semibold">Tipo Movimiento</th>
+                                    <th class="p-3 font-semibold">Lote</th>
+                                    <th class="p-3 font-semibold text-right">Cantidad Base</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-movimientos-kardex" class="divide-y divide-gray-100">
+                                <tr><td colspan="4" class="p-4 text-center text-gray-500">Cargando Kardex...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end mt-4 pt-3 border-t border-gray-100 shrink-0">
+                <button type="button" id="btn-cerrar-modal-kardex" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-semibold transition">Cerrar</button>
             </div>
         </div>
     </div>

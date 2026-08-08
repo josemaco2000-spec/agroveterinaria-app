@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clientes y Fincas - Agrovet Campo Alto</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col h-screen overflow-hidden">
+
+    <!-- Header Principal / Navegación -->
+    <header class="bg-green-800 text-white px-6 py-3 flex justify-between items-center shadow-md shrink-0">
+        <div class="flex items-center gap-3">
+            <h1 class="text-xl font-bold tracking-wide">Agrovet Campo Alto</h1>
+            <span class="bg-green-700 text-green-100 text-xs px-2.5 py-1 rounded-full font-semibold uppercase">Clientes & Créditos</span>
+        </div>
+
+        <nav class="hidden md:flex items-center gap-2">
+            <a href="admin.html" class="text-xs font-semibold px-3 py-1.5 rounded-lg text-green-100 hover:bg-green-700 transition">📊 Resumen</a>
+            <a href="inventario.html" class="text-xs font-semibold px-3 py-1.5 rounded-lg text-green-100 hover:bg-green-700 transition">📦 Inventario</a>
+            <a href="pos.html" class="text-xs font-semibold px-3 py-1.5 rounded-lg text-green-100 hover:bg-green-700 transition">🛒 POS</a>
+            <a href="facturacion.html" class="text-xs font-semibold px-3 py-1.5 rounded-lg text-green-100 hover:bg-green-700 transition">🧾 Facturación</a>
+            <a href="kardex.html" class="text-xs font-semibold px-3 py-1.5 rounded-lg text-green-100 hover:bg-green-700 transition">📋 Kardex</a>
+            <a href="clientes.html" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-green-900 text-white shadow-inner">👥 Clientes</a>
+        </nav>
+        
+        <div class="flex items-center gap-3">
+            <span id="user-email" class="text-xs text-green-100 hidden sm:inline">Cargando...</span>
+            <button id="btn-logout" class="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold py-1.5 px-3 rounded-lg transition">
+                Cerrar Sesión
+            </button>
+        </div>
+    </header>
+
+    <!-- Barra de Acción y Búsqueda Superior -->
+    <div class="bg-white border-b border-gray-200 p-4 shrink-0 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm">
+        <div>
+            <h2 class="text-lg font-bold text-gray-800">Directorio de Clientes y Fincas</h2>
+            <p class="text-xs text-gray-500">Gestión de cuentas corrientes, perfiles ganaderos/agrícolas y abonos</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            <div class="relative flex-1 sm:w-64">
+                <input type="text" id="input-busqueda-cliente" 
+                       placeholder="🔍 Buscar cliente, NIT o teléfono..." 
+                       class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-sm">
+                <span class="absolute left-3 top-2.5 text-gray-400 text-sm">🔍</span>
+            </div>
+
+            <button id="btn-nuevo-cliente" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow transition flex items-center gap-1">
+                <span>+ Nuevo Cliente</span>
+            </button>
+
+            <button id="btn-nuevo-abono" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow transition flex items-center gap-1">
+                <span>💵 Registrar Abono</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Layout Principal Grid Split (2 Columnas) -->
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
+        
+        <!-- Columna Izquierda: Lista de Clientes (Desktop 4 cols / ~35%) -->
+        <section class="lg:col-span-4 border-r border-gray-200 bg-gray-50 flex flex-col overflow-hidden">
+            <div class="p-3 bg-gray-100 border-b border-gray-200 text-xs font-bold uppercase tracking-wider text-gray-500 flex justify-between items-center">
+                <span>Clientes Registrados</span>
+                <span id="clientes-count" class="text-green-700">0</span>
+            </div>
+            
+            <div id="lista-clientes" class="flex-1 overflow-y-auto divide-y divide-gray-200 p-2 space-y-1">
+                <div class="text-center py-12 text-gray-500 text-sm">Cargando directorio de clientes...</div>
+            </div>
+        </section>
+
+        <!-- Columna Derecha: Vista Detalle del Cliente (Desktop 8 cols / ~65%) -->
+        <section id="vista-detalle-cliente" class="lg:col-span-8 flex flex-col bg-white overflow-y-auto p-6">
+            <div class="text-center py-24 text-gray-400">
+                <span class="text-5xl block mb-3">👤</span>
+                <p class="text-base font-bold text-gray-700">Selecciona un cliente de la lista</p>
+                <p class="text-xs text-gray-400 mt-1">Haz clic en cualquier cliente para consultar sus fincas, historial de compras y estado de crédito.</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal Registrar Nuevo Cliente -->
+    <div id="modal-cliente" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 border border-gray-100 relative">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h2 class="text-xl font-bold text-gray-800">Registrar Nuevo Cliente</h2>
+                <button type="button" id="btn-cerrar-modal-cliente-x" class="text-gray-400 hover:text-gray-600 text-xl font-bold p-1">&times;</button>
+            </div>
+
+            <form id="form-cliente" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2 sm:col-span-1">
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Nombre Completo / Razón Social</label>
+                        <input type="text" id="cli-nombre" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Ej. Juan Carlos Pérez">
+                    </div>
+
+                    <div class="col-span-2 sm:col-span-1">
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">NIT</label>
+                        <input type="text" id="cli-nit" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="CF o Número de NIT">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Teléfono</label>
+                        <input type="text" id="cli-telefono" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Ej. 5555-1234">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Límite de Crédito (Q)</label>
+                        <input type="number" id="cli-limite" required min="0" step="0.01" value="0.00" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm font-bold">
+                    </div>
+
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Dirección / Municipio</label>
+                        <input type="text" id="cli-direccion" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Ej. Aldea Sebol, Fray Bartolomé">
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-3 border-t border-gray-100">
+                    <button type="button" id="btn-cerrar-modal-cliente" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-semibold transition">Cancelar</button>
+                    <button type="submit" id="btn-guardar-cliente" class="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-sm shadow transition">Guardar Cliente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Registrar Finca -->
+    <div id="modal-finca" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-gray-100 relative">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h2 class="text-xl font-bold text-gray-800">Agregar Finca / Perfil Ganadero</h2>
+                <button type="button" id="btn-cerrar-modal-finca-x" class="text-gray-400 hover:text-gray-600 text-xl font-bold p-1">&times;</button>
+            </div>
+
+            <form id="form-finca" class="space-y-4">
+                <input type="hidden" id="finca-cliente-id">
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Nombre de la Finca</label>
+                    <input type="text" id="finc-nombre" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Ej. Finca El Esfuerzo">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Ubicación / Comunidad</label>
+                    <input type="text" id="finc-ubicacion" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Ej. Caabón, Alta Verapaz">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Tipo Explotación</label>
+                        <select id="finc-tipo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm bg-white">
+                            <option value="Ganadería Bovino">Ganadería Bovino</option>
+                            <option value="Porcina">Porcina</option>
+                            <option value="Avícola">Avícola</option>
+                            <option value="Agrícola / Maíz">Agrícola / Maíz</option>
+                            <option value="Mixto">Mixto</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Tamaño (Manzanas/Ha)</label>
+                        <input type="number" id="finc-tamano" min="0" step="0.1" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm">
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-3 border-t border-gray-100">
+                    <button type="button" id="btn-cerrar-modal-finca" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-semibold transition">Cancelar</button>
+                    <button type="submit" id="btn-guardar-finca" class="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-sm shadow transition">Guardar Finca</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Registrar Abono de Crédito -->
+    <div id="modal-abono" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-gray-100 relative">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h2 class="text-xl font-bold text-gray-800">Registrar Abono a Cuenta</h2>
+                <button type="button" id="btn-cerrar-modal-abono-x" class="text-gray-400 hover:text-gray-600 text-xl font-bold p-1">&times;</button>
+            </div>
+
+            <form id="form-abono" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Seleccionar Cliente</label>
+                    <select id="abono-cliente-id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm bg-white font-bold">
+                        <option value="">Selecciona un cliente...</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Monto Abono (Q)</label>
+                        <input type="number" id="abono-monto" required min="0.01" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-base font-extrabold text-green-700" placeholder="0.00">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Método de Pago</label>
+                        <select id="abono-metodo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm bg-white">
+                            <option value="EFECTIVO">EFECTIVO</option>
+                            <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+                            <option value="CHEQUE">CHEQUE</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">No. Referencia / Boleta (Opcional)</label>
+                    <input type="text" id="abono-referencia" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Ej. Transacción #987654">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Observaciones</label>
+                    <textarea id="abono-observaciones" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" placeholder="Detalles adicionales del abono..."></textarea>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-3 border-t border-gray-100">
+                    <button type="button" id="btn-cerrar-modal-abono" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-semibold transition">Cancelar</button>
+                    <button type="submit" id="btn-guardar-abono" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-bold text-sm shadow transition">Registrar Abono</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="clientes.js"></script>
+</body>
+</html>

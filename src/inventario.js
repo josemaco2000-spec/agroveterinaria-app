@@ -59,7 +59,7 @@ document.addEventListener('keydown', (e) => {
 })
 
 // ----------------------------------------------------
-// GUARDAR EL PRODUCTO (Inserción Doble)
+// GUARDAR EL PRODUCTO (Inserción Múltiple: productos, costos, lotes, movimientos)
 // ----------------------------------------------------
 document.getElementById('form-producto')?.addEventListener('submit', async (e) => {
     e.preventDefault()
@@ -74,9 +74,13 @@ document.getElementById('form-producto')?.addEventListener('submit', async (e) =
     const unidad = document.getElementById('prod-unidad').value
     const stock = parseFloat(document.getElementById('prod-stock').value) || 0
     const costo = parseFloat(document.getElementById('prod-costo').value) || 0
+    const numeroLote = document.getElementById('prod-lote').value.trim()
+    const fechaVencimiento = document.getElementById('prod-vencimiento').value
 
     try {
-        // 1. Guardar en la tabla pública de productos y obtener el registro con su ID generado
+        const { data: { session } } = await supabase.auth.getSession()
+
+        // 1. Guardar en la tabla de productos
         const { data: nuevoProducto, error: errorProducto } = await supabase
             .from('productos')
             .insert([{ 
@@ -86,12 +90,12 @@ document.getElementById('form-producto')?.addEventListener('submit', async (e) =
                 unidad_base: unidad, 
                 stock_base: stock 
             }])
-            .select() // Solicita que Supabase retorne el objeto recién insertado con el id
+            .select()
             .single()
 
         if (errorProducto) throw errorProducto
 
-        // 2. Usar el ID del nuevo producto para guardar el precio de costo en productos_costos
+        // 2. Guardar el precio de costo en productos_costos
         const { error: errorCosto } = await supabase
             .from('productos_costos')
             .insert([{ 
@@ -99,16 +103,40 @@ document.getElementById('form-producto')?.addEventListener('submit', async (e) =
                 precio_costo: costo 
             }])
 
-        if (errorCosto) {
-            console.error("Error al registrar costo:", errorCosto)
-            alert("El producto se creó pero hubo un detalle al guardar el costo: " + errorCosto.message)
-        } else {
-            alert('¡Producto y costo registrados con éxito en Agrovet Campo Alto!')
-        }
+        if (errorCosto) console.error("Error al registrar costo:", errorCosto)
 
+        // 3. Guardar el primer lote con vencimiento (FEFO)
+        const { data: nuevoLote, error: errorLote } = await supabase
+            .from('lotes')
+            .insert([{
+                producto_id: nuevoProducto.id,
+                numero_lote: numeroLote,
+                fecha_vencimiento: fechaVencimiento,
+                stock_inicial: stock,
+                stock_actual: stock
+            }])
+            .select()
+            .single()
+
+        if (errorLote) console.error("Error al crear lote:", errorLote)
+
+        // 4. Registrar movimiento de inventario en Kardex (ENTRADA_COMPRA)
+        const { error: errorKardex } = await supabase
+            .from('movimientos_inventario')
+            .insert([{
+                producto_id: nuevoProducto.id,
+                lote_id: nuevoLote?.id || null,
+                tipo_movimiento: 'ENTRADA_COMPRA',
+                cantidad: stock,
+                usuario_id: session?.user?.id || null
+            }])
+
+        if (errorKardex) console.error("Error al registrar movimiento Kardex:", errorKardex)
+
+        alert('¡Producto, costo, lote inicial (FEFO) y Kardex registrados con éxito!')
         document.getElementById('form-producto').reset()
         cerrarModal()
-        cargarInventario() // Recargar la lista de productos
+        cargarInventario()
 
     } catch (error) {
         console.error("Error al guardar producto:", error)
@@ -124,9 +152,8 @@ document.getElementById('form-producto')?.addEventListener('submit', async (e) =
 // ----------------------------------------------------
 async function cargarInventario() {
     const tbody = document.getElementById('tabla-productos')
-    tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-gray-500">Cargando inventario...</td></tr>'
+    tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-500">Cargando inventario...</td></tr>'
 
-    // Realizar consulta con relacion a productos_costos
     const { data: productos, error } = await supabase
         .from('productos')
         .select(`
@@ -137,7 +164,7 @@ async function cargarInventario() {
 
     if (error) {
         console.error("Error cargando inventario:", error)
-        tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-red-500 font-semibold">Error al cargar productos: ${error.message}</td></tr>`
+        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-red-500 font-semibold">Error al cargar productos: ${error.message}</td></tr>`
         return
     }
 
@@ -148,9 +175,7 @@ async function cargarInventario() {
         return
     }
 
-    // Renderizar cada producto en la tabla
     productos.forEach(prod => {
-        // Extraer costo de forma segura sea objeto o array de Supabase
         const costoObj = Array.isArray(prod.productos_costos) ? prod.productos_costos[0] : prod.productos_costos
         const costoNum = costoObj && costoObj.precio_costo !== undefined ? Number(costoObj.precio_costo) : 0
         const costoFormateado = costoNum.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -171,20 +196,28 @@ async function cargarInventario() {
                     Q${costoFormateado}
                 </td>
                 <td class="p-4 text-center">
-                    <button class="btn-abrir-presentaciones bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow transition inline-flex items-center gap-1.5" data-id="${prod.id}" data-nombre="${prod.nombre}">
-                        ⚙️ Presentaciones
-                    </button>
+                    <div class="flex items-center justify-center gap-2">
+                        <button class="btn-abrir-presentaciones bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow transition inline-flex items-center gap-1" data-id="${prod.id}" data-nombre="${prod.nombre}">
+                            ⚙️ Presentaciones
+                        </button>
+                        <button class="btn-abrir-kardex bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow transition inline-flex items-center gap-1" data-id="${prod.id}" data-nombre="${prod.nombre}">
+                            📋 Lotes / Kardex
+                        </button>
+                    </div>
                 </td>
             </tr>
         `
     })
 
-    // Event listener delegado para los botones de presentaciones
     tbody.querySelectorAll('.btn-abrir-presentaciones').forEach(btn => {
         btn.addEventListener('click', () => {
-            const prodId = btn.getAttribute('data-id')
-            const prodNombre = btn.getAttribute('data-nombre')
-            abrirModalPresentaciones(prodId, prodNombre)
+            abrirModalPresentaciones(btn.getAttribute('data-id'), btn.getAttribute('data-nombre'))
+        })
+    })
+
+    tbody.querySelectorAll('.btn-abrir-kardex').forEach(btn => {
+        btn.addEventListener('click', () => {
+            abrirModalKardex(btn.getAttribute('data-id'), btn.getAttribute('data-nombre'))
         })
     })
 }
@@ -220,11 +253,140 @@ modalPres?.addEventListener('click', (e) => {
     if (e.target === modalPres) cerrarModalPresentaciones()
 })
 
+// ----------------------------------------------------
+// LÓGICA DEL MODAL DE LOTES Y KARDEX
+// ----------------------------------------------------
+const modalKardex = document.getElementById('modal-kardex')
+const btnCerrarKardex = document.getElementById('btn-cerrar-modal-kardex')
+const btnCerrarKardexX = document.getElementById('btn-cerrar-modal-kardex-x')
+const kardexProductoNombre = document.getElementById('kardex-producto-nombre')
+const tablaLotesProducto = document.getElementById('tabla-lotes-producto')
+const tablaMovimientosKardex = document.getElementById('tabla-movimientos-kardex')
+
+async function abrirModalKardex(id, nombre) {
+    kardexProductoNombre.textContent = nombre
+    modalKardex.classList.remove('hidden')
+    await Promise.all([
+        cargarLotesDeProducto(id),
+        cargarKardexDeProducto(id)
+    ])
+}
+
+function cerrarModalKardex() {
+    modalKardex.classList.add('hidden')
+}
+
+btnCerrarKardex?.addEventListener('click', cerrarModalKardex)
+btnCerrarKardexX?.addEventListener('click', cerrarModalKardex)
+
+modalKardex?.addEventListener('click', (e) => {
+    if (e.target === modalKardex) cerrarModalKardex()
+})
+
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !modalPres.classList.contains('hidden')) {
-        cerrarModalPresentaciones()
+    if (e.key === 'Escape') {
+        if (!modalPres.classList.contains('hidden')) cerrarModalPresentaciones()
+        if (!modalKardex.classList.contains('hidden')) cerrarModalKardex()
     }
 })
+
+// Cargar Lotes del Producto
+async function cargarLotesDeProducto(productoId) {
+    tablaLotesProducto.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-gray-400">Cargando lotes...</td></tr>'
+
+    try {
+        const { data: lotes, error } = await supabase
+            .from('lotes')
+            .select('*')
+            .eq('producto_id', productoId)
+            .order('fecha_vencimiento', { ascending: true })
+
+        if (error) throw error
+
+        tablaLotesProducto.innerHTML = ''
+
+        if (!lotes || lotes.length === 0) {
+            tablaLotesProducto.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-gray-400 italic">No hay lotes registrados para este producto.</td></tr>'
+            return
+        }
+
+        const hoy = new Date()
+
+        lotes.forEach(lote => {
+            const fechaVenc = new Date(lote.fecha_vencimiento)
+            const esVencido = fechaVenc < hoy
+            const badgeEstado = esVencido 
+                ? '<span class="bg-red-100 text-red-800 text-[10px] font-bold px-2 py-0.5 rounded">⚠️ Vencido</span>'
+                : Number(lote.stock_actual) > 0
+                ? '<span class="bg-green-100 text-green-800 text-[10px] font-bold px-2 py-0.5 rounded">✓ Activo FEFO</span>'
+                : '<span class="bg-gray-100 text-gray-600 text-[10px] font-medium px-2 py-0.5 rounded">Agotado</span>'
+
+            tablaLotesProducto.innerHTML += `
+                <tr class="hover:bg-gray-50">
+                    <td class="p-3 font-mono font-bold text-gray-800">${lote.numero_lote}</td>
+                    <td class="p-3 font-medium text-gray-700">${lote.fecha_vencimiento}</td>
+                    <td class="p-3 font-medium text-gray-600">${lote.stock_inicial}</td>
+                    <td class="p-3 font-bold ${Number(lote.stock_actual) > 0 ? 'text-green-700' : 'text-gray-400'}">${lote.stock_actual}</td>
+                    <td class="p-3">${badgeEstado}</td>
+                </tr>
+            `
+        })
+    } catch (err) {
+        console.error("Error al cargar lotes:", err)
+        tablaLotesProducto.innerHTML = `<tr><td colspan="5" class="p-3 text-center text-red-500">Error: ${err.message}</td></tr>`
+    }
+}
+
+// Cargar Historial Kardex
+async function cargarKardexDeProducto(productoId) {
+    tablaMovimientosKardex.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-gray-400">Cargando Kardex...</td></tr>'
+
+    try {
+        const { data: movs, error } = await supabase
+            .from('movimientos_inventario')
+            .select(`
+                *,
+                lotes (
+                    numero_lote
+                )
+            `)
+            .eq('producto_id', productoId)
+            .order('created_at', { ascending: false })
+
+        if (error) throw error
+
+        tablaMovimientosKardex.innerHTML = ''
+
+        if (!movs || movs.length === 0) {
+            tablaMovimientosKardex.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-gray-400 italic">No hay movimientos registrados en Kardex.</td></tr>'
+            return
+        }
+
+        movs.forEach(m => {
+            const fechaStr = new Date(m.created_at).toLocaleString('es-GT', { dateStyle: 'short', timeStyle: 'short' })
+            const esEntrada = m.tipo_movimiento === 'ENTRADA_COMPRA'
+            const badgeTipo = esEntrada 
+                ? '<span class="text-green-700 font-bold">📥 ENTRADA COMPRA</span>'
+                : '<span class="text-red-600 font-bold">📤 SALIDA VENTA (FEFO)</span>'
+
+            const numLote = m.lotes?.numero_lote || '--'
+
+            tablaMovimientosKardex.innerHTML += `
+                <tr class="hover:bg-gray-50">
+                    <td class="p-3 text-gray-500 font-mono">${fechaStr}</td>
+                    <td class="p-3">${badgeTipo}</td>
+                    <td class="p-3 font-mono font-medium text-gray-700">${numLote}</td>
+                    <td class="p-3 text-right font-extrabold ${esEntrada ? 'text-green-700' : 'text-red-600'}">
+                        ${esEntrada ? '+' : '-'}${m.cantidad}
+                    </td>
+                </tr>
+            `
+        })
+    } catch (err) {
+        console.error("Error al cargar Kardex:", err)
+        tablaMovimientosKardex.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-red-500">Error: ${err.message}</td></tr>`
+    }
+}
 
 // Cargar presentaciones de un producto
 async function cargarPresentaciones(productoId) {
@@ -267,7 +429,6 @@ async function cargarPresentaciones(productoId) {
         `
     })
 
-    // Event listener para eliminar presentación
     tablaPresentaciones.querySelectorAll('.btn-eliminar-pres').forEach(btn => {
         btn.addEventListener('click', async () => {
             const presId = btn.getAttribute('data-id')

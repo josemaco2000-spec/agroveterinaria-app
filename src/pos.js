@@ -7,21 +7,225 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 // Estado Global de la App POS
 let catalogo = []
 let carrito = []
+let listaClientesPOS = []
+let clienteSeleccionadoId = null
+let fincaSeleccionadaId = null
+let tipoPagoSeleccionado = 'EFECTIVO'
+
+function actualizarStatusConexionUI() {
+    const badge = document.getElementById('status-conexion')
+    if (!badge) return
+
+    if (navigator.onLine) {
+        badge.textContent = '🟢 En Línea'
+        badge.className = 'bg-emerald-600 text-white text-xs px-2.5 py-1 rounded-full font-semibold uppercase'
+        sincronizarVentasPendientes()
+    } else {
+        badge.textContent = '🔴 Modo Offline'
+        badge.className = 'bg-red-600 text-white text-xs px-2.5 py-1 rounded-full font-semibold uppercase animate-pulse'
+    }
+}
+
+window.addEventListener('online', actualizarStatusConexionUI)
+window.addEventListener('offline', actualizarStatusConexionUI)
+
+function actualizarCacheCatalogoLocal() {
+    const data = {
+        catalogo: catalogo,
+        listaClientesPOS: listaClientesPOS
+    }
+    localStorage.setItem('adnova_catalog_cache', JSON.stringify(data))
+}
+
+function cargarCatalogodesdeCache() {
+    try {
+        const cache = localStorage.getItem('adnova_catalog_cache')
+        if (cache) {
+            const parsed = JSON.parse(cache)
+            catalogo = parsed.catalogo || []
+            listaClientesPOS = parsed.listaClientesPOS || []
+            renderCatalogo(catalogo)
+
+            const selectCliente = document.getElementById('select-cliente')
+            if (selectCliente) {
+                selectCliente.innerHTML = '<option value="">Consumidor Final (CF)</option>'
+                listaClientesPOS.forEach(cli => {
+                    const opt = document.createElement('option')
+                    opt.value = cli.id
+                    opt.textContent = `${cli.nombre} (NIT: ${cli.nit || 'CF'})`
+                    selectCliente.appendChild(opt)
+                })
+            }
+            console.log("Catálogo y clientes cargados desde caché local offline.")
+        }
+    } catch (e) {
+        console.error("Error al cargar caché local:", e)
+    }
+}
 
 // 1. Guard de Autenticación
 async function validarSesion() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
-        window.location.href = 'index.html'
+        const cacheSession = localStorage.getItem('adnova_session_offline')
+        if (!cacheSession && !navigator.onLine) {
+            window.location.href = 'index.html'
+            return
+        }
+    } else {
+        localStorage.setItem('adnova_session_offline', 'true')
+        const cajeroEmail = document.getElementById('cajero-email')
+        if (cajeroEmail) {
+            cajeroEmail.textContent = session.user.email
+        }
+    }
+
+    actualizarStatusConexionUI()
+
+    if (navigator.onLine) {
+        await Promise.all([
+            cargarCatalogo(),
+            cargarClientesPOS()
+        ])
+    } else {
+        cargarCatalogodesdeCache()
+    }
+}
+
+// Cargar Lista de Clientes para el POS
+async function cargarClientesPOS() {
+    const selectCliente = document.getElementById('select-cliente')
+    if (!selectCliente) return
+
+    try {
+        if (!navigator.onLine) {
+            cargarCatalogodesdeCache()
+            return
+        }
+
+        const { data: clientes, error } = await supabase
+            .from('clientes')
+            .select('*')
+            .order('nombre', { ascending: true })
+
+        if (error) throw error
+
+        listaClientesPOS = clientes || []
+        actualizarCacheCatalogoLocal()
+
+        selectCliente.innerHTML = '<option value="">Consumidor Final (CF)</option>'
+        listaClientesPOS.forEach(cli => {
+            const opt = document.createElement('option')
+            opt.value = cli.id
+            opt.textContent = `${cli.nombre} (NIT: ${cli.nit || 'CF'})`
+            selectCliente.appendChild(opt)
+        })
+
+    } catch (err) {
+        console.error("Error al cargar clientes en POS:", err)
+        cargarCatalogodesdeCache()
+    }
+}
+
+// Listener para Cambio de Cliente
+document.getElementById('select-cliente')?.addEventListener('change', async (e) => {
+    const clienteId = e.target.value
+    clienteSeleccionadoId = clienteId || null
+    fincaSeleccionadaId = null
+
+    const containerFinca = document.getElementById('container-finca')
+    const selectFinca = document.getElementById('select-finca')
+    const badgeCredito = document.getElementById('badge-credito-cliente')
+
+    if (clienteId) {
+        containerFinca?.classList.remove('hidden')
+        await cargarFincasDelClientePOS(clienteId)
+
+        const cli = listaClientesPOS.find(c => c.id === clienteId)
+        if (cli && badgeCredito) {
+            const saldoFmt = Number(cli.saldo_actual).toFixed(2)
+            const limiteFmt = Number(cli.limite_credito).toFixed(2)
+            badgeCredito.textContent = `Saldo: Q${saldoFmt} / Límite: Q${limiteFmt}`
+            badgeCredito.className = Number(cli.saldo_actual) >= Number(cli.limite_credito)
+                ? 'text-[11px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-800'
+                : 'text-[11px] font-bold px-2 py-0.5 rounded bg-green-100 text-green-800'
+            badgeCredito.classList.remove('hidden')
+        }
+    } else {
+        containerFinca?.classList.add('hidden')
+        badgeCredito?.classList.add('hidden')
+        if (selectFinca) selectFinca.innerHTML = '<option value="">Sin finca específica</option>'
+
+        if (tipoPagoSeleccionado === 'CREDITO') {
+            actualizarSeleccionTipoPago('EFECTIVO')
+        }
+    }
+})
+
+// Listener para Cambio de Finca
+document.getElementById('select-finca')?.addEventListener('change', (e) => {
+    fincaSeleccionadaId = e.target.value || null
+})
+
+// Cargar Fincas del Cliente Seleccionado
+async function cargarFincasDelClientePOS(clienteId) {
+    const selectFinca = document.getElementById('select-finca')
+    if (!selectFinca) return
+
+    if (!navigator.onLine) {
+        selectFinca.innerHTML = '<option value="">Sin finca específica (Offline)</option>'
         return
     }
 
-    const cajeroEmail = document.getElementById('cajero-email')
-    if (cajeroEmail) {
-        cajeroEmail.textContent = session.user.email
-    }
+    selectFinca.innerHTML = '<option value="">Cargando fincas...</option>'
 
-    cargarCatalogo()
+    try {
+        const { data: fincas, error } = await supabase
+            .from('fincas')
+            .select('*')
+            .eq('cliente_id', clienteId)
+            .order('nombre_finca', { ascending: true })
+
+        if (error) throw error
+
+        selectFinca.innerHTML = '<option value="">Sin finca específica</option>'
+        if (fincas && fincas.length > 0) {
+            fincas.forEach(f => {
+                const opt = document.createElement('option')
+                opt.value = f.id
+                opt.textContent = `🏡 ${f.nombre_finca} (${f.tipo_explotacion || 'General'})`
+                selectFinca.appendChild(opt)
+            })
+        }
+    } catch (err) {
+        console.error("Error al cargar fincas:", err)
+        selectFinca.innerHTML = '<option value="">Sin finca específica</option>'
+    }
+}
+
+// Botones Opción Tipo de Pago
+document.querySelectorAll('.btn-pago-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const tipo = btn.getAttribute('data-tipo')
+        
+        if (tipo === 'CREDITO' && !clienteSeleccionadoId) {
+            alert("⚠️ Para realizar una venta a crédito debes seleccionar un cliente registrado.")
+            return
+        }
+
+        actualizarSeleccionTipoPago(tipo)
+    })
+})
+
+function actualizarSeleccionTipoPago(tipo) {
+    tipoPagoSeleccionado = tipo
+    document.querySelectorAll('.btn-pago-opt').forEach(btn => {
+        if (btn.getAttribute('data-tipo') === tipo) {
+            btn.className = 'btn-pago-opt py-1.5 px-2 rounded-md transition text-center bg-white text-green-800 shadow-sm font-bold'
+        } else {
+            btn.className = 'btn-pago-opt py-1.5 px-2 rounded-md transition text-center text-gray-600 hover:text-gray-900 font-semibold'
+        }
+    })
 }
 
 // 2. Cargar Catálogo de Presentaciones Disponibles
@@ -30,7 +234,11 @@ async function cargarCatalogo() {
     grid.innerHTML = '<div class="col-span-full text-center py-12 text-gray-500 font-medium">Cargando presentaciones de productos...</div>'
 
     try {
-        // Consultar presentaciones unidas con datos del producto
+        if (!navigator.onLine) {
+            cargarCatalogodesdeCache()
+            return
+        }
+
         const { data: presentaciones, error } = await supabase
             .from('presentaciones')
             .select(`
@@ -48,13 +256,13 @@ async function cargarCatalogo() {
 
         if (error) throw error
 
-        // Filtrar presentaciones cuyos productos tengan stock base disponible > 0
         catalogo = (presentaciones || []).filter(p => p.productos && Number(p.productos.stock_base) > 0)
+        actualizarCacheCatalogoLocal()
         renderCatalogo(catalogo)
 
     } catch (err) {
         console.error("Error al cargar catálogo:", err)
-        grid.innerHTML = `<div class="col-span-full text-center py-12 text-red-500 font-semibold">Error al cargar productos: ${err.message}</div>`
+        cargarCatalogodesdeCache()
     }
 }
 
@@ -301,20 +509,137 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
     btnCompletar.disabled = true
 
     try {
-        // Calcular total general de la venta
         const totalVenta = carrito.reduce((sum, item) => sum + (item.cantidad * item.precioVenta), 0)
+
+        // FALLBACK MODO OFFLINE
+        if (!navigator.onLine) {
+            if (tipoPagoSeleccionado === 'CREDITO') {
+                if (!clienteSeleccionadoId) {
+                    alert("⚠️ No se puede realizar una venta a crédito a Consumidor Final. Selecciona un cliente registrado.")
+                    btnCompletar.innerHTML = textoOriginal
+                    btnCompletar.disabled = false
+                    return
+                }
+
+                const cliLocal = listaClientesPOS.find(c => c.id === clienteSeleccionadoId)
+                if (cliLocal) {
+                    const saldoActual = Number(cliLocal.saldo_actual) || 0
+                    const limiteCredito = Number(cliLocal.limite_credito) || 0
+
+                    if ((saldoActual + totalVenta) > limiteCredito) {
+                        const disponible = Math.max(0, limiteCredito - saldoActual)
+                        const disponibleFmt = disponible.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        alert(`⚠️ Límite de crédito excedido para "${cliLocal.nombre}". Crédito disponible: Q${disponibleFmt}.`)
+                        btnCompletar.innerHTML = textoOriginal
+                        btnCompletar.disabled = false
+                        return
+                    }
+                    // Actualizar saldo localmente
+                    cliLocal.saldo_actual = saldoActual + totalVenta
+                }
+            }
+
+            const localId = 'local-' + crypto.randomUUID()
+
+            // Descontar stock localmente en catalogo cargado
+            carrito.forEach(item => {
+                const pres = catalogo.find(p => p.id === item.presentacionId)
+                if (pres && pres.productos) {
+                    pres.productos.stock_base = Math.max(0, Number(pres.productos.stock_base) - (item.cantidad * item.factorConversion))
+                }
+            })
+
+            actualizarCacheCatalogoLocal()
+            renderCatalogo(catalogo)
+
+            // Encolar venta pendiente
+            const pendingSales = JSON.parse(localStorage.getItem('adnova_pending_sales') || '[]')
+            const nuevaVentaOffline = {
+                id: localId,
+                total: totalVenta,
+                cliente_id: clienteSeleccionadoId || null,
+                finca_id: fincaSeleccionadaId || null,
+                tipo_pago: tipoPagoSeleccionado,
+                carrito: [...carrito]
+            }
+            pendingSales.push(nuevaVentaOffline)
+            localStorage.setItem('adnova_pending_sales', JSON.stringify(pendingSales))
+
+            // Generar ticket con marca de agua offline
+            const itemsParaTicket = [...carrito]
+            renderizarTicket(localId, itemsParaTicket, totalVenta)
+
+            vaciarCarrito()
+
+            const modalExito = document.getElementById('modal-exito')
+            const detalleExito = document.getElementById('mensaje-exito-detalle')
+            if (detalleExito) {
+                const totalForm = totalVenta.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                detalleExito.textContent = `La venta offline por Q${totalForm} se guardó localmente. Se sincronizará automáticamente al recuperar internet.`
+            }
+            modalExito?.classList.remove('hidden')
+
+            btnCompletar.innerHTML = textoOriginal
+            btnCompletar.disabled = true
+            return
+        }
+
+        // VALIDACIÓN ONLINE DE CRÉDITO
+        if (tipoPagoSeleccionado === 'CREDITO') {
+            if (!clienteSeleccionadoId) {
+                alert("⚠️ No se puede realizar una venta a crédito a Consumidor Final. Selecciona un cliente registrado.")
+                btnCompletar.innerHTML = textoOriginal
+                btnCompletar.disabled = false
+                return
+            }
+
+            const { data: clienteFresh, error: errCli } = await supabase
+                .from('clientes')
+                .select('saldo_actual, limite_credito, nombre')
+                .eq('id', clienteSeleccionadoId)
+                .single()
+
+            if (errCli || !clienteFresh) {
+                alert("⚠️ No se pudo verificar la información del cliente.")
+                btnCompletar.innerHTML = textoOriginal
+                btnCompletar.disabled = false
+                return
+            }
+
+            const saldoActual = Number(clienteFresh.saldo_actual) || 0
+            const limiteCredito = Number(clienteFresh.limite_credito) || 0
+
+            if ((saldoActual + totalVenta) > limiteCredito) {
+                const disponible = Math.max(0, limiteCredito - saldoActual)
+                const disponibleFmt = disponible.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                alert(`⚠️ Límite de crédito excedido para "${clienteFresh.nombre}". Crédito disponible actual: Q${disponibleFmt}.`)
+                btnCompletar.innerHTML = textoOriginal
+                btnCompletar.disabled = false
+                return
+            }
+        }
 
         // Paso 1: Registrar en tabla `ventas`
         const { data: nuevaVenta, error: errorVenta } = await supabase
             .from('ventas')
             .insert([{
                 total: totalVenta,
-                estado_factura: 'pendiente'
+                estado_factura: 'pendiente',
+                cliente_id: clienteSeleccionadoId || null,
+                finca_id: fincaSeleccionadaId || null,
+                tipo_pago: tipoPagoSeleccionado
             }])
             .select()
             .single()
 
         if (errorVenta) throw errorVenta
+
+        // Si fue Venta a Crédito, actualizar el saldo_actual del cliente en DB
+        if (tipoPagoSeleccionado === 'CREDITO' && clienteSeleccionadoId) {
+            const { data: cliData } = await supabase.from('clientes').select('saldo_actual').eq('id', clienteSeleccionadoId).single()
+            const nuevoSaldo = (Number(cliData?.saldo_actual) || 0) + totalVenta
+            await supabase.from('clientes').update({ saldo_actual: nuevoSaldo }).eq('id', clienteSeleccionadoId)
+        }
 
         // Paso 2: Bulk INSERT en `detalle_ventas`
         const detalles = carrito.map(item => ({
@@ -330,33 +655,23 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
 
         if (errorDetalle) throw errorDetalle
 
-        // Paso 3: Descuenta el stock en la tabla `productos`
-        // Agrupamos el consumo total de stock_base por cada producto_id
-        const consumoPorProducto = {}
-        carrito.forEach(item => {
-            const consumoBase = item.cantidad * item.factorConversion
-            consumoPorProducto[item.productoId] = (consumoPorProducto[item.productoId] || 0) + consumoBase
-        })
+        // Paso 3: Invocar procedimiento almacenado (RPC) procesar_salida_fefo por cada ítem del carrito
+        const { data: { session } } = await supabase.auth.getSession()
+        const usuarioId = session?.user?.id || null
 
-        // Actualizamos cada producto consumido
-        for (const [prodId, consumoTotalBase] of Object.entries(consumoPorProducto)) {
-            // Obtenemos el stock actual directo de la base de datos
-            const { data: prodData, error: errFetchProd } = await supabase
-                .from('productos')
-                .select('stock_base')
-                .eq('id', prodId)
-                .single()
+        for (const item of carrito) {
+            const cantidadBase = item.cantidad * item.factorConversion
 
-            if (!errFetchProd && prodData) {
-                const nuevoStockBase = Math.max(0, Number(prodData.stock_base) - consumoTotalBase)
-                const { error: errUpdateProd } = await supabase
-                    .from('productos')
-                    .update({ stock_base: nuevoStockBase })
-                    .eq('id', prodId)
+            const { error: errorFefo } = await supabase.rpc('procesar_salida_fefo', {
+                p_producto_id: item.productoId,
+                p_cantidad_base: cantidadBase,
+                p_referencia_id: nuevaVenta.id,
+                p_usuario_id: usuarioId
+            })
 
-                if (errUpdateProd) {
-                    console.error(`Error actualizando stock_base del producto ${prodId}:`, errUpdateProd)
-                }
+            if (errorFefo) {
+                console.error(`Error procesando salida FEFO para producto ${item.productoId}:`, errorFefo)
+                alert(`⚠️ Atención con el producto "${item.nombreProducto}": ${errorFefo.message}`)
             }
         }
 
@@ -398,6 +713,17 @@ function renderizarTicket(ventaId, cartItems, totalAmount) {
     const cajeroEmail = document.getElementById('cajero-email')?.textContent || 'Vendedor'
     const totalForm = totalAmount.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
+    const clienteObj = listaClientesPOS.find(c => c.id === clienteSeleccionadoId)
+    const nombreClienteStr = clienteObj ? clienteObj.nombre : 'Consumidor Final (CF)'
+    const nitClienteStr = clienteObj ? (clienteObj.nit || 'CF') : 'CF'
+
+    const esOffline = !navigator.onLine || (ventaId && ventaId.startsWith('local-'))
+    const watermarkHtml = esOffline 
+        ? `<div style="text-align: center; color: red; border: 2px dashed red; padding: 6px; font-weight: bold; font-size: 11px; margin-bottom: 10px;">
+             ** VENTA PENDIENTE DE SINCRONIZAR **
+           </div>`
+        : ''
+
     let filasItemsHtml = ''
     cartItems.forEach(item => {
         const subtotal = item.cantidad * item.precioVenta
@@ -415,6 +741,7 @@ function renderizarTicket(ventaId, cartItems, totalAmount) {
     })
 
     ticketContainer.innerHTML = `
+        ${watermarkHtml}
         <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px;">
             <h2 style="font-size: 14px; font-weight: bold; margin: 0; text-transform: uppercase;">Agrovet Campo Alto</h2>
             <p style="font-size: 10px; margin: 2px 0 0 0;">Fray Bartolomé de las Casas, Alta Verapaz</p>
@@ -425,6 +752,8 @@ function renderizarTicket(ventaId, cartItems, totalAmount) {
             <div><strong>Ticket No:</strong> #${shortId}</div>
             <div><strong>Fecha:</strong> ${fechaHora}</div>
             <div><strong>Atendido por:</strong> ${cajeroEmail}</div>
+            <div><strong>Cliente:</strong> ${nombreClienteStr} (NIT: ${nitClienteStr})</div>
+            <div><strong>Pago:</strong> ${tipoPagoSeleccionado}</div>
         </div>
 
         <div style="border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px;">
@@ -442,7 +771,95 @@ function renderizarTicket(ventaId, cartItems, totalAmount) {
     `
 }
 
-// 7. Acciones del Modal de Exito (Imprimir / Nueva Venta)
+// 7. Auto-Sincronización de Ventas Guardadas en Modo Offline
+let isSyncing = false
+async function sincronizarVentasPendientes() {
+    if (isSyncing || !navigator.onLine) return
+
+    const pendingSales = JSON.parse(localStorage.getItem('adnova_pending_sales') || '[]')
+    if (pendingSales.length === 0) return
+
+    isSyncing = true
+    console.log(`Iniciando auto-sincronización de ${pendingSales.length} ventas offline...`)
+
+    let successfulSyncs = 0
+
+    try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const usuarioId = session?.user?.id || null
+
+        for (const venta of pendingSales) {
+            // 1. Insertar venta
+            const { data: nuevaVenta, error: errorVenta } = await supabase
+                .from('ventas')
+                .insert([{
+                    total: venta.total,
+                    estado_factura: 'pendiente',
+                    cliente_id: venta.cliente_id,
+                    finca_id: venta.finca_id,
+                    tipo_pago: venta.tipo_pago
+                }])
+                .select()
+                .single()
+
+            if (errorVenta) throw errorVenta
+
+            // 2. Insertar detalles
+            const detalles = venta.carrito.map(item => ({
+                venta_id: nuevaVenta.id,
+                presentacion_id: item.presentacionId,
+                cantidad: item.cantidad,
+                subtotal: item.cantidad * item.precioVenta
+            }))
+
+            const { error: errorDetalle } = await supabase
+                .from('detalle_ventas')
+                .insert(detalles)
+
+            if (errorDetalle) throw errorDetalle
+
+            // 3. Procesar salida FEFO por cada ítem
+            for (const item of venta.carrito) {
+                const cantidadBase = item.cantidad * item.factorConversion
+                await supabase.rpc('procesar_salida_fefo', {
+                    p_producto_id: item.productoId,
+                    p_cantidad_base: cantidadBase,
+                    p_referencia_id: nuevaVenta.id,
+                    p_usuario_id: usuarioId
+                })
+            }
+
+            // 4. Si fue crédito, actualizar saldo_actual del cliente
+            if (venta.tipo_pago === 'CREDITO' && venta.cliente_id) {
+                const { data: cliData } = await supabase.from('clientes').select('saldo_actual').eq('id', venta.cliente_id).single()
+                const nuevoSaldo = (Number(cliData?.saldo_actual) || 0) + venta.total
+                await supabase.from('clientes').update({ saldo_actual: nuevoSaldo }).eq('id', venta.cliente_id)
+            }
+
+            successfulSyncs++
+        }
+
+        // Limpiar cola local
+        localStorage.setItem('adnova_pending_sales', '[]')
+        alert(`✅ Sincronización exitosa: ${successfulSyncs} venta(s) offline guardada(s) en la nube.`)
+
+        // Recargar datos frescos
+        await Promise.all([
+            cargarCatalogo(),
+            cargarClientesPOS()
+        ])
+
+    } catch (err) {
+        console.error("Error durante sincronización offline:", err)
+        // Mantener las restantes en cola
+        const remaining = pendingSales.slice(successfulSyncs)
+        localStorage.setItem('adnova_pending_sales', JSON.stringify(remaining))
+    } finally {
+        isSyncing = false
+    }
+}
+
+// 8. Acciones del Modal de Exito (Imprimir / Nueva Venta)
 document.getElementById('btn-imprimir-ticket')?.addEventListener('click', () => {
     window.print()
     document.getElementById('modal-exito')?.classList.add('hidden')
@@ -455,6 +872,7 @@ document.getElementById('btn-nueva-venta')?.addEventListener('click', () => {
 // Logout
 document.getElementById('btn-logout')?.addEventListener('click', async () => {
     await supabase.auth.signOut()
+    localStorage.removeItem('adnova_session_offline')
     window.location.href = 'index.html'
 })
 

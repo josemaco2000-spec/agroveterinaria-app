@@ -42,6 +42,7 @@
         <div class="flex items-center gap-3">
             <h1 class="text-xl font-bold tracking-wide">Agrovet Campo Alto</h1>
             <span class="bg-green-700 text-green-100 text-xs px-2.5 py-1 rounded-full font-semibold uppercase">Punto de Venta / Caja</span>
+            <span id="status-conexion" class="bg-emerald-600 text-white text-xs px-2.5 py-1 rounded-full font-semibold uppercase">🟢 En Línea</span>
         </div>
         
         <div class="flex items-center gap-4">
@@ -104,15 +105,53 @@
                 </div>
             </div>
 
-            <!-- Footer con Resumen y Botón de Cobro -->
-            <div class="p-5 border-t border-gray-200 bg-gray-50 shrink-0 space-y-4 shadow-lg">
-                <div class="flex justify-between items-baseline">
-                    <span class="text-gray-600 font-semibold text-base">Total a Cobrar:</span>
+            <!-- Footer con Resumen, Selección de Cliente/Finca y Botón de Cobro -->
+            <div class="p-4 border-t border-gray-200 bg-gray-50 shrink-0 space-y-3 shadow-lg">
+                <!-- Selección de Cliente y Finca -->
+                <div class="space-y-2">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label for="select-cliente" class="text-xs font-bold text-gray-700 uppercase">Cliente / Comprador:</label>
+                            <span id="badge-credito-cliente" class="hidden text-[11px] font-bold px-2 py-0.5 rounded"></span>
+                        </div>
+                        <select id="select-cliente" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-xs bg-white font-semibold">
+                            <option value="">Consumidor Final (CF)</option>
+                        </select>
+                    </div>
+
+                    <!-- Selector de Finca (Condicional) -->
+                    <div id="container-finca" class="hidden">
+                        <label for="select-finca" class="text-xs font-bold text-gray-700 uppercase block mb-1">Finca / Destino:</label>
+                        <select id="select-finca" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-xs bg-white">
+                            <option value="">Sin finca específica</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Método de Pago -->
+                <div>
+                    <label class="text-xs font-bold text-gray-700 uppercase block mb-1">Método de Pago:</label>
+                    <div class="grid grid-cols-3 gap-1.5 bg-gray-200 p-1 rounded-lg text-xs font-bold">
+                        <button type="button" class="btn-pago-opt py-1.5 px-2 rounded-md transition text-center bg-white text-green-800 shadow-sm" data-tipo="EFECTIVO">
+                            💵 Efectivo
+                        </button>
+                        <button type="button" class="btn-pago-opt py-1.5 px-2 rounded-md transition text-center text-gray-600 hover:text-gray-900" data-tipo="TRANSFERENCIA">
+                            🏦 Transf.
+                        </button>
+                        <button type="button" class="btn-pago-opt py-1.5 px-2 rounded-md transition text-center text-gray-600 hover:text-gray-900" data-tipo="CREDITO">
+                            💳 Crédito
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Total y Registrar Venta -->
+                <div class="flex justify-between items-baseline pt-1">
+                    <span class="text-gray-600 font-semibold text-sm">Total a Cobrar:</span>
                     <span id="total-carrito" class="text-3xl font-extrabold text-green-700">Q0.00</span>
                 </div>
 
                 <button id="btn-completar-venta" disabled 
-                        class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl shadow-lg transition duration-200 text-lg flex items-center justify-center gap-2">
+                        class="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition duration-200 text-lg flex items-center justify-center gap-2">
                     <span>💳 Registrar Venta</span>
                 </button>
             </div>
