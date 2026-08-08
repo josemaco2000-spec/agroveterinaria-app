@@ -49,7 +49,7 @@ formLogin.addEventListener('submit', async (e) => {
         if (rol === 'admin') {
             window.location.href = 'admin.html' 
         } else if (rol === 'vendedor') {
-            window.location.href = 'pos.html' 
+            window.location.href = 'cajero-home.html' 
         }
 
     } catch (error) {

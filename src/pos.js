@@ -249,7 +249,8 @@ async function cargarCatalogo() {
                     codigo_barras,
                     categoria,
                     unidad_base,
-                    stock_base
+                    stock_base,
+                    imagen_url
                 )
             `)
             .order('nombre_presentacion', { ascending: true })
@@ -285,27 +286,52 @@ function renderCatalogo(items) {
         const factor = Number(pres.factor_conversion) || 1
         const maxPresentaciones = Math.floor(Number(prod.stock_base) / factor)
 
+        const imgTopHtml = prod.imagen_url
+            ? `<img src="${prod.imagen_url}" alt="${prod.nombre}" class="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300">`
+            : `<div class="w-full h-full flex flex-col items-center justify-center text-slate-500 bg-forest-950/80">
+                <svg class="w-10 h-10 opacity-30 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+               </div>`
+
         grid.innerHTML += `
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col justify-between hover:shadow-md transition">
-                <div>
-                    <div class="flex justify-between items-start mb-1">
-                        <span class="text-xs font-semibold uppercase px-2 py-0.5 rounded bg-green-100 text-green-800">${prod.categoria || 'General'}</span>
-                        <span class="text-xs text-gray-400 font-mono">${prod.codigo_barras ? '📦 ' + prod.codigo_barras : ''}</span>
-                    </div>
-                    <h3 class="font-bold text-gray-800 text-base leading-tight">${prod.nombre}</h3>
-                    <p class="text-sm font-semibold text-green-700 mt-1">${pres.nombre_presentacion}</p>
-                    <div class="mt-2 text-xs text-gray-500 flex justify-between">
-                        <span>Stock Base: <strong>${prod.stock_base} ${prod.unidad_base}</strong></span>
-                        <span>Disp: ~<strong>${maxPresentaciones} pres.</strong></span>
-                    </div>
+            <div class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between border border-slate-800/80 hover:border-emerald-500/40 transition duration-300 group shadow-lg">
+                <!-- Card Top: Image container -->
+                <div class="w-full h-32 object-cover rounded-t-lg bg-gray-100 dark:bg-forest-950 flex items-center justify-center overflow-hidden relative border-b border-slate-800/60">
+                    ${imgTopHtml}
+                    <span class="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-xs">
+                        ${prod.categoria || 'General'}
+                    </span>
+                    ${prod.codigo_barras ? `<span class="absolute top-2 right-2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/60 text-slate-300 backdrop-blur-xs">📦 ${prod.codigo_barras}</span>` : ''}
                 </div>
 
-                <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-                    <span class="text-xl font-extrabold text-gray-900">Q${precioFormateado}</span>
-                    <button class="btn-agregar-carrito bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold py-2 px-3.5 rounded-lg text-sm shadow transition flex items-center gap-1"
-                            data-pres-id="${pres.id}">
-                        <span>+ Agregar</span>
-                    </button>
+                <!-- Card Body -->
+                <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+                    <div>
+                        <h3 class="font-bold text-white text-sm sm:text-base leading-snug line-clamp-2 group-hover:text-emerald-300 transition-colors">${prod.nombre}</h3>
+                        <p class="text-xs font-semibold text-emerald-400 mt-1">${pres.nombre_presentacion}</p>
+                    </div>
+
+                    <div class="space-y-2.5">
+                        <!-- Available Stock Badge & Price -->
+                        <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-800/60">
+                            <div class="flex flex-col">
+                                <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Stock Base</span>
+                                <span class="font-semibold text-slate-200">${prod.stock_base} ${prod.unidad_base} <span class="text-[10px] text-emerald-400 font-bold">(~${maxPresentaciones} pres.)</span></span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Precio</span>
+                                <span class="text-lg font-extrabold text-emerald-400 tracking-tight">Q${precioFormateado}</span>
+                            </div>
+                        </div>
+
+                        <!-- Big full-width "+ Agregar" button -->
+                        <button class="btn-agregar-carrito w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98] text-white font-bold text-xs shadow-md shadow-emerald-900/30 transition duration-200 flex items-center justify-center gap-1.5"
+                                data-pres-id="${pres.id}">
+                            <span class="text-sm leading-none">+</span>
+                            <span>Agregar</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         `
@@ -388,7 +414,7 @@ function cambiarCantidad(presentacionId, cambio) {
 
     const nuevaCant = item.cantidad + cambio
     if (nuevaCant <= 0) {
-        eliminarDelCarrito(presentacionId)
+        solicitarEliminacionItem(presentacionId)
         return
     }
 
@@ -412,11 +438,6 @@ function cambiarCantidad(presentacionId, cambio) {
     renderCarrito()
 }
 
-function eliminarDelCarrito(presentacionId) {
-    carrito = carrito.filter(item => item.presentacionId !== presentacionId)
-    renderCarrito()
-}
-
 function vaciarCarrito() {
     carrito = []
     renderCarrito()
@@ -434,50 +455,61 @@ function renderCarrito() {
     const totalEl = document.getElementById('total-carrito')
     const btnCompletar = document.getElementById('btn-completar-venta')
 
+    if (!lista || !totalEl) return
     lista.innerHTML = ''
 
     if (carrito.length === 0) {
         lista.innerHTML = `
-            <div class="text-center py-16 text-gray-400">
-                <span class="text-4xl block mb-2">🛒</span>
-                <p class="text-sm font-medium">El carrito está vacío</p>
-                <p class="text-xs text-gray-400 mt-1">Haz clic en "+ Agregar" en los productos del catálogo</p>
+            <div class="glass-card rounded-2xl p-6 text-center text-slate-400">
+                <span class="text-3xl block mb-2">🛒</span>
+                <p class="text-xs font-bold text-slate-300">El carrito está vacío</p>
+                <p class="text-[11px] text-slate-400 mt-1">Haz clic en "+ Agregar" en los productos del catálogo</p>
             </div>
         `
         totalEl.textContent = 'Q0.00'
-        btnCompletar.disabled = true
+        if (btnCompletar) btnCompletar.disabled = true
         return
     }
 
     let granTotal = 0
 
     carrito.forEach(item => {
-        const subtotal = item.cantidad * item.precioVenta
+        const descuentoPct = Number(item.descuentoPorcentaje) || 0
+        const precioEfectivo = item.precioVenta * (1 - descuentoPct / 100)
+        const subtotal = item.cantidad * precioEfectivo
         granTotal += subtotal
 
         const subtotalFormateado = subtotal.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         const precioFormateado = item.precioVenta.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
         lista.innerHTML += `
-            <div class="py-3 flex items-center justify-between gap-3">
+            <div class="py-2.5 px-3 bg-forest-950/60 border border-emerald-500/10 rounded-2xl flex items-center justify-between gap-2.5 transition hover:border-emerald-500/30">
                 <div class="flex-1 min-w-0">
-                    <div class="font-bold text-gray-800 text-sm truncate">${item.nombreProducto}</div>
-                    <div class="text-xs font-semibold text-green-700">${item.nombrePresentacion} — Q${precioFormateado} c/u</div>
+                    <div class="font-bold text-white text-xs truncate">${item.nombreProducto}</div>
+                    <div class="text-[11px] font-semibold text-emerald-400 flex items-center gap-1.5 flex-wrap mt-0.5">
+                        <span>${item.nombrePresentacion} — Q${precioFormateado} c/u</span>
+                        ${descuentoPct > 0 ? `<span class="bg-amber-500/20 text-amber-300 text-[10px] font-extrabold px-1.5 py-0.2 rounded border border-amber-500/30">-${descuentoPct}% desc</span>` : ''}
+                    </div>
                 </div>
 
                 <!-- Controles de Cantidad -->
-                <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white shadow-sm shrink-0">
-                    <button class="btn-restar px-2.5 py-1 text-gray-600 hover:bg-gray-100 font-bold transition" data-id="${item.presentacionId}">-</button>
-                    <span class="px-3 py-1 text-xs font-bold text-gray-800 min-w-[2rem] text-center">${item.cantidad}</span>
-                    <button class="btn-sumar px-2.5 py-1 text-gray-600 hover:bg-gray-100 font-bold transition" data-id="${item.presentacionId}">+</button>
+                <div class="flex items-center border border-slate-700/80 rounded-xl overflow-hidden bg-forest-950/90 shadow-sm shrink-0">
+                    <button class="btn-restar px-2 py-0.5 text-slate-300 hover:bg-slate-800 font-bold transition text-xs" data-id="${item.presentacionId}">-</button>
+                    <span class="px-2.5 py-0.5 text-xs font-bold text-white min-w-[1.75rem] text-center">${item.cantidad}</span>
+                    <button class="btn-sumar px-2 py-0.5 text-slate-300 hover:bg-slate-800 font-bold transition text-xs" data-id="${item.presentacionId}">+</button>
                 </div>
 
-                <!-- Subtotal y Eliminar -->
-                <div class="text-right shrink-0 min-w-[5rem]">
-                    <div class="font-extrabold text-gray-900 text-sm">Q${subtotalFormateado}</div>
-                    <button class="btn-eliminar text-xs text-red-500 hover:text-red-700 font-medium transition mt-0.5" data-id="${item.presentacionId}">
-                        🗑️ Quitar
-                    </button>
+                <!-- Subtotal y Botones Acción -->
+                <div class="text-right shrink-0 min-w-[4.5rem] flex flex-col items-end">
+                    <div class="font-extrabold text-white text-xs">Q${subtotalFormateado}</div>
+                    <div class="flex items-center gap-1 mt-1">
+                        <button class="btn-descuento-item text-[10px] text-amber-300 hover:text-amber-200 font-extrabold transition px-1.5 py-0.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-md" data-id="${item.presentacionId}" title="Aplicar Descuento %">
+                            🏷️ %
+                        </button>
+                        <button class="btn-eliminar text-[10px] text-rose-400 hover:text-rose-300 font-extrabold transition px-1.5 py-0.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-md" data-id="${item.presentacionId}" title="Eliminar ítem">
+                            🗑️
+                        </button>
+                    </div>
                 </div>
             </div>
         `
@@ -485,7 +517,7 @@ function renderCarrito() {
 
     const totalFormateado = granTotal.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     totalEl.textContent = `Q${totalFormateado}`
-    btnCompletar.disabled = false
+    if (btnCompletar) btnCompletar.disabled = false
 
     // Asignar eventos de los botones del carrito
     lista.querySelectorAll('.btn-restar').forEach(btn => {
@@ -494,8 +526,17 @@ function renderCarrito() {
     lista.querySelectorAll('.btn-sumar').forEach(btn => {
         btn.addEventListener('click', () => cambiarCantidad(btn.getAttribute('data-id'), 1))
     })
+    lista.querySelectorAll('.btn-descuento-item').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault()
+            solicitarDescuentoItem(btn.getAttribute('data-id'))
+        })
+    })
     lista.querySelectorAll('.btn-eliminar').forEach(btn => {
-        btn.addEventListener('click', () => eliminarDelCarrito(btn.getAttribute('data-id')))
+        btn.addEventListener('click', (e) => {
+            e.preventDefault()
+            solicitarEliminacionItem(btn.getAttribute('data-id'))
+        })
     })
 }
 
@@ -509,7 +550,11 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
     btnCompletar.disabled = true
 
     try {
-        const totalVenta = carrito.reduce((sum, item) => sum + (item.cantidad * item.precioVenta), 0)
+        const totalVenta = carrito.reduce((sum, item) => {
+            const desc = Number(item.descuentoPorcentaje) || 0
+            const precioEfectivo = item.precioVenta * (1 - desc / 100)
+            return sum + (item.cantidad * precioEfectivo)
+        }, 0)
 
         // FALLBACK MODO OFFLINE
         if (!navigator.onLine) {
@@ -642,12 +687,16 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
         }
 
         // Paso 2: Bulk INSERT en `detalle_ventas`
-        const detalles = carrito.map(item => ({
-            venta_id: nuevaVenta.id,
-            presentacion_id: item.presentacionId,
-            cantidad: item.cantidad,
-            subtotal: item.cantidad * item.precioVenta
-        }))
+        const detalles = carrito.map(item => {
+            const desc = Number(item.descuentoPorcentaje) || 0
+            const precioEfectivo = item.precioVenta * (1 - desc / 100)
+            return {
+                venta_id: nuevaVenta.id,
+                presentacion_id: item.presentacionId,
+                cantidad: item.cantidad,
+                subtotal: item.cantidad * precioEfectivo
+            }
+        })
 
         const { error: errorDetalle } = await supabase
             .from('detalle_ventas')
@@ -869,12 +918,254 @@ document.getElementById('btn-nueva-venta')?.addEventListener('click', () => {
     document.getElementById('modal-exito')?.classList.add('hidden')
 })
 
-// Logout
-document.getElementById('btn-logout')?.addEventListener('click', async () => {
-    await supabase.auth.signOut()
-    localStorage.removeItem('adnova_session_offline')
-    window.location.href = 'index.html'
-})
+// ========================================================
+// SISTEMA DE AUTORIZACIÓN DE SUPERVISOR (PIN RESTRICTED)
+// ========================================================
+const modalPinSupervisor = document.getElementById('modal-pin-supervisor')
+const modalPinContent = document.getElementById('modal-pin-content')
+const formPinSupervisor = document.getElementById('form-pin-supervisor')
+const inputPinSupervisor = document.getElementById('input-pin-supervisor')
+const errorPinSupervisor = document.getElementById('error-pin-supervisor')
+const descAccionPin = document.getElementById('desc-accion-pin')
+const btnCancelarPin = document.getElementById('btn-cancelar-pin')
+const btnAplicarDescuentoCart = document.getElementById('btn-aplicar-descuento-cart')
+
+// Toast Notification Helper
+function mostrarToast(mensaje, tipo = 'success') {
+    let container = document.getElementById('toast-container')
+    if (!container) {
+        container = document.createElement('div')
+        container.id = 'toast-container'
+        container.className = 'fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none'
+        document.body.appendChild(container)
+    }
+
+    const toast = document.createElement('div')
+    toast.className = `pointer-events-auto px-4 py-3 rounded-2xl text-xs font-extrabold text-white shadow-2xl flex items-center gap-2 border transition-all duration-300 transform translate-y-4 opacity-0 ${
+        tipo === 'success' 
+            ? 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200 shadow-emerald-950/60' 
+            : 'bg-rose-950/90 border-rose-500/50 text-rose-200 shadow-rose-950/60'
+    }`
+    toast.innerHTML = `<span>${tipo === 'success' ? '✅' : '⚠️'}</span><span>${mensaje}</span>`
+    container.appendChild(toast)
+
+    requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-4', 'opacity-0')
+    })
+
+    setTimeout(() => {
+        toast.classList.add('translate-y-4', 'opacity-0')
+        setTimeout(() => toast.remove(), 300)
+    }, 3000)
+}
+
+// Abrir modal PIN con contexto de acción
+function abrirModalPinSupervisor(accion, targetId, valor = null, descripcion = '') {
+    if (!modalPinSupervisor) return
+
+    modalPinSupervisor.setAttribute('data-action', accion)
+    modalPinSupervisor.setAttribute('data-target', targetId || '')
+    modalPinSupervisor.setAttribute('data-value', valor !== null ? String(valor) : '')
+
+    if (descAccionPin) {
+        descAccionPin.textContent = descripcion || 'Ingresa el PIN de 4 dígitos para autorizar la acción restringida'
+    }
+
+    if (errorPinSupervisor) {
+        errorPinSupervisor.classList.add('hidden')
+    }
+
+    if (inputPinSupervisor) {
+        inputPinSupervisor.value = ''
+    }
+
+    modalPinSupervisor.classList.remove('hidden', 'opacity-0')
+    modalPinSupervisor.classList.add('flex', 'opacity-100')
+
+    setTimeout(() => {
+        inputPinSupervisor?.focus()
+    }, 100)
+}
+
+// Cerrar modal PIN
+function cerrarModalPinSupervisor() {
+    if (!modalPinSupervisor) return
+
+    modalPinSupervisor.classList.add('hidden')
+    modalPinSupervisor.classList.remove('flex', 'opacity-100')
+    modalPinSupervisor.setAttribute('data-action', '')
+    modalPinSupervisor.setAttribute('data-target', '')
+    modalPinSupervisor.setAttribute('data-value', '')
+
+    if (inputPinSupervisor) {
+        inputPinSupervisor.value = ''
+    }
+}
+
+// Interceptar acción: Eliminar ítem
+function solicitarEliminacionItem(presentacionId) {
+    const item = carrito.find(i => i.presentacionId === presentacionId)
+    const nombreItem = item ? item.nombreProducto : 'el ítem'
+    abrirModalPinSupervisor(
+        'delete_item', 
+        presentacionId, 
+        null, 
+        `Autorizar eliminación de "${nombreItem}" del carrito`
+    )
+}
+
+// Interceptar acción: Aplicar descuento a un ítem
+function solicitarDescuentoItem(presentacionId) {
+    const item = carrito.find(i => i.presentacionId === presentacionId)
+    if (!item) return
+
+    const actualDesc = item.descuentoPorcentaje || 0
+    const pctStr = prompt(`Porcentaje de descuento para "${item.nombreProducto}" (0 - 100%):`, actualDesc ? String(actualDesc) : '10')
+
+    if (pctStr === null) return
+    const pct = parseFloat(pctStr)
+
+    if (isNaN(pct) || pct < 0 || pct > 100) {
+        alert("⚠️ Ingrese un porcentaje de descuento válido (entre 0% y 100%).")
+        return
+    }
+
+    abrirModalPinSupervisor(
+        'discount_item',
+        presentacionId,
+        pct,
+        `Autorizar descuento de ${pct}% para "${item.nombreProducto}"`
+    )
+}
+
+// Interceptar acción: Aplicar descuento global al carrito
+function solicitarDescuentoGlobal() {
+    if (carrito.length === 0) return
+
+    const pctStr = prompt('Porcentaje de descuento global para todo el carrito (0 - 100%):', '10')
+    if (pctStr === null) return
+
+    const pct = parseFloat(pctStr)
+    if (isNaN(pct) || pct < 0 || pct > 100) {
+        alert("⚠️ Ingrese un porcentaje de descuento válido (entre 0% y 100%).")
+        return
+    }
+
+    abrirModalPinSupervisor(
+        'discount_global',
+        'cart',
+        pct,
+        `Autorizar descuento global de ${pct}% a todos los ítems`
+    )
+}
+
+// Ejecución directa de eliminación tras PIN correcto
+function eliminarDelCarritoDirecto(presentacionId) {
+    carrito = carrito.filter(item => item.presentacionId !== presentacionId)
+    renderCarrito()
+}
+
+// Procesar Submit del Formulario PIN
+if (formPinSupervisor) {
+    formPinSupervisor.addEventListener('submit', async (e) => {
+        e.preventDefault()
+
+        const inputPin = inputPinSupervisor ? inputPinSupervisor.value.trim() : ''
+
+        if (!inputPin || inputPin.length !== 4 || !/^\d+$/.test(inputPin)) {
+            if (errorPinSupervisor) {
+                errorPinSupervisor.textContent = '⚠️ El PIN debe ser exactamente de 4 dígitos numéricos.'
+                errorPinSupervisor.classList.remove('hidden')
+            }
+            if (modalPinContent) {
+                modalPinContent.classList.remove('animate-shake')
+                void modalPinContent.offsetWidth
+                modalPinContent.classList.add('animate-shake')
+            }
+            return
+        }
+
+        const btnAutorizar = document.getElementById('btn-autorizar-pin')
+        const textoOriginal = btnAutorizar ? btnAutorizar.innerHTML : 'Autorizar'
+        if (btnAutorizar) {
+            btnAutorizar.disabled = true
+            btnAutorizar.innerHTML = '<span>⏳ Validando...</span>'
+        }
+
+        try {
+            // Invocar RPC en Supabase
+            const { data: isValid, error } = await supabase.rpc('validar_pin_supervisor', { p_pin: inputPin })
+
+            if (error) {
+                console.error("Error al validar PIN de supervisor:", error)
+                throw error
+            }
+
+            if (isValid === true) {
+                const accion = modalPinSupervisor.getAttribute('data-action')
+                const targetId = modalPinSupervisor.getAttribute('data-target')
+                const valor = modalPinSupervisor.getAttribute('data-value')
+
+                cerrarModalPinSupervisor()
+
+                // Ejecutar acción pendiente
+                if (accion === 'delete_item') {
+                    eliminarDelCarritoDirecto(targetId)
+                } else if (accion === 'discount_item') {
+                    const item = carrito.find(i => i.presentacionId === targetId)
+                    if (item) {
+                        item.descuentoPorcentaje = parseFloat(valor) || 0
+                        renderCarrito()
+                    }
+                } else if (accion === 'discount_global') {
+                    const descPct = parseFloat(valor) || 0
+                    carrito.forEach(item => {
+                        item.descuentoPorcentaje = descPct
+                    })
+                    renderCarrito()
+                }
+
+                // Toast de éxito
+                mostrarToast("Autorización de Admin aceptada", "success")
+
+            } else {
+                // PIN Incorrecto
+                if (inputPinSupervisor) {
+                    inputPinSupervisor.value = ''
+                }
+                if (errorPinSupervisor) {
+                    errorPinSupervisor.textContent = '⚠️ PIN Incorrecto.'
+                    errorPinSupervisor.classList.remove('hidden')
+                }
+                if (modalPinContent) {
+                    modalPinContent.classList.remove('animate-shake')
+                    void modalPinContent.offsetWidth
+                    modalPinContent.classList.add('animate-shake')
+                }
+                setTimeout(() => inputPinSupervisor?.focus(), 150)
+            }
+        } catch (err) {
+            console.error("Excepción en validación de PIN:", err)
+            if (errorPinSupervisor) {
+                errorPinSupervisor.textContent = '⚠️ Error al verificar PIN. Verifique su conexión.'
+                errorPinSupervisor.classList.remove('hidden')
+            }
+        } finally {
+            if (btnAutorizar) {
+                btnAutorizar.disabled = false
+                btnAutorizar.innerHTML = textoOriginal
+            }
+        }
+    })
+}
+
+if (btnCancelarPin) {
+    btnCancelarPin.addEventListener('click', cerrarModalPinSupervisor)
+}
+
+if (btnAplicarDescuentoCart) {
+    btnAplicarDescuentoCart.addEventListener('click', solicitarDescuentoGlobal)
+}
 
 // Inicializar la aplicación POS
 validarSesion()

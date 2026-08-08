@@ -27,12 +27,56 @@ async function validarAcceso() {
 }
 
 // ----------------------------------------------------
-// LÓGICA DEL MODAL
+// ----------------------------------------------------
+// LÓGICA DEL MODAL E IMAGEN
 // ----------------------------------------------------
 const modal = document.getElementById('modal-producto')
 const btnNuevo = document.getElementById('btn-nuevo-producto')
 const btnCerrar = document.getElementById('btn-cerrar-modal')
 const btnCerrarX = document.getElementById('btn-cerrar-modal-x')
+
+const dropzone = document.getElementById('dropzone-imagen')
+const fileInput = document.getElementById('prod-imagen')
+const previewContainer = document.getElementById('preview-imagen')
+
+const defaultPreviewHtml = `
+    <svg class="w-8 h-8 text-slate-500 group-hover:text-emerald-400 transition-colors mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+    </svg>
+    <span class="text-xs text-slate-400 font-medium group-hover:text-slate-200">Haz clic para seleccionar una imagen</span>
+    <span class="text-[10px] text-slate-500 mt-0.5">PNG, JPG, WEBP</span>
+`
+
+function resetPreviewImagen() {
+    if (previewContainer) previewContainer.innerHTML = defaultPreviewHtml
+    if (fileInput) fileInput.value = ''
+}
+
+dropzone?.addEventListener('click', () => {
+    fileInput?.click()
+})
+
+fileInput?.addEventListener('change', (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+        const reader = new FileReader()
+        reader.onload = (evt) => {
+            if (previewContainer) {
+                previewContainer.innerHTML = `
+                    <div class="relative group/preview w-full flex items-center justify-center">
+                        <img src="${evt.target.result}" class="h-24 max-w-full object-cover rounded-xl border border-emerald-500/40 shadow-md">
+                        <span class="absolute bottom-1 right-1 bg-black/70 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-md backdrop-blur-xs">
+                            ✓ Seleccionada
+                        </span>
+                    </div>
+                `
+            }
+        }
+        reader.readAsDataURL(file)
+    } else {
+        resetPreviewImagen()
+    }
+})
 
 function abrirModal() {
     modal.classList.remove('hidden')
@@ -40,6 +84,7 @@ function abrirModal() {
 
 function cerrarModal() {
     modal.classList.add('hidden')
+    resetPreviewImagen()
 }
 
 btnNuevo?.addEventListener('click', abrirModal)
@@ -80,6 +125,32 @@ document.getElementById('form-producto')?.addEventListener('submit', async (e) =
     try {
         const { data: { session } } = await supabase.auth.getSession()
 
+        // Upload imagen si existe
+        let imagenUrl = null
+        const file = fileInput?.files?.[0]
+        if (file) {
+            btnGuardar.textContent = 'Subiendo imagen...'
+            const cleanFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+            const filePath = `prod_${Date.now()}_${cleanFileName}`
+            
+            const { data: storageData, error: storageError } = await supabase.storage
+                .from('productos-imagenes')
+                .upload(filePath, file)
+
+            if (storageError) {
+                console.error("Error al subir imagen a Supabase Storage:", storageError)
+                throw new Error(`Error al subir imagen: ${storageError.message || storageError}`)
+            }
+
+            const { data: urlData } = supabase.storage
+                .from('productos-imagenes')
+                .getPublicUrl(filePath)
+
+            imagenUrl = urlData?.publicUrl || null
+        }
+
+        btnGuardar.textContent = 'Guardando producto...'
+
         // 1. Guardar en la tabla de productos
         const { data: nuevoProducto, error: errorProducto } = await supabase
             .from('productos')
@@ -88,7 +159,8 @@ document.getElementById('form-producto')?.addEventListener('submit', async (e) =
                 codigo_barras: codigo, 
                 categoria: categoria, 
                 unidad_base: unidad, 
-                stock_base: stock 
+                stock_base: stock,
+                imagen_url: imagenUrl
             }])
             .select()
             .single()
@@ -135,6 +207,7 @@ document.getElementById('form-producto')?.addEventListener('submit', async (e) =
 
         alert('¡Producto, costo, lote inicial (FEFO) y Kardex registrados con éxito!')
         document.getElementById('form-producto').reset()
+        resetPreviewImagen()
         cerrarModal()
         cargarInventario()
 
@@ -152,7 +225,7 @@ document.getElementById('form-producto')?.addEventListener('submit', async (e) =
 // ----------------------------------------------------
 async function cargarInventario() {
     const tbody = document.getElementById('tabla-productos')
-    tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-500">Cargando inventario...</td></tr>'
+    tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-500">Cargando inventario...</td></tr>'
 
     const { data: productos, error } = await supabase
         .from('productos')
@@ -164,14 +237,14 @@ async function cargarInventario() {
 
     if (error) {
         console.error("Error cargando inventario:", error)
-        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-red-500 font-semibold">Error al cargar productos: ${error.message}</td></tr>`
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-red-500 font-semibold">Error al cargar productos: ${error.message}</td></tr>`
         return
     }
 
     tbody.innerHTML = ''
 
     if (!productos || productos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-500 italic">No hay productos registrados en Agrovet Campo Alto aún.</td></tr>'
+        tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-500 italic">No hay productos registrados en Agrovet Campo Alto aún.</td></tr>'
         return
     }
 
@@ -180,8 +253,17 @@ async function cargarInventario() {
         const costoNum = costoObj && costoObj.precio_costo !== undefined ? Number(costoObj.precio_costo) : 0
         const costoFormateado = costoNum.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
+        const imgHtml = prod.imagen_url 
+            ? `<img src="${prod.imagen_url}" alt="${prod.nombre}" class="w-10 h-10 object-cover rounded-xl border border-slate-700/80 shadow-sm shrink-0">`
+            : `<div class="w-10 h-10 rounded-xl bg-forest-950 border border-slate-800 flex items-center justify-center text-slate-500 shrink-0" title="Sin imagen">
+                <svg class="w-5 h-5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+               </div>`
+
         tbody.innerHTML += `
             <tr class="border-b border-gray-100 hover:bg-green-50/50 transition">
+                <td class="p-4 pl-6">${imgHtml}</td>
                 <td class="p-4">
                     <div class="font-semibold text-gray-800">${prod.nombre}</div>
                     <div class="text-xs text-gray-400 font-mono mt-0.5">${prod.codigo_barras ? '📦 ' + prod.codigo_barras : 'Sin código'}</div>
