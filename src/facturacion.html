@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facturación Manual - Agrovet Campo Alto</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 flex h-screen overflow-hidden">
+
+    <!-- Barra Lateral (Sidebar) -->
+    <aside class="w-64 bg-green-800 text-white flex flex-col shadow-lg shrink-0">
+        <div class="p-6 text-center border-b border-green-700">
+            <h2 class="text-xl font-bold tracking-wide">Agrovet Campo Alto</h2>
+            <p class="text-xs text-green-200 mt-1 uppercase font-medium">Panel de Administración</p>
+        </div>
+        <nav class="flex-1 p-4 space-y-2">
+            <a href="admin.html" class="flex items-center gap-3 py-2.5 px-4 rounded-lg transition hover:bg-green-700 text-sm font-medium">
+                📊 <span>Resumen General</span>
+            </a>
+            <a href="inventario.html" class="flex items-center gap-3 py-2.5 px-4 rounded-lg transition hover:bg-green-700 text-sm font-medium">
+                📦 <span>Inventario y Costos</span>
+            </a>
+            <a href="pos.html" class="flex items-center gap-3 py-2.5 px-4 rounded-lg transition hover:bg-green-700 text-sm font-medium">
+                🛒 <span>Punto de Venta (POS)</span>
+            </a>
+            <a href="facturacion.html" class="flex items-center gap-3 py-2.5 px-4 rounded-lg transition bg-green-900 text-white text-sm font-semibold shadow-inner">
+                🧾 <span>Facturación Manual</span>
+            </a>
+        </nav>
+        <div class="p-4 border-t border-green-700">
+            <button id="btn-logout" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition text-sm font-semibold shadow">
+                Cerrar Sesión
+            </button>
+        </div>
+    </aside>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 flex flex-col overflow-y-auto p-6">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Gestión de Facturación Manual (SAT)</h1>
+                <p class="text-sm text-gray-500">Control de comprobantes pendientes y registro de correlativos físicos</p>
+            </div>
+            <div class="text-right">
+                <span class="text-xs text-gray-400 block">Administrador:</span>
+                <span id="admin-email" class="text-sm font-bold text-green-800">Cargando...</span>
+            </div>
+        </header>
+
+        <!-- Tarjetas de Resumen (Métricas) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-500 border border-gray-100 flex justify-between items-center">
+                <div>
+                    <h3 class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Pendientes de Facturar</h3>
+                    <p id="stat-pendientes-monto" class="text-3xl font-extrabold text-gray-800">Q0.00</p>
+                    <p id="stat-pendientes-count" class="text-xs font-semibold text-orange-600 mt-1">0 ventas por facturar</p>
+                </div>
+                <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-2xl font-bold">
+                    ⏳
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500 border border-gray-100 flex justify-between items-center">
+                <div>
+                    <h3 class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Facturadas Manualmente</h3>
+                    <p id="stat-facturadas-monto" class="text-3xl font-extrabold text-gray-800">Q0.00</p>
+                    <p id="stat-facturadas-count" class="text-xs font-semibold text-green-600 mt-1">0 ventas facturadas</p>
+                </div>
+                <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-2xl font-bold">
+                    🧾
+                </div>
+            </div>
+        </div>
+
+        <!-- Barra de Control: Pestañas de Estado + Buscador -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <!-- Tabs -->
+            <div class="flex bg-gray-100 p-1 rounded-xl w-full sm:w-auto">
+                <button id="tab-pendientes" class="px-5 py-2 rounded-lg text-sm font-bold transition bg-white text-gray-800 shadow-sm">
+                    ⏳ Pendientes
+                </button>
+                <button id="tab-facturadas" class="px-5 py-2 rounded-lg text-sm font-semibold transition text-gray-500 hover:text-gray-800">
+                    ✓ Facturadas
+                </button>
+            </div>
+
+            <!-- Buscador -->
+            <div class="w-full sm:w-72">
+                <input type="text" id="input-busqueda" 
+                       placeholder="🔍 Buscar por No. Factura o Fecha..." 
+                       class="w-full px-3.5 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-sm">
+            </div>
+        </div>
+
+        <!-- Tabla de Ventas -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50 text-gray-600 border-b border-gray-200 text-xs uppercase tracking-wider">
+                        <th class="p-4 font-semibold">ID Venta</th>
+                        <th class="p-4 font-semibold">Fecha / Hora</th>
+                        <th class="p-4 font-semibold">Total Venta</th>
+                        <th class="p-4 font-semibold">Estado</th>
+                        <th class="p-4 font-semibold">No. Factura Física</th>
+                        <th class="p-4 font-semibold text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-ventas" class="text-gray-700 divide-y divide-gray-100 text-sm">
+                    <tr><td colspan="6" class="p-6 text-center text-gray-500">Cargando registro de ventas...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Modal Registrar Factura Física -->
+    <div id="modal-facturar" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-gray-100 relative">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h2 class="text-xl font-bold text-gray-800">Registrar Factura Física</h2>
+                <button type="button" id="btn-cerrar-modal-facturar-x" class="text-gray-400 hover:text-gray-600 text-xl font-bold p-1">&times;</button>
+            </div>
+
+            <form id="form-factura" class="space-y-4">
+                <input type="hidden" id="factura-venta-id">
+                
+                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 text-xs text-gray-600 space-y-1">
+                    <div>Venta ID: <strong id="factura-venta-shortid" class="text-gray-800 font-mono">--</strong></div>
+                    <div>Monto Total: <strong id="factura-venta-monto" class="text-green-700 font-extrabold text-sm">Q0.00</strong></div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Número de Factura Física (SAT)</label>
+                    <input type="text" id="factura-numero" required 
+                           class="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-base font-mono font-bold" 
+                           placeholder="Ej. A-001234 o Serie B-567">
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-3 border-t border-gray-100">
+                    <button type="button" id="btn-cerrar-modal-facturar" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-semibold transition">Cancelar</button>
+                    <button type="submit" id="btn-guardar-factura" class="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-sm shadow transition">Guardar Factura</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Ver Detalle de Venta -->
+    <div id="modal-detalle" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 border border-gray-100 relative">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800">Detalle de Ticket de Venta</h2>
+                    <p id="detalle-venta-id" class="text-xs text-gray-400 font-mono">ID: --</p>
+                </div>
+                <button type="button" id="btn-cerrar-modal-detalle-x" class="text-gray-400 hover:text-gray-600 text-xl font-bold p-1">&times;</button>
+            </div>
+
+            <div id="detalle-resumen" class="mb-4 text-xs text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-200 grid grid-cols-2 gap-2">
+                <div>Fecha: <strong id="detalle-fecha">--</strong></div>
+                <div>Estado: <strong id="detalle-estado">--</strong></div>
+                <div>Factura Física: <strong id="detalle-factura-num">--</strong></div>
+                <div>Total: <strong id="detalle-total" class="text-green-700 font-bold text-sm">Q0.00</strong></div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden max-h-60 overflow-y-auto mb-4">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead class="bg-gray-100 text-gray-600 text-xs uppercase tracking-wider sticky top-0 border-b border-gray-200">
+                        <tr>
+                            <th class="p-3 font-semibold">Producto / Presentación</th>
+                            <th class="p-3 font-semibold text-center">Cant.</th>
+                            <th class="p-3 font-semibold text-right">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-detalle-items" class="divide-y divide-gray-100">
+                        <tr><td colspan="3" class="p-4 text-center text-gray-500">Cargando productos...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-end pt-2 border-t border-gray-100">
+                <button type="button" id="btn-cerrar-modal-detalle" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-semibold transition">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="facturacion.js"></script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arqueo y Cierre de Caja - Agrovet Campo Alto</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+    <!-- Header Principal -->
+    <header class="bg-green-800 text-white px-6 py-3 flex justify-between items-center shadow-md z-10 no-print shrink-0">
+        <div class="flex items-center gap-3">
+            <h1 class="text-xl font-bold tracking-wide">Agrovet Campo Alto</h1>
+            <span class="bg-green-700 text-green-100 text-xs px-2.5 py-1 rounded-full font-semibold uppercase">Arqueo y Cierre de Caja</span>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <div class="text-sm text-green-100 hidden sm:block">
+                <span>Usuario: </span>
+                <strong id="cajero-email" class="text-white">Cargando...</strong>
+            </div>
+            <a href="pos.html" class="bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold py-2 px-3.5 rounded-lg transition shadow flex items-center gap-1.5">
+                <span>⬅️ Volver a la Caja</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Layout Principal Arqueo (2 Columnas) -->
+    <main class="flex-1 p-6 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Columna Izquierda: Calculadora / Desglose de Efectivo (7 cols / ~60%) -->
+        <section class="lg:col-span-7 space-y-6">
+            
+            <!-- Card Fondo de Caja -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+                <h2 class="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    💵 <span>Fondo de Caja (Monto Inicial)</span>
+                </h2>
+                <div class="relative">
+                    <span class="absolute left-3.5 top-2.5 text-gray-500 font-bold text-lg">Q</span>
+                    <input type="number" id="monto-inicial" min="0" step="0.01" value="0.00" 
+                           class="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-extrabold text-xl text-gray-800">
+                </div>
+                <p class="text-xs text-gray-400 mt-1">Efectivo base asignado al inicio del turno.</p>
+            </div>
+
+            <!-- Card Desglose de Billetes y Monedas -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+                <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
+                    <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
+                        🧮 <span>Desglose Físico de Efectivo</span>
+                    </h2>
+                    <span class="text-xs text-gray-500 font-medium">Contador por Denominación</span>
+                </div>
+
+                <!-- Grid de Denominaciones -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <!-- Q200 -->
+                    <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-center">
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Billetes Q200</label>
+                        <input type="number" id="den-200" min="0" value="0" class="den-input w-full px-2 py-1.5 text-center border border-gray-300 rounded-lg text-base font-bold outline-none focus:ring-2 focus:ring-green-500">
+                        <span id="sub-200" class="block text-xs text-green-700 font-bold mt-1">Q0.00</span>
+                    </div>
+
+                    <!-- Q100 -->
+                    <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-center">
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Billetes Q100</label>
+                        <input type="number" id="den-100" min="0" value="0" class="den-input w-full px-2 py-1.5 text-center border border-gray-300 rounded-lg text-base font-bold outline-none focus:ring-2 focus:ring-green-500">
+                        <span id="sub-100" class="block text-xs text-green-700 font-bold mt-1">Q0.00</span>
+                    </div>
+
+                    <!-- Q50 -->
+                    <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-center">
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Billetes Q50</label>
+                        <input type="number" id="den-50" min="0" value="0" class="den-input w-full px-2 py-1.5 text-center border border-gray-300 rounded-lg text-base font-bold outline-none focus:ring-2 focus:ring-green-500">
+                        <span id="sub-50" class="block text-xs text-green-700 font-bold mt-1">Q0.00</span>
+                    </div>
+
+                    <!-- Q20 -->
+                    <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-center">
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Billetes Q20</label>
+                        <input type="number" id="den-20" min="0" value="0" class="den-input w-full px-2 py-1.5 text-center border border-gray-300 rounded-lg text-base font-bold outline-none focus:ring-2 focus:ring-green-500">
+                        <span id="sub-20" class="block text-xs text-green-700 font-bold mt-1">Q0.00</span>
+                    </div>
+
+                    <!-- Q10 -->
+                    <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-center">
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Billetes Q10</label>
+                        <input type="number" id="den-10" min="0" value="0" class="den-input w-full px-2 py-1.5 text-center border border-gray-300 rounded-lg text-base font-bold outline-none focus:ring-2 focus:ring-green-500">
+                        <span id="sub-10" class="block text-xs text-green-700 font-bold mt-1">Q0.00</span>
+                    </div>
+
+                    <!-- Q5 -->
+                    <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-center">
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Billetes Q5</label>
+                        <input type="number" id="den-5" min="0" value="0" class="den-input w-full px-2 py-1.5 text-center border border-gray-300 rounded-lg text-base font-bold outline-none focus:ring-2 focus:ring-green-500">
+                        <span id="sub-5" class="block text-xs text-green-700 font-bold mt-1">Q0.00</span>
+                    </div>
+
+                    <!-- Q1 -->
+                    <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-center">
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Billetes Q1</label>
+                        <input type="number" id="den-1" min="0" value="0" class="den-input w-full px-2 py-1.5 text-center border border-gray-300 rounded-lg text-base font-bold outline-none focus:ring-2 focus:ring-green-500">
+                        <span id="sub-1" class="block text-xs text-green-700 font-bold mt-1">Q0.00</span>
+                    </div>
+
+                    <!-- Monedas (Total Q) -->
+                    <div class="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-center">
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Monedas (Q)</label>
+                        <input type="number" id="den-monedas" min="0" step="0.01" value="0.00" class="den-input w-full px-2 py-1.5 text-center border border-gray-300 rounded-lg text-base font-bold outline-none focus:ring-2 focus:ring-green-500">
+                        <span id="sub-monedas" class="block text-xs text-green-700 font-bold mt-1">Q0.00</span>
+                    </div>
+                </div>
+
+                <!-- Input Sobrescribir Monto Físico Real -->
+                <div class="mt-4 pt-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <label class="text-sm font-bold text-gray-700">Total Efectivo Real Contado (Q):</label>
+                    <div class="relative w-full sm:w-64">
+                        <span class="absolute left-3.5 top-2 text-gray-500 font-bold text-base">Q</span>
+                        <input type="number" id="monto-real" min="0" step="0.01" value="0.00" 
+                               class="w-full pl-9 pr-4 py-2 border border-green-300 bg-green-50/50 rounded-xl focus:ring-2 focus:ring-green-500 font-extrabold text-lg text-green-800 outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Observaciones -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+                <label class="block text-sm font-bold text-gray-700 mb-2">Observaciones o Notas del Cierre</label>
+                <textarea id="observaciones" rows="3" 
+                          placeholder="Escribe aquí cualquier justificación en caso de faltante, sobrante o novedades del turno..." 
+                          class="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-sm"></textarea>
+            </div>
+        </section>
+
+        <!-- Columna Derecha: Resumen Sistema vs Conteo (5 cols / ~40%) -->
+        <section class="lg:col-span-5 space-y-6">
+            
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-5">
+                <h2 class="text-lg font-bold text-gray-800 border-b border-gray-100 pb-3 flex items-center gap-2">
+                    📊 <span>Resumen del Arqueo</span>
+                </h2>
+
+                <!-- Tarjeta Ventas Registradas del Día -->
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex justify-between items-center">
+                    <div>
+                        <span class="text-xs font-bold text-blue-600 uppercase tracking-wider block">Ventas Sistema (Hoy)</span>
+                        <span class="text-xs text-blue-500 font-medium">Ventas registradas en el POS</span>
+                    </div>
+                    <strong id="ventas-sistema" class="text-2xl font-extrabold text-blue-800">Q0.00</strong>
+                </div>
+
+                <!-- Detalles Esperado vs Real -->
+                <div class="space-y-3 pt-2 text-sm">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Fondo Inicial:</span>
+                        <strong id="resumen-inicial" class="text-gray-800 font-mono">Q0.00</strong>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">+ Ventas del Día:</span>
+                        <strong id="resumen-ventas" class="text-gray-800 font-mono">Q0.00</strong>
+                    </div>
+                    <div class="border-t border-gray-200 pt-2 flex justify-between items-center">
+                        <span class="font-bold text-gray-700">= Monto Esperado en Caja:</span>
+                        <strong id="monto-esperado" class="text-lg font-bold text-gray-900 font-mono">Q0.00</strong>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-gray-700">Monto Real Contado:</span>
+                        <strong id="resumen-monto-real" class="text-lg font-bold text-green-700 font-mono">Q0.00</strong>
+                    </div>
+                </div>
+
+                <!-- Discrepancia / Diferencia Badge -->
+                <div id="card-diferencia" class="p-4 rounded-xl border flex justify-between items-center bg-gray-50 border-gray-200">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider block text-gray-600">Diferencia (Arqueo)</span>
+                        <span id="badge-diferencia" class="inline-block mt-1 text-xs px-2.5 py-0.5 rounded-full font-bold bg-gray-200 text-gray-700">
+                            Q0.00 (Cuadrado)
+                        </span>
+                    </div>
+                    <strong id="diferencia-monto" class="text-2xl font-extrabold text-gray-800">Q0.00</strong>
+                </div>
+
+                <!-- Botón de Ejecución -->
+                <button id="btn-guardar-cierre" 
+                        class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg transition duration-200 text-lg flex items-center justify-center gap-2">
+                    <span>🚀 Realizar Cierre de Caja</span>
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Éxito y Ticket de Cierre -->
+    <div id="modal-cierre-exito" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full border border-green-100 space-y-4">
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
+                    ✓
+                </div>
+                <h3 class="text-xl font-bold text-gray-800">¡Cierre de Caja Guardado!</h3>
+                <p class="text-xs text-gray-500">El resumen del arqueo se registró exitosamente en el sistema.</p>
+            </div>
+
+            <!-- Resumen Ticket -->
+            <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 text-xs space-y-1.5 font-mono text-gray-700">
+                <div class="text-center font-bold border-b border-gray-300 pb-2 mb-2 text-sm text-gray-900 uppercase">Agrovet Campo Alto</div>
+                <div class="flex justify-between"><span>Ventas POS:</span><strong id="ticket-ventas">Q0.00</strong></div>
+                <div class="flex justify-between"><span>Fondo Inicial:</span><strong id="ticket-inicial">Q0.00</strong></div>
+                <div class="flex justify-between"><span>Esperado:</span><strong id="ticket-esperado">Q0.00</strong></div>
+                <div class="flex justify-between"><span>Real Contado:</span><strong id="ticket-real">Q0.00</strong></div>
+                <div class="flex justify-between border-t border-gray-300 pt-1.5 font-bold">
+                    <span>Diferencia:</span>
+                    <strong id="ticket-diferencia" class="text-gray-900">Q0.00</strong>
+                </div>
+            </div>
+
+            <div class="flex gap-3 pt-2">
+                <button id="btn-imprimir-cierre" class="flex-1 bg-gray-800 hover:bg-gray-900 text-white font-bold py-2.5 px-3 rounded-xl text-sm transition flex items-center justify-center gap-1">
+                    🖨️ Imprimir Ticket
+                </button>
+                <button id="btn-finalizar-cierre" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-3 rounded-xl text-sm transition flex items-center justify-center gap-1">
+                    Listo / Salir
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="cierre.js"></script>
+</body>
+</html>
