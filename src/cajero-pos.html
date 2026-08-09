@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADNova - Terminal de Caja POS</title>
+    <title>Agroservicio Campo Alto - Terminal de Caja POS</title>
 
     <!-- Google Fonts: Plus Jakarta Sans & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -87,7 +87,7 @@
                     ⚡
                 </div>
                 <div>
-                    <h1 class="text-xl font-black text-slate-900 tracking-tight leading-none">ADNova Caja</h1>
+                    <h1 class="text-xl font-black text-slate-900 tracking-tight leading-none">Agroservicio Campo Alto - Caja</h1>
                     <span class="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Terminal Vendedor</span>
                 </div>
             </div>
@@ -167,24 +167,22 @@
                     <!-- Footer con Selección de Cliente/Finca, Método de Pago y Total -->
                     <div class="space-y-4 pt-3 border-t border-slate-200">
                         
-                        <!-- Selección de Cliente / Finca -->
+                        <!-- Selección de Cliente / Finca mediante Autocomplete Input -->
                         <div class="space-y-3 text-xs">
                             <div>
                                 <div class="flex justify-between items-center mb-1">
-                                    <label for="select-cliente" class="font-extrabold text-slate-800 uppercase tracking-wide">Cliente / Comprador:</label>
+                                    <label for="input-cliente" class="font-extrabold text-slate-800 uppercase tracking-wide">Cliente / Comprador:</label>
                                     <span id="badge-credito-cliente" class="hidden text-[11px] font-bold px-2 py-0.5 rounded-md"></span>
                                 </div>
-                                <select id="select-cliente" class="w-full bg-slate-50 border-2 border-slate-300 text-slate-900 text-sm font-bold rounded-2xl px-4 py-3 outline-none cursor-pointer focus:border-emerald-500 transition">
-                                    <option value="">Consumidor Final (CF)</option>
-                                </select>
+                                <input type="text" id="input-cliente" list="datalist-clientes" autocomplete="off" class="w-full bg-slate-50 border-2 border-slate-300 text-slate-900 text-sm font-bold rounded-2xl px-4 py-3 outline-none focus:border-emerald-500 transition" placeholder="Escriba o seleccione un cliente...">
+                                <datalist id="datalist-clientes"></datalist>
                             </div>
 
-                            <!-- Selector de Finca (Condicional) -->
-                            <div id="container-finca" class="hidden">
-                                <label for="select-finca" class="font-extrabold text-slate-800 uppercase tracking-wide block mb-1">Finca / Destino:</label>
-                                <select id="select-finca" class="w-full bg-slate-50 border-2 border-slate-300 text-slate-900 text-sm font-bold rounded-2xl px-4 py-3 outline-none cursor-pointer focus:border-emerald-500 transition">
-                                    <option value="">Sin finca específica</option>
-                                </select>
+                            <!-- Input de Finca -->
+                            <div id="container-finca">
+                                <label for="input-finca" class="font-extrabold text-slate-800 uppercase tracking-wide block mb-1">Finca / Destino:</label>
+                                <input type="text" id="input-finca" list="datalist-fincas" autocomplete="off" class="w-full bg-slate-50 border-2 border-slate-300 text-slate-900 text-sm font-bold rounded-2xl px-4 py-3 outline-none focus:border-emerald-500 transition" placeholder="Escriba o seleccione una finca (opcional)...">
+                                <datalist id="datalist-fincas"></datalist>
                             </div>
                         </div>
 

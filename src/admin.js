@@ -21,7 +21,7 @@ async function validarAccesoAdmin() {
     // Consultar perfil de administrador
     const { data: perfilData, error: perfilError } = await supabase
         .from('perfiles')
-        .select('rol')
+        .select('rol, nombre_completo')
         .eq('id', userId)
         .single()
 
@@ -31,14 +31,19 @@ async function validarAccesoAdmin() {
         return
     }
 
-    // Mostrar usuario e iniciales
+    // Mostrar nombre del usuario e iniciales
+    const nombreUsuario = perfilData?.nombre_completo || session.user.email || 'Usuario'
     const userInfoEl = document.getElementById('usuario-info')
     if (userInfoEl) {
-        userInfoEl.textContent = session.user.email
+        userInfoEl.textContent = nombreUsuario
     }
     const avatarInitialsEl = document.getElementById('user-avatar-initials')
-    if (avatarInitialsEl && session.user.email) {
-        avatarInitialsEl.textContent = session.user.email.substring(0, 2).toUpperCase()
+    if (avatarInitialsEl && nombreUsuario) {
+        const partes = nombreUsuario.trim().split(' ')
+        const iniciales = partes.length >= 2 
+            ? (partes[0][0] + partes[1][0]).toUpperCase() 
+            : nombreUsuario.substring(0, 2).toUpperCase()
+        avatarInitialsEl.textContent = iniciales
     }
     
     // Cargar información inicial

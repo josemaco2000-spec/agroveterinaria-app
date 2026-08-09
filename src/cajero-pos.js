@@ -12,6 +12,7 @@ let clienteSeleccionadoId = ''
 let fincaSeleccionadaId = ''
 let tipoPagoSeleccionado = 'EFECTIVO'
 let isSyncing = false
+let cajeroNombreCompleto = 'Usuario'
 
 // 1. Guard de Autenticación y Rol Vendedor
 async function validarSesion() {
@@ -23,10 +24,10 @@ async function validarSesion() {
             return
         }
 
-        // Verificar rol en perfiles
+        // Verificar rol y nombre_completo en perfiles
         const { data: perfil, error: perfilError } = await supabase
             .from('perfiles')
-            .select('rol')
+            .select('rol, nombre_completo')
             .eq('id', session.user.id)
             .single()
 
@@ -37,9 +38,11 @@ async function validarSesion() {
             return
         }
 
+        cajeroNombreCompleto = perfil?.nombre_completo || session.user.email || 'Usuario'
+
         const cajeroEmailEl = document.getElementById('cajero-email')
         if (cajeroEmailEl) {
-            cajeroEmailEl.textContent = session.user.email
+            cajeroEmailEl.textContent = cajeroNombreCompleto
         }
 
         // Cargar datos del POS
@@ -163,12 +166,15 @@ function renderCatalogo(items) {
                 </div>
 
                 <div class="flex items-center justify-between pt-2 border-t border-slate-100 gap-2">
-                    <div>
+                    <div class="min-w-0 flex-1">
                         <span class="text-[10px] font-extrabold text-slate-400 block uppercase">Precio</span>
-                        <span class="text-2xl font-black text-emerald-600 font-sans">Q ${precioFmt}</span>
+                        <div class="flex items-baseline space-x-1 whitespace-nowrap text-ellipsis overflow-hidden">
+                            <span class="text-xs font-extrabold text-emerald-600">Q</span>
+                            <span class="text-xl md:text-2xl font-black text-emerald-600 font-sans tracking-tight">${precioFmt}</span>
+                        </div>
                     </div>
 
-                    <button class="btn-agregar-carrito bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-sm px-4 py-2.5 rounded-2xl shadow-md transition flex items-center gap-1.5"
+                    <button class="btn-agregar-carrito bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-sm px-4 py-2.5 rounded-2xl shadow-md transition flex items-center gap-1.5 shrink-0"
                             data-id="${pres.id}">
                         <span>➕ Agregar</span>
                     </button>
@@ -367,10 +373,11 @@ function renderCarrito() {
     })
 }
 
-// 5. Cargar Clientes y Fincas
+let listaFincasCliente = []
+
+// 5. Cargar Clientes y Fincas para Autocomplete Datalist
 async function cargarClientesPOS() {
-    const selectCliente = document.getElementById('select-cliente')
-    if (!selectCliente) return
+    const datalistClientes = document.getElementById('datalist-clientes')
 
     try {
         const { data: clientes, error } = await supabase
@@ -381,69 +388,73 @@ async function cargarClientesPOS() {
         if (error) throw error
 
         listaClientesPOS = clientes || []
-        selectCliente.innerHTML = '<option value="">Consumidor Final (CF)</option>'
-
-        listaClientesPOS.forEach(cli => {
-            selectCliente.innerHTML += `<option value="${cli.id}">${cli.nombre} ${cli.nit ? `(NIT: ${cli.nit})` : ''}</option>`
-        })
+        if (datalistClientes) {
+            datalistClientes.innerHTML = listaClientesPOS.map(cli => 
+                `<option value="${cli.nombre}">${cli.nit ? `NIT: ${cli.nit}` : 'CF'}</option>`
+            ).join('')
+        }
     } catch (err) {
         console.error("Error al cargar clientes en POS:", err)
     }
 }
 
-// Evento cambio de cliente
-document.getElementById('select-cliente')?.addEventListener('change', async (e) => {
-    clienteSeleccionadoId = e.target.value
-    const containerFinca = document.getElementById('container-finca')
-    const selectFinca = document.getElementById('select-finca')
+// Evento al escribir en input-cliente
+document.getElementById('input-cliente')?.addEventListener('input', async (e) => {
+    const val = e.target.value.trim().toLowerCase()
     const badgeCredito = document.getElementById('badge-credito-cliente')
+    const datalistFincas = document.getElementById('datalist-fincas')
 
-    fincaSeleccionadaId = ''
+    fincaSeleccionadaId = null
 
-    if (!clienteSeleccionadoId) {
-        containerFinca?.classList.add('hidden')
-        badgeCredito?.classList.add('hidden')
-        return
-    }
+    const clienteEncontrado = listaClientesPOS.find(c => (c.nombre || '').toLowerCase() === val)
 
-    const cliente = listaClientesPOS.find(c => c.id === clienteSeleccionadoId)
-    if (cliente && badgeCredito) {
-        const limite = Number(cliente.limite_credito) || 0
-        const saldo = Number(cliente.saldo_actual) || 0
-        const disponible = Math.max(0, limite - saldo)
+    if (clienteEncontrado) {
+        clienteSeleccionadoId = clienteEncontrado.id
 
-        badgeCredito.textContent = `Crédito Disp: Q${disponible.toFixed(2)}`
-        badgeCredito.className = `text-[11px] font-bold px-2 py-0.5 rounded ${disponible > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`
-        badgeCredito.classList.remove('hidden')
-    }
+        if (badgeCredito) {
+            const limite = Number(clienteEncontrado.limite_credito) || 0
+            const saldo = Number(clienteEncontrado.saldo_actual) || 0
+            const disponible = Math.max(0, limite - saldo)
 
-    // Cargar fincas del cliente
-    try {
-        const { data: fincas, error } = await supabase
-            .from('fincas')
-            .select('*')
-            .eq('cliente_id', clienteSeleccionadoId)
-            .order('nombre_finca', { ascending: true })
-
-        if (error) throw error
-
-        if (fincas && fincas.length > 0 && selectFinca) {
-            selectFinca.innerHTML = '<option value="">Sin finca específica</option>'
-            fincas.forEach(f => {
-                selectFinca.innerHTML += `<option value="${f.id}">🏡 ${f.nombre_finca} (${f.ubicacion || 'Sin ubicación'})</option>`
-            })
-            containerFinca?.classList.remove('hidden')
-        } else {
-            containerFinca?.classList.add('hidden')
+            badgeCredito.textContent = `Crédito Disp: Q${disponible.toFixed(2)}`
+            badgeCredito.className = `text-[11px] font-bold px-2 py-0.5 rounded ${disponible > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`
+            badgeCredito.classList.remove('hidden')
         }
-    } catch (err) {
-        console.error("Error al cargar fincas de cliente:", err)
-        containerFinca?.classList.add('hidden')
+
+        // Cargar fincas del cliente para el datalist-fincas
+        try {
+            const { data: fincas } = await supabase
+                .from('fincas')
+                .select('*')
+                .eq('cliente_id', clienteSeleccionadoId)
+                .order('nombre_finca', { ascending: true })
+
+            listaFincasCliente = fincas || []
+            if (datalistFincas) {
+                datalistFincas.innerHTML = listaFincasCliente.map(f => 
+                    `<option value="${f.nombre_finca}">${f.ubicacion || ''}</option>`
+                ).join('')
+            }
+        } catch (err) {
+            console.error("Error al cargar fincas de cliente:", err)
+        }
+    } else {
+        clienteSeleccionadoId = null
+        badgeCredito?.classList.add('hidden')
+        listaFincasCliente = []
+        if (datalistFincas) datalistFincas.innerHTML = ''
     }
 })
 
-document.getElementById('select-finca')?.addEventListener('change', (e) => {
-    fincaSeleccionadaId = e.target.value
+// Evento al escribir en input-finca
+document.getElementById('input-finca')?.addEventListener('input', (e) => {
+    const val = e.target.value.trim().toLowerCase()
+    const fincaEncontrada = listaFincasCliente.find(f => (f.nombre_finca || '').toLowerCase() === val)
+    if (fincaEncontrada) {
+        fincaSeleccionadaId = fincaEncontrada.id
+    } else {
+        fincaSeleccionadaId = null
+    }
 })
 
 // Selector de Método de Pago
@@ -475,9 +486,60 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
             return sum + (item.cantidad * precioEfectivo)
         }, 0)
 
+        // Determinar o auto-crear Cliente y Finca silenciosamente
+        const inputClienteVal = document.getElementById('input-cliente')?.value.trim() || ''
+        const inputFincaVal = document.getElementById('input-finca')?.value.trim() || ''
+
+        let activeClienteId = clienteSeleccionadoId
+
+        if (!activeClienteId && inputClienteVal !== '') {
+            const existCli = listaClientesPOS.find(c => (c.nombre || '').toLowerCase() === inputClienteVal.toLowerCase())
+            if (existCli) {
+                activeClienteId = existCli.id
+            } else if (navigator.onLine) {
+                try {
+                    const { data: newCli, error: errNewCli } = await supabase
+                        .from('clientes')
+                        .insert([{ nombre: inputClienteVal, nit: 'CF' }])
+                        .select()
+                        .single()
+
+                    if (!errNewCli && newCli) {
+                        activeClienteId = newCli.id
+                        listaClientesPOS.push(newCli)
+                    }
+                } catch (e) {
+                    console.error("Auto-creación cliente silenciosa error:", e)
+                }
+            }
+        }
+
+        let activeFincaId = fincaSeleccionadaId
+
+        if (activeClienteId && !activeFincaId && inputFincaVal !== '' && navigator.onLine) {
+            const existFinca = listaFincasCliente.find(f => (f.nombre_finca || '').toLowerCase() === inputFincaVal.toLowerCase())
+            if (existFinca) {
+                activeFincaId = existFinca.id
+            } else {
+                try {
+                    const { data: newFinca, error: errNewFinca } = await supabase
+                        .from('fincas')
+                        .insert([{ cliente_id: activeClienteId, nombre_finca: inputFincaVal }])
+                        .select()
+                        .single()
+
+                    if (!errNewFinca && newFinca) {
+                        activeFincaId = newFinca.id
+                    }
+                } catch (e) {
+                    console.error("Auto-creación finca silenciosa error:", e)
+                }
+            }
+        }
+
         // FALLBACK MODO OFFLINE
         if (!navigator.onLine) {
-            if (tipoPagoSeleccionado === 'CREDITO' && !clienteSeleccionadoId) {
+            if (tipoPagoSeleccionado === 'CREDITO' && !activeClienteId) {
                 alert("⚠️ No se puede realizar una venta a crédito a Consumidor Final.")
                 btnCompletar.innerHTML = textoOriginal
                 btnCompletar.disabled = false
@@ -499,8 +561,8 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
             pendingSales.push({
                 id: localId,
                 total: totalVenta,
-                cliente_id: clienteSeleccionadoId || null,
-                finca_id: fincaSeleccionadaId || null,
+                cliente_id: activeClienteId || null,
+                finca_id: activeFincaId || null,
                 tipo_pago: tipoPagoSeleccionado,
                 carrito: [...carrito]
             })
@@ -522,7 +584,7 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
 
         // VALIDACIÓN ONLINE DE CRÉDITO
         if (tipoPagoSeleccionado === 'CREDITO') {
-            if (!clienteSeleccionadoId) {
+            if (!activeClienteId) {
                 alert("⚠️ No se puede realizar una venta a crédito a Consumidor Final.")
                 btnCompletar.innerHTML = textoOriginal
                 btnCompletar.disabled = false
@@ -532,7 +594,7 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
             const { data: clienteFresh } = await supabase
                 .from('clientes')
                 .select('saldo_actual, limite_credito, nombre')
-                .eq('id', clienteSeleccionadoId)
+                .eq('id', activeClienteId)
                 .single()
 
             if (clienteFresh) {
@@ -554,8 +616,8 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
             .insert([{
                 total: totalVenta,
                 estado_factura: 'pendiente',
-                cliente_id: clienteSeleccionadoId || null,
-                finca_id: fincaSeleccionadaId || null,
+                cliente_id: activeClienteId || null,
+                finca_id: activeFincaId || null,
                 tipo_pago: tipoPagoSeleccionado
             }])
             .select()
@@ -563,10 +625,10 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
 
         if (errorVenta) throw errorVenta
 
-        if (tipoPagoSeleccionado === 'CREDITO' && clienteSeleccionadoId) {
-            const { data: cliData } = await supabase.from('clientes').select('saldo_actual').eq('id', clienteSeleccionadoId).single()
+        if (tipoPagoSeleccionado === 'CREDITO' && activeClienteId) {
+            const { data: cliData } = await supabase.from('clientes').select('saldo_actual').eq('id', activeClienteId).single()
             const nuevoSaldo = (Number(cliData?.saldo_actual) || 0) + totalVenta
-            await supabase.from('clientes').update({ saldo_actual: nuevoSaldo }).eq('id', clienteSeleccionadoId)
+            await supabase.from('clientes').update({ saldo_actual: nuevoSaldo }).eq('id', activeClienteId)
         }
 
         // 2. Bulk INSERT en `detalle_ventas`
@@ -630,13 +692,9 @@ function renderizarTicket(ventaId, cartItems, total) {
 
     const shortId = (ventaId || '').slice(0, 8).toUpperCase()
     const fechaHora = new Date().toLocaleString('es-GT')
-    const cajeroEmail = document.getElementById('cajero-email')?.textContent || 'Cajero'
-    
-    let nombreClienteStr = 'Consumidor Final (CF)'
-    if (clienteSeleccionadoId) {
-        const cliObj = listaClientesPOS.find(c => c.id === clienteSeleccionadoId)
-        if (cliObj) nombreClienteStr = cliObj.nombre
-    }
+    const cajeroDisplayNombre = cajeroNombreCompleto || document.getElementById('cajero-email')?.textContent || 'Usuario'
+    const valInputCli = document.getElementById('input-cliente')?.value.trim()
+    const nombreClienteStr = valInputCli || 'Consumidor Final (CF)'
 
     const totalForm = total.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -660,14 +718,14 @@ function renderizarTicket(ventaId, cartItems, total) {
 
     ticketContainer.innerHTML = `
         <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px;">
-            <h2 style="font-size: 14px; font-weight: bold; margin: 0; text-transform: uppercase;">Agrovet Campo Alto</h2>
+            <h2 style="font-size: 14px; font-weight: bold; margin: 0; text-transform: uppercase;">Agroservicio Campo Alto</h2>
             <p style="font-size: 10px; margin: 2px 0 0 0;">Terminal POS Vendedor</p>
         </div>
 
         <div style="font-size: 10px; border-bottom: 1px dashed #000; padding-bottom: 6px; margin-bottom: 8px;">
             <div><strong>Ticket No:</strong> #${shortId}</div>
             <div><strong>Fecha:</strong> ${fechaHora}</div>
-            <div><strong>Atendido por:</strong> ${cajeroEmail}</div>
+            <div><strong>Atendido por:</strong> ${cajeroDisplayNombre}</div>
             <div><strong>Cliente:</strong> ${nombreClienteStr}</div>
             <div><strong>Pago:</strong> ${tipoPagoSeleccionado}</div>
         </div>

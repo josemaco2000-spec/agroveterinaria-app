@@ -16,10 +16,10 @@ async function validarSesion() {
             return
         }
 
-        // Obtener rol del perfil
+        // Obtener perfil (rol y nombre)
         const { data: perfil, error: perfilError } = await supabase
             .from('perfiles')
-            .select('rol')
+            .select('rol, nombre_completo')
             .eq('id', session.user.id)
             .single()
 
@@ -31,10 +31,10 @@ async function validarSesion() {
             return
         }
 
-        // Mostrar email del cajero
+        // Mostrar nombre completo del cajero
         const cajeroEmailEl = document.getElementById('cajero-email')
         if (cajeroEmailEl) {
-            cajeroEmailEl.textContent = session.user.email
+            cajeroEmailEl.textContent = perfil?.nombre_completo || session.user.email || 'Usuario'
         }
     } catch (err) {
         console.error("Excepción en autenticación:", err)

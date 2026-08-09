@@ -18,7 +18,7 @@ async function validarSesion() {
 
         const { data: perfil, error: perfilError } = await supabase
             .from('perfiles')
-            .select('rol')
+            .select('rol, nombre_completo')
             .eq('id', session.user.id)
             .single()
 
@@ -31,7 +31,7 @@ async function validarSesion() {
 
         const cajeroEmailEl = document.getElementById('cajero-email')
         if (cajeroEmailEl) {
-            cajeroEmailEl.textContent = session.user.email
+            cajeroEmailEl.textContent = perfil?.nombre_completo || session.user.email || 'Usuario'
         }
 
         await cargarClientes()
