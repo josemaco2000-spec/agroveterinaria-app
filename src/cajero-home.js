@@ -32,7 +32,7 @@ async function validarSesion() {
         }
 
         // Mostrar nombre completo del cajero
-        const cajeroEmailEl = document.getElementById('cajero-email')
+        const cajeroEmailEl = document.getElementById('cajero-email') || document.getElementById('user-email') || document.getElementById('admin-email') || document.getElementById('usuario-info')
         if (cajeroEmailEl) {
             cajeroEmailEl.textContent = perfil?.nombre_completo || session.user.email || 'Usuario'
         }

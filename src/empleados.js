@@ -34,7 +34,7 @@ async function validarAccesoAdmin() {
 
     // Mostrar nombre del usuario e iniciales en el Header
     const nombreUsuario = perfilData?.nombre_completo || session.user.email || 'Administrador'
-    const userInfoEl = document.getElementById('usuario-info')
+    const userInfoEl = document.getElementById('usuario-info') || document.getElementById('user-email') || document.getElementById('admin-email') || document.getElementById('cajero-email')
     if (userInfoEl) {
         userInfoEl.textContent = nombreUsuario
     }

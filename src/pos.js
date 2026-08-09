@@ -74,9 +74,23 @@ async function validarSesion() {
         }
     } else {
         localStorage.setItem('adnova_session_offline', 'true')
-        const cajeroEmail = document.getElementById('cajero-email')
+        let nombreMostrar = session.user.email
+        try {
+            const { data: perfil } = await supabase
+                .from('perfiles')
+                .select('nombre_completo')
+                .eq('id', session.user.id)
+                .single()
+            if (perfil?.nombre_completo) {
+                nombreMostrar = perfil.nombre_completo
+            }
+        } catch (e) {
+            console.warn("No se pudo obtener el perfil del usuario:", e)
+        }
+
+        const cajeroEmail = document.getElementById('cajero-email') || document.getElementById('user-email') || document.getElementById('admin-email') || document.getElementById('usuario-info')
         if (cajeroEmail) {
-            cajeroEmail.textContent = session.user.email
+            cajeroEmail.textContent = nombreMostrar
         }
     }
 

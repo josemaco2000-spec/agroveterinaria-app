@@ -29,7 +29,7 @@ async function validarSesion() {
             return
         }
 
-        const cajeroEmailEl = document.getElementById('cajero-email')
+        const cajeroEmailEl = document.getElementById('cajero-email') || document.getElementById('user-email') || document.getElementById('admin-email') || document.getElementById('usuario-info')
         if (cajeroEmailEl) {
             cajeroEmailEl.textContent = perfil?.nombre_completo || session.user.email || 'Usuario'
         }

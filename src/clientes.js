@@ -17,9 +17,16 @@ async function validarSesion() {
         return
     }
 
-    const userEmail = document.getElementById('user-email')
+    const { data: perfil } = await supabase
+        .from('perfiles')
+        .select('nombre_completo')
+        .eq('id', session.user.id)
+        .single()
+
+    const nombreUsuario = perfil?.nombre_completo || session.user.email
+    const userEmail = document.getElementById('user-email') || document.getElementById('usuario-info') || document.getElementById('admin-email') || document.getElementById('cajero-email')
     if (userEmail) {
-        userEmail.textContent = session.user.email
+        userEmail.textContent = nombreUsuario
     }
 
     cargarClientes()

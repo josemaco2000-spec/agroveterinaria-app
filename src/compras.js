@@ -19,7 +19,7 @@ async function validarAcceso() {
 
     const { data: perfil, error } = await supabase
         .from('perfiles')
-        .select('rol')
+        .select('rol, nombre_completo')
         .eq('id', session.user.id)
         .single()
 
@@ -28,9 +28,10 @@ async function validarAcceso() {
         return
     }
 
-    const adminEmail = document.getElementById('admin-email')
+    const nombreUsuario = perfil?.nombre_completo || session.user.email
+    const adminEmail = document.getElementById('admin-email') || document.getElementById('user-email') || document.getElementById('usuario-info')
     if (adminEmail) {
-        adminEmail.textContent = session.user.email
+        adminEmail.textContent = nombreUsuario
     }
 
     await Promise.all([

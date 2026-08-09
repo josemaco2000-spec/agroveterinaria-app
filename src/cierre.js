@@ -17,9 +17,17 @@ async function validarSesion() {
     }
 
     currentUserId = session.user.id
-    const cajeroEmail = document.getElementById('cajero-email')
+
+    const { data: perfil } = await supabase
+        .from('perfiles')
+        .select('nombre_completo')
+        .eq('id', session.user.id)
+        .single()
+
+    const nombreUsuario = perfil?.nombre_completo || session.user.email
+    const cajeroEmail = document.getElementById('cajero-email') || document.getElementById('user-email') || document.getElementById('admin-email') || document.getElementById('usuario-info')
     if (cajeroEmail) {
-        cajeroEmail.textContent = session.user.email
+        cajeroEmail.textContent = nombreUsuario
     }
 
     await cargarVentasDelDia()

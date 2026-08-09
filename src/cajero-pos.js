@@ -40,7 +40,7 @@ async function validarSesion() {
 
         cajeroNombreCompleto = perfil?.nombre_completo || session.user.email || 'Usuario'
 
-        const cajeroEmailEl = document.getElementById('cajero-email')
+        const cajeroEmailEl = document.getElementById('cajero-email') || document.getElementById('user-email') || document.getElementById('admin-email') || document.getElementById('usuario-info')
         if (cajeroEmailEl) {
             cajeroEmailEl.textContent = cajeroNombreCompleto
         }
