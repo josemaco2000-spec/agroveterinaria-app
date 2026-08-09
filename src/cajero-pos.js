@@ -631,15 +631,24 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
             await supabase.from('clientes').update({ saldo_actual: nuevoSaldo }).eq('id', activeClienteId)
         }
 
-        // 2. Bulk INSERT en `detalle_ventas`
+        // 2. Bulk INSERT en `detalle_ventas` (con Snapshot de Costo Histórico)
         const detalles = carrito.map(item => {
             const desc = Number(item.descuentoPorcentaje) || 0
             const precioEfectivo = item.precioVenta * (1 - desc / 100)
+
+            const presItem = catalogo.find(p => p.id === item.presentacionId)
+            const costoBaseObj = Array.isArray(presItem?.productos?.productos_costos) 
+                ? presItem?.productos?.productos_costos[0] 
+                : presItem?.productos?.productos_costos
+            const costoUnitarioBase = Number(costoBaseObj?.precio_costo) || 0
+            const costoSnapshot = item.factorConversion * costoUnitarioBase
+
             return {
                 venta_id: nuevaVenta.id,
                 presentacion_id: item.presentacionId,
                 cantidad: item.cantidad,
-                subtotal: item.cantidad * precioEfectivo
+                subtotal: item.cantidad * precioEfectivo,
+                costo_unitario: costoSnapshot
             }
         })
 

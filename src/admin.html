@@ -561,6 +561,121 @@
 
             </div>
 
+            <!-- PANEL DE VISTAS FINANCIERAS & SAT GT (TRES CAPAS: GANANCIAS REALES, COMPRAS, IMPUESTOS) -->
+            <div class="glass-panel rounded-3xl p-6 shadow-2xl space-y-6">
+                <!-- Header & Tabs selector -->
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-emerald-500/10">
+                    <div>
+                        <h2 class="text-xl font-extrabold text-slate-900 dark:text-white tracking-wide">Vistas Financieras & SAT Guatemala</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Análisis de capas: Ganancias Reales (snapshots PEPS), Compras/Surtido e Impuestos (Débito/Crédito Fiscal)</p>
+                    </div>
+
+                    <!-- Tabs de Selector de Vistas -->
+                    <div class="flex items-center gap-1.5 bg-forest-950/80 p-1.5 rounded-2xl border border-slate-700/80 text-xs font-bold shrink-0">
+                        <button type="button" id="btn-vista-ganancias" class="btn-vista-tab px-3.5 py-2 rounded-xl transition bg-emerald-600 text-white shadow-md">
+                            💵 Ganancias Reales
+                        </button>
+                        <button type="button" id="btn-vista-compras" class="btn-vista-tab px-3.5 py-2 rounded-xl transition text-slate-400 hover:text-white">
+                            📦 Compras & Surtido
+                        </button>
+                        <button type="button" id="btn-vista-impuestos" class="btn-vista-tab px-3.5 py-2 rounded-xl transition text-slate-400 hover:text-white">
+                            🏛️ Impuestos SAT (IVA)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CONTENIDO VISTA 1: GANANCIAS REALES (SNAPSHOT COSTO HISTÓRICO) -->
+                <div id="vista-container-ganancias" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs space-y-1">
+                            <span class="text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Ventas Totales</span>
+                            <h4 id="rep-ganancias-ventas" class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">Q0.00</h4>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400">Facturación bruta en período</p>
+                        </div>
+                        <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs space-y-1">
+                            <span class="text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Costo Real de Lo Vendido</span>
+                            <h4 id="rep-ganancias-costos" class="text-2xl font-extrabold text-amber-600 dark:text-amber-400">Q0.00</h4>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400">Snapshot histórico de costo por lote</p>
+                        </div>
+                        <div class="p-4 rounded-2xl bg-violet-500/10 border border-violet-500/20 text-xs space-y-1">
+                            <span class="text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Utilidad Real (Margen %)</span>
+                            <h4 id="rep-ganancias-utilidad" class="text-2xl font-extrabold text-violet-600 dark:text-violet-400">Q0.00 (0.0%)</h4>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400">Ganancia neta real deduciendo costos</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONTENIDO VISTA 2: COMPRAS & SURTIDO -->
+                <div id="vista-container-compras" class="hidden space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-xs space-y-1">
+                            <span class="text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Total Invertido en Compras</span>
+                            <h4 id="rep-compras-total" class="text-2xl font-extrabold text-blue-600 dark:text-blue-400">Q0.00</h4>
+                            <p id="rep-compras-count" class="text-[10px] text-slate-500 dark:text-slate-400">0 órdenes de abastecimiento</p>
+                        </div>
+                        <div class="p-4 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-xs space-y-1">
+                            <span class="text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Crédito Fiscal Generado (IVA)</span>
+                            <h4 id="rep-compras-credito" class="text-2xl font-extrabold text-teal-600 dark:text-teal-400">Q0.00</h4>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400">12% IVA pagado en facturas de compras</p>
+                        </div>
+                        <div class="p-4 rounded-2xl bg-forest-950/80 border border-slate-700 text-xs space-y-1">
+                            <span class="text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Base Imponible Compras</span>
+                            <h4 id="rep-compras-base" class="text-2xl font-extrabold text-slate-800 dark:text-slate-200">Q0.00</h4>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400">Monto ex-IVA pagado a proveedores</p>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Compras Recientes -->
+                    <div class="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-100 dark:bg-forest-950 text-slate-600 dark:text-slate-400 uppercase border-b border-slate-200 dark:border-slate-800">
+                                <tr>
+                                    <th class="p-3 font-semibold">Fecha</th>
+                                    <th class="p-3 font-semibold">Proveedor</th>
+                                    <th class="p-3 font-semibold">Comprobante</th>
+                                    <th class="p-3 font-semibold text-right">Monto Total</th>
+                                    <th class="p-3 font-semibold text-right">Crédito Fiscal IVA</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-reporte-compras" class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
+                                <tr><td colspan="5" class="p-4 text-center text-slate-400">Cargando compras...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- CONTENIDO VISTA 3: IMPUESTOS (SAT GT - MECÁNICA IVA) -->
+                <div id="vista-container-impuestos" class="hidden space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs space-y-1">
+                            <span class="text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Débito Fiscal (IVA Ventas)</span>
+                            <h4 id="sat-debito-fiscal" class="text-2xl font-extrabold text-rose-600 dark:text-rose-400">Q0.00</h4>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400">12% IVA recaudado en ventas afectas</p>
+                        </div>
+                        <div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs space-y-1">
+                            <span class="text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Crédito Fiscal (IVA Compras)</span>
+                            <h4 id="sat-credito-fiscal" class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">Q0.00</h4>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400">12% IVA deducible pagado a proveedores</p>
+                        </div>
+                        <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs space-y-1">
+                            <span class="text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">IVA a Pagar SAT (Neto)</span>
+                            <h4 id="sat-iva-neto" class="text-2xl font-extrabold text-amber-600 dark:text-amber-400">Q0.00</h4>
+                            <p id="sat-iva-estado" class="text-[10px] text-slate-500 dark:text-slate-400">Débito Fiscal − Crédito Fiscal</p>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-white/80 dark:bg-forest-950/80 border border-slate-200 dark:border-emerald-500/20 text-xs text-slate-700 dark:text-slate-300 space-y-2">
+                        <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold">
+                            <span>🇬🇹 Resumen para Declaración Mensual del Contador (SAT GT)</span>
+                        </div>
+                        <p id="sat-explicacion-contador" class="leading-relaxed font-medium">
+                            Cargando cálculo fiscal...
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
             <!-- TABLA "ÚLTIMAS VENTAS" (Filas Flotantes Separadas con Sombreado y Glassmorphism) -->
             <div class="glass-panel rounded-3xl p-6 shadow-2xl space-y-4">
                 

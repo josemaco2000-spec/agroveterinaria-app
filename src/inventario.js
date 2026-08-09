@@ -133,6 +133,8 @@ document.getElementById('form-producto')?.addEventListener('submit', async (e) =
     const unidad = document.getElementById('prod-unidad').value
     const stock = parseFloat(document.getElementById('prod-stock').value) || 0
     const costo = parseFloat(document.getElementById('prod-costo').value) || 0
+    const precioVenta = parseFloat(document.getElementById('prod-precio-venta')?.value) || 0
+    const esAfectoIva = document.getElementById('prod-afecto-iva')?.value !== 'false'
     const numeroLote = document.getElementById('prod-lote').value.trim()
     const fechaVencimiento = document.getElementById('prod-vencimiento').value
 
@@ -174,7 +176,8 @@ document.getElementById('form-producto')?.addEventListener('submit', async (e) =
                 categoria: categoria, 
                 unidad_base: unidad, 
                 stock_base: stock,
-                imagen_url: imagenUrl
+                imagen_url: imagenUrl,
+                es_afecto_iva: esAfectoIva
             }])
             .select()
             .single()
@@ -219,7 +222,20 @@ document.getElementById('form-producto')?.addEventListener('submit', async (e) =
 
         if (errorKardex) console.error("Error al registrar movimiento Kardex:", errorKardex)
 
-        alert('¡Producto, costo, lote inicial (FEFO) y Kardex registrados con éxito!')
+        // 5. Crear la presentación base inicial para que aparezca de inmediato en el POS
+        const nombrePresentacionBase = unidad ? (unidad.charAt(0).toUpperCase() + unidad.slice(1)) : 'Unidad'
+        const { error: errorPres } = await supabase
+            .from('presentaciones')
+            .insert([{
+                producto_id: nuevoProducto.id,
+                nombre_presentacion: nombrePresentacionBase,
+                factor_conversion: 1,
+                precio_venta: precioVenta
+            }])
+
+        if (errorPres) console.error("Error al registrar presentación base para el POS:", errorPres)
+
+        alert('¡Producto, costo, presentación para el POS, lote inicial (FEFO) y Kardex registrados con éxito!')
         document.getElementById('form-producto').reset()
         resetPreviewImagen()
         cerrarModal()
@@ -235,6 +251,43 @@ document.getElementById('form-producto')?.addEventListener('submit', async (e) =
 })
 
 // ----------------------------------------------------
+// AUTO-REPARAR PRODUCTOS EXISTENTES SIN PRESENTACIÓN
+// ----------------------------------------------------
+async function asegurarPresentacionesDefecto() {
+    try {
+        const { data: productosSinPres } = await supabase
+            .from('productos')
+            .select(`
+                id,
+                unidad_base,
+                productos_costos (precio_costo),
+                presentaciones (id)
+            `)
+
+        if (!productosSinPres) return
+
+        const aReparar = productosSinPres.filter(p => !p.presentaciones || p.presentaciones.length === 0)
+        for (const p of aReparar) {
+            const costoArr = p.productos_costos || []
+            const costo = costoArr.length > 0 ? (Number(costoArr[0].precio_costo) || 0) : 0
+            const precioVentaSugerido = costo > 0 ? (costo * 1.25) : 10
+            const nombrePres = p.unidad_base ? (p.unidad_base.charAt(0).toUpperCase() + p.unidad_base.slice(1)) : 'Unidad'
+
+            await supabase
+                .from('presentaciones')
+                .insert([{
+                    producto_id: p.id,
+                    nombre_presentacion: nombrePres,
+                    factor_conversion: 1,
+                    precio_venta: precioVentaSugerido
+                }])
+        }
+    } catch (e) {
+        console.warn("Auto-reparación de presentaciones:", e)
+    }
+}
+
+// ----------------------------------------------------
 // CARGAR LA TABLA DE INVENTARIO
 // ----------------------------------------------------
 async function cargarInventario() {
@@ -244,6 +297,8 @@ async function cargarInventario() {
     if (countBadge) countBadge.textContent = 'Cargando...'
 
     try {
+        await asegurarPresentacionesDefecto()
+
         const { data: productos, error } = await supabase
             .from('productos')
             .select(`
@@ -611,10 +666,39 @@ async function eliminarPresentacion(presId) {
     }
 }
 
-// Configurar botón de logout
-document.getElementById('btn-logout')?.addEventListener('click', async () => {
-    await supabase.auth.signOut()
-    window.location.href = 'index.html'
-})
+// ----------------------------------------------------
+// CALCULADORA DE MARGEN EN TIEMPO REAL
+// ----------------------------------------------------
+const inputCosto = document.getElementById('prod-costo')
+const inputMargenPct = document.getElementById('prod-margen-pct')
+const inputPrecioVenta = document.getElementById('prod-precio-venta')
+const badgeMargen = document.getElementById('preview-margen-badge')
+
+function actualizarCalculadoraMargen(origen = 'costo') {
+    if (!inputCosto || !inputPrecioVenta || !badgeMargen) return
+    const costo = parseFloat(inputCosto.value) || 0
+    let margenPct = parseFloat(inputMargenPct?.value) || 0
+    let precioVenta = parseFloat(inputPrecioVenta.value) || 0
+
+    if (origen === 'costo' || origen === 'margen') {
+        if (costo > 0) {
+            precioVenta = costo * (1 + (margenPct / 100))
+            inputPrecioVenta.value = precioVenta.toFixed(2)
+        }
+    } else if (origen === 'precio') {
+        if (costo > 0 && precioVenta >= costo) {
+            margenPct = ((precioVenta - costo) / costo) * 100
+            if (inputMargenPct) inputMargenPct.value = margenPct.toFixed(1)
+        }
+    }
+
+    const margenQ = precioVenta - costo
+    const margenRealPct = precioVenta > 0 ? ((margenQ / precioVenta) * 100) : 0
+    badgeMargen.textContent = `Margen: Q${margenQ.toFixed(2)} (${margenRealPct.toFixed(1)}% de venta)`
+}
+
+inputCosto?.addEventListener('input', () => actualizarCalculadoraMargen('costo'))
+inputMargenPct?.addEventListener('input', () => actualizarCalculadoraMargen('margen'))
+inputPrecioVenta?.addEventListener('input', () => actualizarCalculadoraMargen('precio'))
 
 validarAcceso()

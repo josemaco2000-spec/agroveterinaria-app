@@ -170,23 +170,32 @@
             color: #94a3b8 !important;
         }
 
-        html:not(.dark) .text-slate-300, 
-        html:not(.dark) .text-slate-400 {
+        html:not(.dark) .text-slate-300:not([class*="bg-black"]):not([class*="bg-slate-9"]):not([class*="bg-slate-8"]), 
+        html:not(.dark) .text-slate-400:not([class*="bg-black"]):not([class*="bg-slate-9"]):not([class*="bg-slate-8"]) {
             color: #475569 !important;
         }
 
-        html:not(.dark) .text-slate-200 {
+        html:not(.dark) .text-slate-200:not([class*="bg-black"]):not([class*="bg-slate-9"]):not([class*="bg-slate-8"]) {
             color: #1e293b !important;
         }
 
-        html:not(.dark) .text-white:not(button):not(.btn-pago-opt):not([class*="bg-emerald"]):not([class*="bg-blue"]):not([class*="bg-rose"]):not([class*="bg-amber"]):not([class*="bg-slate-8"]) {
+        html:not(.dark) .text-white:not(button):not(.btn-pago-opt):not([class*="bg-emerald"]):not([class*="bg-blue"]):not([class*="bg-rose"]):not([class*="bg-amber"]):not([class*="bg-slate-9"]):not([class*="bg-black"]) {
             color: #0f172a !important;
+        }
+
+        html:not(.dark) [class*="bg-black"] .text-slate-300,
+        html:not(.dark) [class*="bg-black"] .text-slate-200,
+        html:not(.dark) [class*="bg-black"] .text-white,
+        html:not(.dark) [class*="bg-slate-9"] .text-slate-300,
+        html:not(.dark) [class*="bg-slate-9"] .text-slate-200,
+        html:not(.dark) [class*="bg-slate-9"] .text-white {
+            color: #f8fafc !important;
         }
 
         html:not(.dark) .bg-forest-950, 
         html:not(.dark) .bg-forest-950\/80, 
         html:not(.dark) .bg-forest-950\/90 {
-            background-color: rgba(241, 245, 249, 0.9) !important;
+            background-color: rgba(241, 245, 249, 0.95) !important;
         }
 
         html:not(.dark) .border-slate-800, 
@@ -487,9 +496,33 @@
                         <input type="date" id="prod-vencimiento" required class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono outline-none focus:border-emerald-500">
                     </div>
 
-                    <div class="col-span-2 pt-2 border-t border-slate-800">
-                        <label class="block font-bold text-slate-300 mb-1">Precio de Costo (Q) - <span class="text-amber-400">Privado</span></label>
-                        <input type="number" id="prod-costo" required min="0" step="0.01" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-amber-400 font-bold outline-none focus:border-emerald-500" placeholder="Ej. 150.00">
+                    <div>
+                        <label class="block font-bold text-slate-300 mb-1">Régimen Fiscal (SAT GT)</label>
+                        <select id="prod-afecto-iva" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-emerald-500 font-medium">
+                            <option value="true" selected>🇬🇹 Afecto a IVA (12%)</option>
+                            <option value="false">🌱 Exento de IVA (Agro/Especial)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-span-2 pt-3 border-t border-slate-800 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">💰 Capa de Costos & Precios (Margen en Tiempo Real)</span>
+                            <span id="preview-margen-badge" class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Margen: Q0.00 (0.0%)</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block font-bold text-slate-300 mb-1">Precio Costo (Q)</label>
+                                <input type="number" id="prod-costo" required min="0" step="0.01" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-amber-400 font-bold outline-none focus:border-emerald-500" placeholder="Ej. 150.00">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-300 mb-1">Margen Objetivo (%)</label>
+                                <input type="number" id="prod-margen-pct" min="0" step="0.1" value="25" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-violet-300 font-bold outline-none focus:border-emerald-500" placeholder="Ej. 25%">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-300 mb-1">Precio Venta (Q)</label>
+                                <input type="number" id="prod-precio-venta" required min="0" step="0.01" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-emerald-400 font-bold outline-none focus:border-emerald-500" placeholder="Ej. 187.50">
+                            </div>
+                        </div>
                     </div>
                 </div>
 

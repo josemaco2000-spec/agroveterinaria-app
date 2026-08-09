@@ -302,45 +302,45 @@ function renderCatalogo(items) {
 
         const imgTopHtml = prod.imagen_url
             ? `<img src="${prod.imagen_url}" alt="${prod.nombre}" class="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300">`
-            : `<div class="w-full h-full flex flex-col items-center justify-center text-slate-500 bg-forest-950/80">
-                <svg class="w-10 h-10 opacity-30 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            : `<div class="w-full h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 bg-slate-200/60 dark:bg-forest-950/80">
+                <svg class="w-10 h-10 opacity-40 text-emerald-500 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                 </svg>
                </div>`
 
         grid.innerHTML += `
-            <div class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between border border-slate-800/80 hover:border-emerald-500/40 transition duration-300 group shadow-lg">
+            <div class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between border border-slate-200 dark:border-slate-800/80 hover:border-emerald-500/50 transition duration-300 group shadow-md hover:shadow-xl bg-white/80 dark:bg-slate-900/40">
                 <!-- Card Top: Image container -->
-                <div class="w-full h-32 object-cover rounded-t-lg bg-gray-100 dark:bg-forest-950 flex items-center justify-center overflow-hidden relative border-b border-slate-800/60">
+                <div class="w-full h-32 object-cover rounded-t-lg bg-slate-100 dark:bg-forest-950 flex items-center justify-center overflow-hidden relative border-b border-slate-200 dark:border-slate-800/60">
                     ${imgTopHtml}
-                    <span class="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-xs">
+                    <span class="absolute top-2 left-2 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30 backdrop-blur-xs shadow-xs">
                         ${prod.categoria || 'General'}
                     </span>
-                    ${prod.codigo_barras ? `<span class="absolute top-2 right-2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/60 text-slate-300 backdrop-blur-xs">📦 ${prod.codigo_barras}</span>` : ''}
+                    ${prod.codigo_barras ? `<span class="absolute top-2 right-2 text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-900/90 dark:bg-black/75 text-white dark:text-slate-200 backdrop-blur-xs font-bold shadow-xs">📦 ${prod.codigo_barras}</span>` : ''}
                 </div>
 
                 <!-- Card Body -->
                 <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
                     <div>
-                        <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base leading-snug line-clamp-2 group-hover:text-emerald-500 dark:group-hover:text-emerald-300 transition-colors">${prod.nombre}</h3>
-                        <p class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-1">${pres.nombre_presentacion}</p>
+                        <h3 class="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base leading-snug line-clamp-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">${prod.nombre}</h3>
+                        <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-1">${pres.nombre_presentacion}</p>
                     </div>
 
                     <div class="space-y-2.5">
                         <!-- Available Stock Badge & Price -->
-                        <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-800/60">
+                        <div class="flex items-center justify-between text-xs pt-2.5 border-t border-slate-200 dark:border-slate-800/60">
                             <div class="flex flex-col">
-                                <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Stock Base</span>
-                                <span class="font-semibold text-slate-200">${prod.stock_base} ${prod.unidad_base} <span class="text-[10px] text-emerald-400 font-bold">(~${maxPresentaciones} pres.)</span></span>
+                                <span class="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Stock Base</span>
+                                <span class="font-bold text-slate-800 dark:text-slate-200">${prod.stock_base} ${prod.unidad_base} <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">(~${maxPresentaciones} pres.)</span></span>
                             </div>
                             <div class="text-right">
-                                <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Precio</span>
-                                <span class="text-lg font-extrabold text-emerald-400 tracking-tight">Q${precioFormateado}</span>
+                                <span class="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider block">Precio</span>
+                                <span class="text-lg font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight">Q${precioFormateado}</span>
                             </div>
                         </div>
 
                         <!-- Big full-width "+ Agregar" button -->
-                        <button class="btn-agregar-carrito w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98] text-white font-bold text-xs shadow-md shadow-emerald-900/30 transition duration-200 flex items-center justify-center gap-1.5"
+                        <button class="btn-agregar-carrito w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98] text-white font-bold text-xs shadow-md shadow-emerald-900/20 transition duration-200 flex items-center justify-center gap-1.5"
                                 data-pres-id="${pres.id}">
                             <span class="text-sm leading-none">+</span>
                             <span>Agregar</span>
@@ -497,30 +497,30 @@ function renderCarrito() {
         const precioFormateado = item.precioVenta.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
         lista.innerHTML += `
-            <div class="py-2.5 px-3 bg-forest-950/60 border border-emerald-500/10 rounded-2xl flex items-center justify-between gap-2.5 transition hover:border-emerald-500/30">
+            <div class="py-2.5 px-3 bg-white/90 dark:bg-forest-950/60 border border-slate-200 dark:border-emerald-500/10 rounded-2xl flex items-center justify-between gap-2.5 transition hover:border-emerald-500/30 shadow-xs">
                 <div class="flex-1 min-w-0">
                     <div class="font-bold text-slate-900 dark:text-white text-xs truncate">${item.nombreProducto}</div>
-                    <div class="text-[11px] font-semibold text-emerald-400 flex items-center gap-1.5 flex-wrap mt-0.5">
+                    <div class="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 flex-wrap mt-0.5">
                         <span>${item.nombrePresentacion} — Q${precioFormateado} c/u</span>
-                        ${descuentoPct > 0 ? `<span class="bg-amber-500/20 text-amber-300 text-[10px] font-extrabold px-1.5 py-0.2 rounded border border-amber-500/30">-${descuentoPct}% desc</span>` : ''}
+                        ${descuentoPct > 0 ? `<span class="bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 text-[10px] font-extrabold px-1.5 py-0.2 rounded border border-amber-300 dark:border-amber-500/30">-${descuentoPct}% desc</span>` : ''}
                     </div>
                 </div>
 
                 <!-- Controles de Cantidad -->
-                <div class="flex items-center border border-slate-700/80 rounded-xl overflow-hidden bg-forest-950/90 shadow-sm shrink-0">
-                    <button class="btn-restar px-2 py-0.5 text-slate-300 hover:bg-slate-800 font-bold transition text-xs" data-id="${item.presentacionId}">-</button>
-                    <span class="px-2.5 py-0.5 text-xs font-bold text-slate-900 dark:text-white min-w-[1.75rem] text-center">${item.cantidad}</span>
-                    <button class="btn-sumar px-2 py-0.5 text-slate-300 hover:bg-slate-800 font-bold transition text-xs" data-id="${item.presentacionId}">+</button>
+                <div class="flex items-center border border-slate-300 dark:border-slate-700/80 rounded-xl overflow-hidden bg-slate-100 dark:bg-forest-950/90 shadow-xs shrink-0">
+                    <button class="btn-restar px-2 py-0.5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 font-bold transition text-xs" data-id="${item.presentacionId}">-</button>
+                    <span class="px-2.5 py-0.5 text-xs font-extrabold text-slate-900 dark:text-white min-w-[1.75rem] text-center">${item.cantidad}</span>
+                    <button class="btn-sumar px-2 py-0.5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 font-bold transition text-xs" data-id="${item.presentacionId}">+</button>
                 </div>
 
                 <!-- Subtotal y Botones Acción -->
                 <div class="text-right shrink-0 min-w-[4.5rem] flex flex-col items-end">
                     <div class="font-extrabold text-slate-900 dark:text-white text-xs">Q${subtotalFormateado}</div>
                     <div class="flex items-center gap-1 mt-1">
-                        <button class="btn-descuento-item text-[10px] text-amber-300 hover:text-amber-200 font-extrabold transition px-1.5 py-0.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-md" data-id="${item.presentacionId}" title="Aplicar Descuento %">
+                        <button class="btn-descuento-item text-[10px] text-amber-700 dark:text-amber-300 hover:text-amber-800 font-extrabold transition px-1.5 py-0.5 bg-amber-100 dark:bg-amber-500/10 hover:bg-amber-200 dark:hover:bg-amber-500/20 border border-amber-300 dark:border-amber-500/20 rounded-md" data-id="${item.presentacionId}" title="Aplicar Descuento %">
                             🏷️ %
                         </button>
-                        <button class="btn-eliminar text-[10px] text-rose-400 hover:text-rose-300 font-extrabold transition px-1.5 py-0.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-md" data-id="${item.presentacionId}" title="Eliminar ítem">
+                        <button class="btn-eliminar text-[10px] text-rose-600 dark:text-rose-400 hover:text-rose-700 font-extrabold transition px-1.5 py-0.5 bg-rose-100 dark:bg-rose-500/10 hover:bg-rose-200 dark:hover:bg-rose-500/20 border border-rose-300 dark:border-rose-500/20 rounded-md" data-id="${item.presentacionId}" title="Eliminar ítem">
                             🗑️
                         </button>
                     </div>
@@ -700,15 +700,24 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
             await supabase.from('clientes').update({ saldo_actual: nuevoSaldo }).eq('id', clienteSeleccionadoId)
         }
 
-        // Paso 2: Bulk INSERT en `detalle_ventas`
+        // Paso 2: Bulk INSERT en `detalle_ventas` (con Snapshot de Costo Histórico)
         const detalles = carrito.map(item => {
             const desc = Number(item.descuentoPorcentaje) || 0
             const precioEfectivo = item.precioVenta * (1 - desc / 100)
+
+            const presItem = catalogo.find(p => p.id === item.presentacionId)
+            const costoBaseObj = Array.isArray(presItem?.productos?.productos_costos) 
+                ? presItem?.productos?.productos_costos[0] 
+                : presItem?.productos?.productos_costos
+            const costoUnitarioBase = Number(costoBaseObj?.precio_costo) || 0
+            const costoSnapshot = item.factorConversion * costoUnitarioBase
+
             return {
                 venta_id: nuevaVenta.id,
                 presentacion_id: item.presentacionId,
                 cantidad: item.cantidad,
-                subtotal: item.cantidad * precioEfectivo
+                subtotal: item.cantidad * precioEfectivo,
+                costo_unitario: costoSnapshot
             }
         })
 

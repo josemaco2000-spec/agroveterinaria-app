@@ -169,23 +169,32 @@
             color: #94a3b8 !important;
         }
 
-        html:not(.dark) .text-slate-300, 
-        html:not(.dark) .text-slate-400 {
+        html:not(.dark) .text-slate-300:not([class*="bg-black"]):not([class*="bg-slate-9"]):not([class*="bg-slate-8"]), 
+        html:not(.dark) .text-slate-400:not([class*="bg-black"]):not([class*="bg-slate-9"]):not([class*="bg-slate-8"]) {
             color: #475569 !important;
         }
 
-        html:not(.dark) .text-slate-200 {
+        html:not(.dark) .text-slate-200:not([class*="bg-black"]):not([class*="bg-slate-9"]):not([class*="bg-slate-8"]) {
             color: #1e293b !important;
         }
 
-        html:not(.dark) .text-white:not(button):not(.btn-pago-opt):not([class*="bg-emerald"]):not([class*="bg-blue"]):not([class*="bg-rose"]):not([class*="bg-amber"]):not([class*="bg-slate-8"]) {
+        html:not(.dark) .text-white:not(button):not(.btn-pago-opt):not([class*="bg-emerald"]):not([class*="bg-blue"]):not([class*="bg-rose"]):not([class*="bg-amber"]):not([class*="bg-slate-9"]):not([class*="bg-black"]) {
             color: #0f172a !important;
+        }
+
+        html:not(.dark) [class*="bg-black"] .text-slate-300,
+        html:not(.dark) [class*="bg-black"] .text-slate-200,
+        html:not(.dark) [class*="bg-black"] .text-white,
+        html:not(.dark) [class*="bg-slate-9"] .text-slate-300,
+        html:not(.dark) [class*="bg-slate-9"] .text-slate-200,
+        html:not(.dark) [class*="bg-slate-9"] .text-white {
+            color: #f8fafc !important;
         }
 
         html:not(.dark) .bg-forest-950, 
         html:not(.dark) .bg-forest-950\/80, 
         html:not(.dark) .bg-forest-950\/90 {
-            background-color: rgba(241, 245, 249, 0.9) !important;
+            background-color: rgba(241, 245, 249, 0.95) !important;
         }
 
         html:not(.dark) .border-slate-800, 
