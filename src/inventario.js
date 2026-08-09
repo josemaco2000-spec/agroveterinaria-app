@@ -94,10 +94,12 @@ fileInput?.addEventListener('change', (e) => {
 
 function abrirModal() {
     modal.classList.remove('hidden')
+    modal.classList.add('flex')
 }
 
 function cerrarModal() {
     modal.classList.add('hidden')
+    modal.classList.remove('flex')
     resetPreviewImagen()
 }
 
@@ -209,12 +211,13 @@ document.getElementById('form-producto')?.addEventListener('submit', async (e) =
 
         if (errorLote) console.error("Error al crear lote:", errorLote)
 
-        // 4. Registrar movimiento de inventario en Kardex (ENTRADA_COMPRA)
+        // 4. Registrar movimiento de inventario en Kardex (ENTRADA_COMPRA en Bodega Central)
         const { error: errorKardex } = await supabase
             .from('movimientos_inventario')
             .insert([{
                 producto_id: nuevoProducto.id,
                 lote_id: nuevoLote?.id || null,
+                ubicacion_id: '11111111-1111-1111-1111-111111111111',
                 tipo_movimiento: 'ENTRADA_COMPRA',
                 cantidad: stock,
                 usuario_id: session?.user?.id || null
@@ -299,6 +302,18 @@ async function cargarInventario() {
     try {
         await asegurarPresentacionesDefecto()
 
+        const { data: stockUbicaciones } = await supabase
+            .from('v_stock_productos_ubicacion')
+            .select('*')
+
+        const ubicacionesMap = {}
+        if (stockUbicaciones) {
+            stockUbicaciones.forEach(s => {
+                if (!ubicacionesMap[s.producto_id]) ubicacionesMap[s.producto_id] = {}
+                ubicacionesMap[s.producto_id][s.ubicacion_nombre] = Number(s.stock_disponible) || 0
+            })
+        }
+
         const { data: productos, error } = await supabase
             .from('productos')
             .select(`
@@ -336,6 +351,10 @@ async function cargarInventario() {
         const costoNum = costoObj && costoObj.precio_costo !== undefined ? Number(costoObj.precio_costo) : 0
         const costoFormateado = costoNum.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
+        const stockTotal = Number(prod.stock_base) || 0
+        const stockPos = ubicacionesMap[prod.id]?.['Área de Venta'] ?? 0
+        const stockBodega = Math.max(0, stockTotal - stockPos)
+
         const imgHtml = prod.imagen_url 
             ? `<img src="${prod.imagen_url}" alt="${prod.nombre}" class="w-10 h-10 object-cover rounded-xl border border-slate-700/80 shadow-sm shrink-0">`
             : `<div class="w-10 h-10 rounded-xl bg-forest-950 border border-slate-800 flex items-center justify-center text-slate-500 shrink-0" title="Sin imagen">
@@ -355,7 +374,15 @@ async function cargarInventario() {
                     <span class="inline-block bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20 text-xs px-2.5 py-1 rounded-full font-bold">${prod.categoria || 'General'}</span>
                 </td>
                 <td class="p-3.5 font-semibold text-slate-700 dark:text-slate-200">
-                    ${prod.stock_base} <span class="text-xs text-slate-500 dark:text-slate-400 font-normal">${prod.unidad_base}</span>
+                    <div class="font-bold text-slate-900 dark:text-white">${stockTotal.toFixed(2)} ${prod.unidad_base}</div>
+                    <div class="flex items-center gap-1.5 flex-wrap mt-1 text-[10px]">
+                        <span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 font-mono font-bold" title="Stock en Bodega Central">
+                            🏢 Bodega: ${stockBodega.toFixed(2)}
+                        </span>
+                        <span class="px-2 py-0.5 rounded ${stockPos > 0 ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20' : 'bg-slate-800 text-slate-400 border border-slate-700'} font-mono font-bold" title="Stock disponible para el POS">
+                            🛒 POS: ${stockPos.toFixed(2)}
+                        </span>
+                    </div>
                 </td>
                 <td class="p-3.5 font-extrabold text-rose-600 dark:text-rose-400">
                     Q${costoFormateado}
@@ -700,5 +727,286 @@ function actualizarCalculadoraMargen(origen = 'costo') {
 inputCosto?.addEventListener('input', () => actualizarCalculadoraMargen('costo'))
 inputMargenPct?.addEventListener('input', () => actualizarCalculadoraMargen('margen'))
 inputPrecioVenta?.addEventListener('input', () => actualizarCalculadoraMargen('precio'))
+
+// ----------------------------------------------------
+// GESTIÓN DE TRASLADOS ENTRE UBICACIONES
+// ----------------------------------------------------
+const modalTraslado = document.getElementById('modal-traslado')
+const modalHistorial = document.getElementById('modal-historial-traslados')
+const btnAbrirTraslado = document.getElementById('btn-abrir-traslado')
+const btnVerHistorial = document.getElementById('btn-ver-historial-traslados')
+
+const selectOrigen = document.getElementById('traslado-origen')
+const selectDestino = document.getElementById('traslado-destino')
+const selectProductoTraslado = document.getElementById('traslado-producto')
+const selectLoteTraslado = document.getElementById('traslado-lote')
+const inputCantTraslado = document.getElementById('traslado-cantidad')
+const selectPresTraslado = document.getElementById('traslado-presentacion')
+const previewBaseTraslado = document.getElementById('preview-traslado-base')
+const formTraslado = document.getElementById('form-traslado')
+const tablaHistorialTraslados = document.getElementById('tabla-historial-traslados')
+
+function abrirModalTraslado() {
+    if (modalTraslado) {
+        modalTraslado.classList.remove('hidden')
+        modalTraslado.classList.add('flex')
+        cargarProductosTraslado()
+    }
+}
+
+function cerrarModalTraslado() {
+    if (modalTraslado) {
+        modalTraslado.classList.add('hidden')
+        modalTraslado.classList.remove('flex')
+    }
+}
+
+function abrirModalHistorial() {
+    if (modalHistorial) {
+        modalHistorial.classList.remove('hidden')
+        modalHistorial.classList.add('flex')
+        cargarHistorialTraslados()
+    }
+}
+
+function cerrarModalHistorial() {
+    if (modalHistorial) {
+        modalHistorial.classList.add('hidden')
+        modalHistorial.classList.remove('flex')
+    }
+}
+
+btnAbrirTraslado?.addEventListener('click', abrirModalTraslado)
+btnVerHistorial?.addEventListener('click', abrirModalHistorial)
+
+document.getElementById('btn-cerrar-modal-traslado')?.addEventListener('click', cerrarModalTraslado)
+document.getElementById('btn-cerrar-modal-traslado-x')?.addEventListener('click', cerrarModalTraslado)
+document.getElementById('btn-cerrar-modal-historial')?.addEventListener('click', cerrarModalHistorial)
+document.getElementById('btn-cerrar-modal-historial-x')?.addEventListener('click', cerrarModalHistorial)
+
+let productosTrasladoCache = []
+let lotesOrigenCache = []
+
+async function cargarProductosTraslado() {
+    if (!selectProductoTraslado) return
+    selectProductoTraslado.innerHTML = '<option value="">Cargando productos...</option>'
+
+    const { data, error } = await supabase
+        .from('productos')
+        .select('id, nombre, unidad_base')
+        .order('nombre', { ascending: true })
+
+    if (error) {
+        console.error("Error al cargar productos para traslado:", error)
+        return
+    }
+
+    productosTrasladoCache = data || []
+    selectProductoTraslado.innerHTML = '<option value="">-- Seleccionar producto --</option>'
+    productosTrasladoCache.forEach(p => {
+        selectProductoTraslado.innerHTML += `<option value="${p.id}">${p.nombre} (${p.unidad_base})</option>`
+    })
+}
+
+selectProductoTraslado?.addEventListener('change', async (e) => {
+    const prodId = e.target.value
+    if (!prodId) return
+
+    const { data: presentaciones } = await supabase
+        .from('presentaciones')
+        .select('*')
+        .eq('producto_id', prodId)
+
+    if (selectPresTraslado) {
+        const prodObj = productosTrasladoCache.find(p => p.id === prodId)
+        selectPresTraslado.innerHTML = `<option value="1">Unidad Base (${prodObj?.unidad_base || 'unidad'}) x1</option>`
+        if (presentaciones) {
+            presentaciones.forEach(pres => {
+                selectPresTraslado.innerHTML += `<option value="${pres.factor_conversion}">${pres.nombre_presentacion} (x${pres.factor_conversion})</option>`
+            })
+        }
+    }
+
+    cargarLotesOrigen(prodId)
+})
+
+selectOrigen?.addEventListener('change', () => {
+    const prodId = selectProductoTraslado?.value
+    if (prodId) cargarLotesOrigen(prodId)
+})
+
+async function cargarLotesOrigen(productoId) {
+    if (!selectLoteTraslado) return
+    const origenId = selectOrigen?.value || '11111111-1111-1111-1111-111111111111'
+
+    selectLoteTraslado.innerHTML = '<option value="">Cargando lotes disponibles...</option>'
+
+    // 1. Consultar vista de stock por lotes y ubicación
+    const { data: lotesUbic } = await supabase
+        .from('v_stock_lotes_ubicacion')
+        .select('*')
+        .eq('producto_id', productoId)
+        .eq('ubicacion_id', origenId)
+        .gt('stock_actual', 0)
+        .order('fecha_vencimiento', { ascending: true })
+
+    lotesOrigenCache = lotesUbic || []
+
+    // 2. Fallback resiliente: Si el origen es Bodega Central y aún no existen filas de movimientos en la vista, consultar la tabla 'lotes' directamente
+    if (lotesOrigenCache.length === 0 && origenId === '11111111-1111-1111-1111-111111111111') {
+        const { data: lotesDirectos } = await supabase
+            .from('lotes')
+            .select('*')
+            .eq('producto_id', productoId)
+            .gt('stock_actual', 0)
+            .order('fecha_vencimiento', { ascending: true })
+
+        if (lotesDirectos && lotesDirectos.length > 0) {
+            lotesOrigenCache = lotesDirectos.map(l => ({
+                lote_id: l.id,
+                numero_lote: l.numero_lote,
+                stock_actual: l.stock_actual,
+                fecha_vencimiento: l.fecha_vencimiento
+            }))
+        }
+    }
+
+    selectLoteTraslado.innerHTML = ''
+
+    if (lotesOrigenCache.length === 0) {
+        selectLoteTraslado.innerHTML = '<option value="">Sin lotes con stock en esta ubicación</option>'
+        return
+    }
+
+    lotesOrigenCache.forEach(l => {
+        selectLoteTraslado.innerHTML += `
+            <option value="${l.lote_id}">
+                Lote: ${l.numero_lote} | Stock Disp: ${Number(l.stock_actual).toFixed(2)} | Vence: ${l.fecha_vencimiento}
+            </option>
+        `
+    })
+}
+
+function calcularBaseTraslado() {
+    if (!inputCantTraslado || !selectPresTraslado || !previewBaseTraslado) return
+    const cant = parseFloat(inputCantTraslado.value) || 0
+    const factor = parseFloat(selectPresTraslado.value) || 1
+    const totalBase = cant * factor
+    const prodObj = productosTrasladoCache.find(p => p.id === selectProductoTraslado?.value)
+    const unidadText = prodObj?.unidad_base || 'unidad'
+    previewBaseTraslado.textContent = `${totalBase.toFixed(2)} ${unidadText}`
+}
+
+inputCantTraslado?.addEventListener('input', calcularBaseTraslado)
+selectPresTraslado?.addEventListener('change', calcularBaseTraslado)
+
+formTraslado?.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    const origenId = selectOrigen.value
+    const destinoId = selectDestino.value
+    const prodId = selectProductoTraslado.value
+    const loteId = selectLoteTraslado.value
+    const cant = parseFloat(inputCantTraslado.value) || 0
+    const factor = parseFloat(selectPresTraslado.value) || 1
+
+    if (origenId === destinoId) {
+        alert("⚠️ La ubicación de origen y destino no pueden ser iguales.")
+        return
+    }
+
+    const cantidadBaseTotal = Math.round((cant * factor) * 1000) / 1000
+
+    if (cantidadBaseTotal <= 0) {
+        alert("⚠️ Ingrese una cantidad a trasladar válida.")
+        return
+    }
+
+    try {
+        const { data: { session } } = await supabase.auth.getSession()
+
+        const { data: trasladoId, error } = await supabase.rpc('realizar_traslado_inventario', {
+            p_producto_id: prodId,
+            p_lote_id: loteId,
+            p_ubicacion_origen_id: origenId,
+            p_ubicacion_destino_id: destinoId,
+            p_cantidad_base: cantidadBaseTotal,
+            p_usuario_id: session?.user?.id || null
+        })
+
+        if (error) throw error
+
+        alert("✅ Traslado atómico completado con éxito.")
+        cerrarModalTraslado()
+        cargarInventario()
+    } catch (err) {
+        console.error("Error al ejecutar traslado:", err)
+        alert("Error al ejecutar traslado: " + (err.message || err))
+    }
+})
+
+async function cargarHistorialTraslados() {
+    if (!tablaHistorialTraslados) return
+    tablaHistorialTraslados.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Cargando historial de traslados...</td></tr>'
+
+    const { data: traslados, error } = await supabase
+        .from('movimientos_inventario')
+        .select(`
+            *,
+            productos (nombre, unidad_base),
+            lotes (numero_lote),
+            ubicaciones (nombre)
+        `)
+        .eq('tipo_movimiento', 'TRASLADO_SALIDA')
+        .order('created_at', { ascending: false })
+
+    if (error) {
+        console.error("Error al cargar historial de traslados:", error)
+        tablaHistorialTraslados.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${error.message}</td></tr>`
+        return
+    }
+
+    tablaHistorialTraslados.innerHTML = ''
+
+    if (!traslados || traslados.length === 0) {
+        tablaHistorialTraslados.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400 italic">No se han registrado traslados entre ubicaciones.</td></tr>'
+        return
+    }
+
+    const trasladoIds = traslados.map(t => t.traslado_id).filter(Boolean)
+    const { data: entradasDestino } = await supabase
+        .from('movimientos_inventario')
+        .select('traslado_id, ubicaciones(nombre)')
+        .eq('tipo_movimiento', 'TRASLADO_ENTRADA')
+        .in('traslado_id', trasladoIds)
+
+    const destinoMap = {}
+    if (entradasDestino) {
+        entradasDestino.forEach(e => {
+            destinoMap[e.traslado_id] = e.ubicaciones?.nombre || 'Destino'
+        })
+    }
+
+    traslados.forEach(t => {
+        const fechaStr = new Date(t.created_at).toLocaleString('es-GT', { dateStyle: 'short', timeStyle: 'short' })
+        const origenNombre = t.ubicaciones?.nombre || 'Bodega Central'
+        const destinoNombre = destinoMap[t.traslado_id] || 'Área de Venta'
+        const cantFmt = Number(t.cantidad).toFixed(2)
+
+        tablaHistorialTraslados.innerHTML += `
+            <tr class="hover:bg-slate-800/40 transition border-b border-slate-800/60">
+                <td class="p-3 text-slate-400 font-mono">${fechaStr}</td>
+                <td class="p-3 font-bold text-white">${t.productos?.nombre || '--'}</td>
+                <td class="p-3 font-mono text-emerald-400 font-medium">${t.lotes?.numero_lote || '--'}</td>
+                <td class="p-3 font-semibold text-slate-300">
+                    <span class="text-amber-400">${origenNombre}</span> ➔ <span class="text-emerald-400">${destinoNombre}</span>
+                </td>
+                <td class="p-3 text-right font-extrabold text-emerald-400 font-mono">
+                    -${cantFmt} ${t.productos?.unidad_base || ''}
+                </td>
+                <td class="p-3 text-center text-slate-400">Administración</td>
+            </tr>
+        `
+    })
+}
 
 validarAcceso()

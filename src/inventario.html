@@ -375,7 +375,15 @@
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Control centralizado de medicamentos, alimentos y unidades base</p>
                 </div>
 
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3 flex-wrap">
+                    <button id="btn-abrir-traslado" class="px-4 py-2.5 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold text-xs shadow-md transition flex items-center gap-2 whitespace-nowrap">
+                        <span>📦 Realizar Traslado</span>
+                    </button>
+
+                    <button id="btn-ver-historial-traslados" class="px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs shadow-md transition flex items-center gap-2 whitespace-nowrap">
+                        <span>📜 Historial Traslados</span>
+                    </button>
+
                     <button id="btn-nuevo-producto" class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-900/40 transition transform hover:-translate-y-0.5 flex items-center gap-2 whitespace-nowrap">
                         <span class="text-base leading-none">+</span>
                         <span>Nuevo Producto</span>
@@ -424,8 +432,8 @@
     <!-- ========================================== -->
 
     <!-- MODAL 1: NUEVO PRODUCTO -->
-    <div id="modal-producto" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md items-center justify-center p-4">
-        <div class="glass-panel rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl border border-emerald-500/30 animate-pop-in">
+    <div id="modal-producto" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md items-center justify-center p-4 overflow-y-auto">
+        <div class="glass-panel rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl border border-emerald-500/30 animate-pop-in max-h-[90vh] overflow-y-auto my-auto">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <h3 class="text-lg font-bold text-white flex items-center gap-2">
                     📦 Registrar Nuevo Producto
@@ -535,8 +543,8 @@
     </div>
 
     <!-- MODAL 2: GESTIÓN DE PRESENTACIONES -->
-    <div id="modal-presentaciones" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md items-center justify-center p-4">
-        <div class="glass-panel rounded-3xl max-w-2xl w-full p-6 space-y-6 shadow-2xl border border-emerald-500/30 animate-pop-in">
+    <div id="modal-presentaciones" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md items-center justify-center p-4 overflow-y-auto">
+        <div class="glass-panel rounded-3xl max-w-2xl w-full p-6 space-y-6 shadow-2xl border border-emerald-500/30 animate-pop-in max-h-[90vh] overflow-y-auto my-auto">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div>
                     <h3 class="text-lg font-bold text-white">Presentaciones de Venta</h3>
@@ -648,6 +656,115 @@
 
             <div class="flex justify-end pt-2 border-t border-slate-800 shrink-0">
                 <button type="button" id="btn-cerrar-modal-kardex" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: TRASLADO ENTRE UBICACIONES -->
+    <div id="modal-traslado" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md items-center justify-center p-4 overflow-y-auto">
+        <div class="glass-panel rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl border border-emerald-500/30 animate-pop-in max-h-[90vh] overflow-y-auto my-auto">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    📦 Traslado de Inventario entre Ubicaciones
+                </h3>
+                <button type="button" id="btn-cerrar-modal-traslado-x" class="text-slate-400 hover:text-white font-bold text-lg">&times;</button>
+            </div>
+
+            <form id="form-traslado" class="space-y-4 text-xs">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-300 mb-1">Ubicación Origen</label>
+                        <select id="traslado-origen" required class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-bold">
+                            <option value="11111111-1111-1111-1111-111111111111" selected>🏢 Bodega Central (Almacenamiento)</option>
+                            <option value="22222222-2222-2222-2222-222222222222">🛒 Área de Venta (POS)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-slate-300 mb-1">Ubicación Destino</label>
+                        <select id="traslado-destino" required class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-bold">
+                            <option value="22222222-2222-2222-2222-222222222222" selected>🛒 Área de Venta (POS)</option>
+                            <option value="11111111-1111-1111-1111-111111111111">🏢 Bodega Central (Almacenamiento)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-300 mb-1">Producto</label>
+                    <select id="traslado-producto" required class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-medium">
+                        <option value="">Seleccione un producto...</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-300 mb-1">Lote (FEFO / Stock en Origen)</label>
+                    <select id="traslado-lote" required class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-mono">
+                        <option value="">Seleccione primero un producto...</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-300 mb-1">Cantidad a Trasladar</label>
+                        <input type="number" id="traslado-cantidad" required min="0.001" step="0.001" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-emerald-400 font-bold text-sm outline-none focus:border-emerald-500" placeholder="Ej. 10">
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-slate-300 mb-1">Presentación / Unidad</label>
+                        <select id="traslado-presentacion" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-medium">
+                            <option value="1">Unidad Base (1.000)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-forest-950/80 border border-slate-800 rounded-xl flex items-center justify-between text-xs font-semibold">
+                    <span class="text-slate-400">Total equivalente en Unidad Base:</span>
+                    <span id="preview-traslado-base" class="text-emerald-400 font-bold font-mono">0.000 lb</span>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                    <button type="button" id="btn-cerrar-modal-traslado" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition">Cancelar</button>
+                    <button type="submit" id="btn-ejecutar-traslado" class="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-900/40 transition flex items-center gap-1.5">
+                        <span>⚡ Confirmar Traslado Atómico</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 5: HISTORIAL AUDITABLE DE TRASLADOS -->
+    <div id="modal-historial-traslados" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md items-center justify-center p-4 overflow-y-auto">
+        <div class="glass-panel rounded-3xl max-w-4xl w-full p-6 space-y-6 shadow-2xl border border-emerald-500/30 animate-pop-in max-h-[90vh] flex flex-col my-auto">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3 shrink-0">
+                <div>
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        📜 Historial Auditable de Traslados de Inventario
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Registro de movimientos atómicos entre Bodega Central y Área de Venta</p>
+                </div>
+                <button type="button" id="btn-cerrar-modal-historial-x" class="text-slate-400 hover:text-white font-bold text-lg">&times;</button>
+            </div>
+
+            <div class="glass-card rounded-2xl overflow-hidden flex-1 overflow-y-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead class="sticky top-0 bg-forest-950 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                        <tr>
+                            <th class="p-3 font-semibold">Fecha / Hora</th>
+                            <th class="p-3 font-semibold">Producto</th>
+                            <th class="p-3 font-semibold">Lote</th>
+                            <th class="p-3 font-semibold">Origen ➔ Destino</th>
+                            <th class="p-3 font-semibold text-right">Cantidad Base</th>
+                            <th class="p-3 font-semibold text-center">Responsable</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-historial-traslados" class="divide-y divide-slate-800 text-slate-200">
+                        <tr><td colspan="6" class="p-4 text-center text-slate-400">Cargando historial de traslados...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-end pt-2 border-t border-slate-800 shrink-0">
+                <button type="button" id="btn-cerrar-modal-historial" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition">Cerrar</button>
             </div>
         </div>
     </div>

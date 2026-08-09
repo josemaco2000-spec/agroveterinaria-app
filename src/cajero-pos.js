@@ -74,6 +74,19 @@ async function cargarCatalogo() {
             return
         }
 
+        // Consultar stock específico del Área de Venta (POS)
+        const { data: stockVenta } = await supabase
+            .from('v_stock_productos_ubicacion')
+            .select('*')
+            .eq('ubicacion_id', '22222222-2222-2222-2222-222222222222')
+
+        const stockMap = {}
+        if (stockVenta) {
+            stockVenta.forEach(s => {
+                stockMap[s.producto_id] = Number(s.stock_disponible) || 0
+            })
+        }
+
         const { data: presentaciones, error } = await supabase
             .from('presentaciones')
             .select(`
@@ -92,7 +105,17 @@ async function cargarCatalogo() {
 
         if (error) throw error
 
-        catalogo = (presentaciones || []).filter(p => p.productos && Number(p.productos.stock_base) > 0)
+        catalogo = (presentaciones || []).map(p => {
+            const stockPos = stockMap[p.productos.id] ?? Number(p.productos.stock_base)
+            return {
+                ...p,
+                productos: {
+                    ...p.productos,
+                    stock_base: stockPos
+                }
+            }
+        }).filter(p => p.productos && Number(p.productos.stock_base) > 0)
+
         actualizarCacheCatalogoLocal()
         renderCatalogo(catalogo)
 
@@ -210,15 +233,15 @@ if (inputBusqueda) {
 // 4. Lógica de Carrito de Compras
 function agregarAlCarrito(presItem) {
     const prod = presItem.productos
-    const stockBaseTotal = Number(prod.stock_base)
+    const stockBaseTotal = Number(prod.stock_base) || 0
+    const factor = Number(presItem.factor_conversion || 1)
 
     const stockBaseUsado = carrito
         .filter(item => item.productoId === prod.id)
-        .reduce((sum, item) => sum + (item.cantidad * item.factorConversion), 0)
+        .reduce((sum, item) => sum + (Number(item.cantidad) * Number(item.factorConversion)), 0)
 
-    const factor = Number(presItem.factor_conversion || 1)
     if ((stockBaseUsado + factor) > stockBaseTotal) {
-        alert(`⚠️ Stock insuficiente. El stock base disponible de "${prod.nombre}" es de ${stockBaseTotal} ${prod.unidad_base}.`)
+        alert(`⚠️ Stock insuficiente. El stock base disponible de "${prod.nombre}" es de ${stockBaseTotal.toFixed(3)} ${prod.unidad_base}.`)
         return
     }
 
@@ -232,9 +255,10 @@ function agregarAlCarrito(presItem) {
             productoId: prod.id,
             nombreProducto: prod.nombre,
             nombrePresentacion: presItem.nombre_presentacion,
-            precioVenta: Number(presItem.precio_venta),
+            precioVenta: Number(presItem.precio_venta) || 0,
             factorConversion: factor,
             unidadBase: prod.unidad_base,
+            stockBase: stockBaseTotal,
             cantidad: 1,
             descuentoPorcentaje: 0
         })
@@ -243,32 +267,52 @@ function agregarAlCarrito(presItem) {
     renderCarrito()
 }
 
-function cambiarCantidad(presentacionId, cambio) {
-    const item = carrito.find(i => i.presentacionId === presentacionId)
+function cambiarCantidadDirecta(index, nuevaCantidad) {
+    const item = carrito[index]
     if (!item) return
 
-    const nuevaCant = item.cantidad + cambio
-    if (nuevaCant <= 0) {
-        solicitarEliminacionItem(presentacionId)
-        return
+    const cantNum = parseFloat(nuevaCantidad)
+    if (isNaN(cantNum) || cantNum <= 0) {
+        item.cantidad = 0
+    } else {
+        item.cantidad = Math.round(cantNum * 1000) / 1000
     }
 
-    const presItem = catalogo.find(p => p.id === presentacionId)
+    renderCarrito()
+}
+
+function cambiarPresentacionItem(index, nuevaPresId) {
+    const item = carrito[index]
+    if (!item) return
+
+    const presItem = catalogo.find(p => p.id === nuevaPresId)
     if (presItem) {
-        const prod = presItem.productos
-        const stockBaseTotal = Number(prod.stock_base)
-        const stockBaseUsadoSinEste = carrito
-            .filter(i => i.productoId === prod.id && i.presentacionId !== presentacionId)
-            .reduce((sum, i) => sum + (i.cantidad * i.factorConversion), 0)
-
-        const requirienteBase = stockBaseUsadoSinEste + (nuevaCant * item.factorConversion)
-        if (requirienteBase > stockBaseTotal) {
-            alert(`⚠️ Stock insuficiente. El stock base disponible de "${prod.nombre}" es de ${stockBaseTotal} ${prod.unidad_base}.`)
-            return
-        }
+        item.presentacionId = presItem.id
+        item.nombrePresentacion = presItem.nombre_presentacion
+        item.factorConversion = Number(presItem.factor_conversion) || 1
+        item.precioVenta = Number(presItem.precio_venta) || 0
     }
 
-    item.cantidad = nuevaCant
+    renderCarrito()
+}
+
+function venderTodoElDisponible(index) {
+    const item = carrito[index]
+    if (!item) return
+
+    const stockBaseTotal = Number(item.stockBase) || 0
+    const stockUsadoOtros = carrito
+        .filter((i, idx) => i.productoId === item.productoId && idx !== index)
+        .reduce((sum, i) => sum + (Number(i.cantidad) * Number(i.factorConversion)), 0)
+
+    const stockDisponibleRestante = Math.max(0, stockBaseTotal - stockUsadoOtros)
+    const factor = Number(item.factorConversion) || 1
+
+    if (factor > 0) {
+        const cantMax = stockDisponibleRestante / factor
+        item.cantidad = Math.max(0, Math.floor(cantMax * 1000) / 1000)
+    }
+
     renderCarrito()
 }
 
@@ -301,13 +345,17 @@ function renderCarrito() {
             </div>
         `
         totalEl.textContent = 'Q0.00'
-        if (btnCompletar) btnCompletar.disabled = true
+        if (btnCompletar) {
+            btnCompletar.disabled = true
+            btnCompletar.innerHTML = '<span>💳 Registrar Venta (POS)</span>'
+        }
         return
     }
 
     let granTotal = 0
+    let hayErrorStock = false
 
-    carrito.forEach(item => {
+    carrito.forEach((item, index) => {
         const desc = Number(item.descuentoPorcentaje) || 0
         const precioEfectivo = item.precioVenta * (1 - desc / 100)
         const subtotal = item.cantidad * precioEfectivo
@@ -316,34 +364,104 @@ function renderCarrito() {
         const subtotalFormateado = subtotal.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         const precioFormateado = item.precioVenta.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
+        // 1. Stock base disponible total del producto
+        const stockBaseTotal = Number(item.stockBase) || 0
+
+        // 2. Stock reservado por OTROS ítems del mismo producto en el carrito
+        const stockUsadoOtros = carrito
+            .filter((i, idx) => i.productoId === item.productoId && idx !== index)
+            .reduce((sum, i) => sum + (Number(i.cantidad) * Number(i.factorConversion)), 0)
+
+        // 3. Stock disponible restante para esta línea
+        const stockDisponibleRestante = Math.max(0, stockBaseTotal - stockUsadoOtros)
+
+        // 4. Cantidad consumida en unidad base por esta línea
+        const cantidadBaseRequerida = Number(item.cantidad) * Number(item.factorConversion)
+
+        // 5. Validación de stock excedido
+        const excedeStock = cantidadBaseRequerida > (stockDisponibleRestante + 0.0001) || Number(item.cantidad) <= 0
+        if (excedeStock) {
+            hayErrorStock = true
+        }
+
+        const presentacionesProducto = catalogo
+            .filter(p => p.productos && p.productos.id === item.productoId)
+            .map(p => ({
+                id: p.id,
+                nombre: p.nombre_presentacion,
+                factor: Number(p.factor_conversion) || 1,
+                precio: Number(p.precio_venta) || 0
+            }))
+
+        let selectPresentacionesHtml = ''
+        if (presentacionesProducto.length > 1) {
+            selectPresentacionesHtml = `
+                <select class="select-presentacion-item text-xs font-bold bg-white text-slate-800 border border-slate-300 rounded-lg px-2 py-1 outline-none focus:border-emerald-500 shrink-0" data-index="${index}">
+                    ${presentacionesProducto.map(p => `
+                        <option value="${p.id}" ${p.id === item.presentacionId ? 'selected' : ''}>
+                            ${p.nombre} (x${p.factor}) — Q${p.precio.toFixed(2)}
+                        </option>
+                    `).join('')}
+                </select>
+            `
+        } else {
+            selectPresentacionesHtml = `<span class="text-xs font-bold text-emerald-700">${item.nombrePresentacion} — Q${precioFormateado} c/u</span>`
+        }
+
+        const cantidadBaseTotalStr = cantidadBaseRequerida.toFixed(3)
+        const stockDisponibleStr = stockDisponibleRestante.toFixed(3)
+        const unidadBaseText = item.unidadBase || 'unidad'
+
         lista.innerHTML += `
-            <div class="p-3 bg-slate-50 border-2 border-slate-200 rounded-2xl flex items-center justify-between gap-3 transition hover:border-emerald-300">
-                <div class="flex-1 min-w-0">
-                    <div class="font-extrabold text-slate-900 text-sm truncate">${item.nombreProducto}</div>
-                    <div class="text-xs font-bold text-emerald-700 flex items-center gap-1.5 flex-wrap mt-0.5">
-                        <span>${item.nombrePresentacion} — Q${precioFormateado} c/u</span>
-                        ${desc > 0 ? `<span class="bg-amber-100 text-amber-900 text-[10px] font-black px-1.5 py-0.5 rounded border border-amber-300">-${desc}% desc</span>` : ''}
+            <div class="p-3 bg-slate-50 border-2 ${excedeStock ? 'border-rose-500 bg-rose-50' : 'border-slate-200 hover:border-emerald-300'} rounded-2xl space-y-2.5 transition">
+                <!-- Fila Superior -->
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex-1 min-w-0">
+                        <div class="font-extrabold text-slate-900 text-sm truncate">${item.nombreProducto}</div>
+                        <div class="flex items-center gap-1.5 flex-wrap mt-0.5">
+                            ${selectPresentacionesHtml}
+                            ${desc > 0 ? `<span class="bg-amber-100 text-amber-900 text-[10px] font-black px-1.5 py-0.5 rounded border border-amber-300">-${desc}% desc</span>` : ''}
+                        </div>
+                    </div>
+                    <!-- Botón Vender Todo el Disponible -->
+                    <button type="button" class="btn-max-item text-[10px] font-black px-2 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300 transition shrink-0 flex items-center gap-1" data-index="${index}" title="Llenar con el máximo stock disponible">
+                        <span>⚡ Max</span>
+                    </button>
+                </div>
+
+                <!-- Fila Media -->
+                <div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-200">
+                    <div class="flex items-center gap-1">
+                        <div class="flex items-center border-2 border-slate-300 rounded-xl overflow-hidden bg-white shadow-sm">
+                            <button type="button" class="btn-restar px-2.5 py-1 text-slate-700 hover:bg-slate-100 font-black transition text-sm" data-index="${index}">-</button>
+                            <input type="number" step="0.001" min="0.001" class="input-cantidad-item w-16 px-1 py-0.5 text-center text-xs font-black text-slate-900 bg-transparent outline-none border-x-2 border-slate-300" value="${item.cantidad}" data-index="${index}">
+                            <button type="button" class="btn-sumar px-2.5 py-1 text-slate-700 hover:bg-slate-100 font-black transition text-sm" data-index="${index}">+</button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <div class="text-right">
+                            <div class="font-black text-slate-900 text-sm">Q${subtotalFormateado}</div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" class="btn-descuento-item text-xs text-amber-800 hover:text-amber-900 font-extrabold transition px-2 py-0.5 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-lg" data-index="${index}" title="Aplicar Descuento %">
+                                🏷️
+                            </button>
+                            <button type="button" class="btn-eliminar text-xs text-rose-700 hover:text-rose-900 font-extrabold transition px-2 py-0.5 bg-rose-100 hover:bg-rose-200 border border-rose-300 rounded-lg" data-index="${index}" title="Eliminar ítem">
+                                🗑️
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Controles de Cantidad -->
-                <div class="flex items-center border-2 border-slate-300 rounded-xl overflow-hidden bg-white shadow-sm shrink-0">
-                    <button class="btn-restar px-3 py-1 text-slate-700 hover:bg-slate-100 font-black transition text-sm" data-id="${item.presentacionId}">-</button>
-                    <span class="px-3 py-1 text-xs font-black text-slate-900 min-w-[2rem] text-center">${item.cantidad}</span>
-                    <button class="btn-sumar px-3 py-1 text-slate-700 hover:bg-slate-100 font-black transition text-sm" data-id="${item.presentacionId}">+</button>
-                </div>
-
-                <!-- Subtotal y Botones Acción -->
-                <div class="text-right shrink-0 min-w-[5rem] flex flex-col items-end">
-                    <div class="font-black text-slate-900 text-sm">Q${subtotalFormateado}</div>
-                    <div class="flex items-center gap-1.5 mt-1">
-                        <button class="btn-descuento-item text-xs text-amber-800 hover:text-amber-900 font-extrabold transition px-2 py-0.5 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-lg" data-id="${item.presentacionId}" title="Aplicar Descuento %">
-                            🏷️ %
-                        </button>
-                        <button class="btn-eliminar text-xs text-rose-700 hover:text-rose-900 font-extrabold transition px-2 py-0.5 bg-rose-100 hover:bg-rose-200 border border-rose-300 rounded-lg" data-id="${item.presentacionId}" title="Eliminar ítem">
-                            🗑️
-                        </button>
-                    </div>
+                <!-- Fila Inferior -->
+                <div class="flex items-center justify-between text-[10px] font-bold pt-1 border-t border-slate-200">
+                    <span class="px-1.5 py-0.5 rounded bg-slate-200 text-slate-800 font-mono">
+                        = ${cantidadBaseTotalStr} ${unidadBaseText}
+                    </span>
+                    <span class="${excedeStock ? 'text-rose-600 font-black animate-pulse' : 'text-slate-500'}">
+                        ${excedeStock ? `⚠️ Stock insuficiente (Disp: ${stockDisponibleStr} ${unidadBaseText})` : `Disp: ${stockDisponibleStr} ${unidadBaseText}`}
+                    </span>
                 </div>
             </div>
         `
@@ -351,24 +469,90 @@ function renderCarrito() {
 
     const totalFormateado = granTotal.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     totalEl.textContent = `Q${totalFormateado}`
-    if (btnCompletar) btnCompletar.disabled = false
+
+    if (btnCompletar) {
+        if (hayErrorStock) {
+            btnCompletar.disabled = true
+            btnCompletar.innerHTML = '<span>⚠️ Ajustar Cantidad (Stock Excedido)</span>'
+            btnCompletar.className = 'w-full py-3.5 px-4 rounded-2xl bg-rose-600 opacity-80 cursor-not-allowed text-white font-extrabold text-xs shadow-lg transition'
+        } else {
+            btnCompletar.disabled = false
+            btnCompletar.innerHTML = '<span>💳 Registrar Venta (POS)</span>'
+            btnCompletar.className = 'w-full py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-sm shadow-md transition flex items-center justify-center gap-2'
+        }
+    }
+
+    asignarEventosCarrito()
+}
+
+function asignarEventosCarrito() {
+    const lista = document.getElementById('lista-carrito')
+    if (!lista) return
 
     lista.querySelectorAll('.btn-restar').forEach(btn => {
-        btn.addEventListener('click', () => cambiarCantidad(btn.getAttribute('data-id'), -1))
+        btn.addEventListener('click', (e) => {
+            e.preventDefault()
+            const idx = Number(btn.getAttribute('data-index'))
+            const item = carrito[idx]
+            if (item) {
+                if (item.cantidad > 1) {
+                    item.cantidad = Math.round((item.cantidad - 1) * 1000) / 1000
+                } else {
+                    solicitarEliminacionItemIndex(idx)
+                }
+                renderCarrito()
+            }
+        })
     })
+
     lista.querySelectorAll('.btn-sumar').forEach(btn => {
-        btn.addEventListener('click', () => cambiarCantidad(btn.getAttribute('data-id'), 1))
+        btn.addEventListener('click', (e) => {
+            e.preventDefault()
+            const idx = Number(btn.getAttribute('data-index'))
+            const item = carrito[idx]
+            if (item) {
+                item.cantidad = Math.round((item.cantidad + 1) * 1000) / 1000
+                renderCarrito()
+            }
+        })
     })
+
+    lista.querySelectorAll('.input-cantidad-item').forEach(input => {
+        input.addEventListener('change', (e) => {
+            const idx = Number(input.getAttribute('data-index'))
+            cambiarCantidadDirecta(idx, e.target.value)
+        })
+    })
+
+    lista.querySelectorAll('.select-presentacion-item').forEach(select => {
+        select.addEventListener('change', (e) => {
+            const idx = Number(select.getAttribute('data-index'))
+            cambiarPresentacionItem(idx, e.target.value)
+        })
+    })
+
+    lista.querySelectorAll('.btn-max-item').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault()
+            const idx = Number(btn.getAttribute('data-index'))
+            venderTodoElDisponible(idx)
+        })
+    })
+
     lista.querySelectorAll('.btn-descuento-item').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault()
-            solicitarDescuentoItem(btn.getAttribute('data-id'))
+            const idx = Number(btn.getAttribute('data-index'))
+            const item = carrito[idx]
+            if (item) solicitarDescuentoItem(item.presentacionId)
         })
     })
+
     lista.querySelectorAll('.btn-eliminar').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault()
-            solicitarEliminacionItem(btn.getAttribute('data-id'))
+            const idx = Number(btn.getAttribute('data-index'))
+            solicitarEliminacionItemIndex(idx)
         })
     })
 }

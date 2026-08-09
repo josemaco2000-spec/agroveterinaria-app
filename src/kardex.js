@@ -84,11 +84,15 @@ async function cargarMovimientosKardex() {
             .order('created_at', { ascending: false })
 
         // Aplicar Filtros Dinámicos
+        const ubicacionId = document.getElementById('filtro-ubicacion')?.value
         const productoId = document.getElementById('filtro-producto')?.value
         const tipoMovimiento = document.getElementById('filtro-tipo')?.value
         const fechaInicio = document.getElementById('fecha-inicio')?.value
         const fechaFin = document.getElementById('fecha-fin')?.value
 
+        if (ubicacionId) {
+            query = query.eq('ubicacion_id', ubicacionId)
+        }
         if (productoId) {
             query = query.eq('producto_id', productoId)
         }
@@ -147,6 +151,16 @@ async function cargarMovimientosKardex() {
                     badgeTipo = '<span class="inline-block bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20 text-xs font-bold px-2.5 py-1 rounded-full">📥 ENTRADA COMPRA</span>'
                     signoCantidad = '+'
                     colorCantidad = 'text-emerald-600 dark:text-emerald-400 font-extrabold'
+                    break
+                case 'TRASLADO_ENTRADA':
+                    badgeTipo = '<span class="inline-block bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold px-2.5 py-1 rounded-full">📦 TRASLADO ENTRADA</span>'
+                    signoCantidad = '+'
+                    colorCantidad = 'text-emerald-400 font-extrabold'
+                    break
+                case 'TRASLADO_SALIDA':
+                    badgeTipo = '<span class="inline-block bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-bold px-2.5 py-1 rounded-full">📦 TRASLADO SALIDA</span>'
+                    signoCantidad = '-'
+                    colorCantidad = 'text-amber-400 font-extrabold'
                     break
                 case 'SALIDA_VENTA':
                     badgeTipo = '<span class="inline-block bg-blue-500/10 text-blue-600 dark:text-blue-300 border border-blue-500/20 text-xs font-bold px-2.5 py-1 rounded-full">📤 SALIDA VENTA (FEFO)</span>'
