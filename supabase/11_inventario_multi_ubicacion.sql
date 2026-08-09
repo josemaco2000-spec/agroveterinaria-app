@@ -18,7 +18,25 @@ VALUES
   ('22222222-2222-2222-2222-222222222222', 'Área de Venta', 'punto_venta')
 ON CONFLICT (nombre) DO NOTHING;
 
--- 2. Agregar columnas ubicacion_id y traslado_id a movimientos_inventario
+-- 2. Actualizar restricción CHECK de tipo_movimiento en movimientos_inventario
+ALTER TABLE movimientos_inventario 
+  DROP CONSTRAINT IF EXISTS movimientos_inventario_tipo_movimiento_check;
+
+ALTER TABLE movimientos_inventario 
+  ADD CONSTRAINT movimientos_inventario_tipo_movimiento_check 
+  CHECK (tipo_movimiento IN (
+    'ENTRADA_COMPRA', 
+    'SALIDA_VENTA', 
+    'TRASLADO_SALIDA', 
+    'TRASLADO_ENTRADA', 
+    'AJUSTE_ENTRADA', 
+    'AJUSTE_SALIDA', 
+    'MERMA_VENCIDO',
+    'AJUSTE_POSITIVO',
+    'AJUSTE_NEGATIVO'
+  ));
+
+-- 3. Agregar columnas ubicacion_id y traslado_id a movimientos_inventario
 ALTER TABLE movimientos_inventario 
   ADD COLUMN IF NOT EXISTS ubicacion_id UUID REFERENCES ubicaciones(id) DEFAULT '11111111-1111-1111-1111-111111111111',
   ADD COLUMN IF NOT EXISTS traslado_id UUID;
@@ -28,7 +46,7 @@ UPDATE movimientos_inventario
 SET ubicacion_id = '11111111-1111-1111-1111-111111111111' 
 WHERE ubicacion_id IS NULL;
 
--- 2.b AUTO-REPARACIÓN DE LOTES EXISTENTES SINO TIENEN FILA EN MOVIMIENTOS_INVENTARIO
+-- 3.b AUTO-REPARACIÓN DE LOTES EXISTENTES SINO TIENEN FILA EN MOVIMIENTOS_INVENTARIO
 INSERT INTO movimientos_inventario (
   producto_id,
   lote_id,
@@ -46,7 +64,7 @@ FROM lotes l
 LEFT JOIN movimientos_inventario m ON m.lote_id = l.id
 WHERE l.stock_actual > 0 AND m.id IS NULL;
 
--- 3. Crear tabla de stock mínimo (puntos de reorden) por ubicación
+-- 4. Crear tabla de stock mínimo (puntos de reorden) por ubicación
 CREATE TABLE IF NOT EXISTS stock_minimo_ubicacion (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   producto_id UUID REFERENCES productos(id) ON DELETE CASCADE,
@@ -72,7 +90,7 @@ CREATE POLICY "Lectura stock minimo autenticados" ON stock_minimo_ubicacion FOR 
 CREATE POLICY "Admin gestiona stock minimo" ON stock_minimo_ubicacion FOR ALL TO authenticated 
 USING ( (SELECT rol FROM perfiles WHERE id = auth.uid()) = 'admin' );
 
--- 4. Vistas de Stock Puro Calculado por Ubicación (desde movimientos_inventario)
+-- 5. Vistas de Stock Puro Calculado por Ubicación (desde movimientos_inventario)
 
 -- Vista A: Stock por lote y ubicación
 CREATE OR REPLACE VIEW v_stock_lotes_ubicacion AS
@@ -117,7 +135,7 @@ LEFT JOIN (
 ) s ON s.producto_id = p.id AND s.ubicacion_id = u.id
 LEFT JOIN stock_minimo_ubicacion sm ON sm.producto_id = p.id AND sm.ubicacion_id = u.id;
 
--- 5. Procedimiento Almacenado (RPC) para Traslados Atómicos entre Ubicaciones
+-- 6. Procedimiento Almacenado (RPC) para Traslados Atómicos entre Ubicaciones
 CREATE OR REPLACE FUNCTION realizar_traslado_inventario(
   p_producto_id UUID,
   p_lote_id UUID,
@@ -191,7 +209,7 @@ BEGIN
 END;
 $$;
 
--- 6. Actualizar RPC procesar_salida_fefo para vender EXCLUSIVAMENTE contra Área de Venta (o ubicación especificada)
+-- 7. Actualizar RPC procesar_salida_fefo para vender EXCLUSIVAMENTE contra Área de Venta (o ubicación especificada)
 CREATE OR REPLACE FUNCTION procesar_salida_fefo(
   p_producto_id UUID,
   p_cantidad_base DECIMAL(12,3),
