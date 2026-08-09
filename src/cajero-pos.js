@@ -408,8 +408,8 @@ function renderCarrito() {
             selectPresentacionesHtml = `<span class="text-xs font-bold text-emerald-700">${item.nombrePresentacion} — Q${precioFormateado} c/u</span>`
         }
 
-        const cantidadBaseTotalStr = cantidadBaseRequerida.toFixed(3)
-        const stockDisponibleStr = stockDisponibleRestante.toFixed(3)
+        const cantidadBaseTotalStr = cantidadBaseRequerida.toFixed(2)
+        const stockDisponibleStr = stockDisponibleRestante.toFixed(2)
         const unidadBaseText = item.unidadBase || 'unidad'
 
         lista.innerHTML += `
@@ -434,7 +434,7 @@ function renderCarrito() {
                     <div class="flex items-center gap-1">
                         <div class="flex items-center border-2 border-slate-300 rounded-xl overflow-hidden bg-white shadow-sm">
                             <button type="button" class="btn-restar px-2.5 py-1 text-slate-700 hover:bg-slate-100 font-black transition text-sm" data-index="${index}">-</button>
-                            <input type="number" step="0.001" min="0.001" class="input-cantidad-item w-16 px-1 py-0.5 text-center text-xs font-black text-slate-900 bg-transparent outline-none border-x-2 border-slate-300" value="${item.cantidad}" data-index="${index}">
+                            <input type="number" step="0.01" min="0.01" class="input-cantidad-item w-16 px-1 py-0.5 text-center text-xs font-black text-slate-900 bg-transparent outline-none border-x-2 border-slate-300" value="${item.cantidad}" data-index="${index}">
                             <button type="button" class="btn-sumar px-2.5 py-1 text-slate-700 hover:bg-slate-100 font-black transition text-sm" data-index="${index}">+</button>
                         </div>
                     </div>

@@ -194,7 +194,7 @@ async function cargarMovimientosKardex() {
                     <td class="p-3.5 text-xs">${loteDisplay}</td>
                     <td class="p-3.5">${badgeTipo}</td>
                     <td class="p-3.5 text-right ${colorCantidad}">
-                        ${signoCantidad}${m.cantidad} <span class="text-xs text-slate-500 dark:text-slate-400 font-normal">${prod?.unidad_base || ''}</span>
+                        ${signoCantidad}${Number(m.cantidad).toFixed(2)} <span class="text-xs text-slate-500 dark:text-slate-400 font-normal">${prod?.unidad_base || ''}</span>
                     </td>
                     <td class="p-3.5 pr-6">${refDisplay}</td>
                 </tr>
