@@ -308,8 +308,8 @@ function renderCatalogo(items) {
                 <!-- Card Body -->
                 <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
                     <div>
-                        <h3 class="font-bold text-white text-sm sm:text-base leading-snug line-clamp-2 group-hover:text-emerald-300 transition-colors">${prod.nombre}</h3>
-                        <p class="text-xs font-semibold text-emerald-400 mt-1">${pres.nombre_presentacion}</p>
+                        <h3 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base leading-snug line-clamp-2 group-hover:text-emerald-500 dark:group-hover:text-emerald-300 transition-colors">${prod.nombre}</h3>
+                        <p class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-1">${pres.nombre_presentacion}</p>
                     </div>
 
                     <div class="space-y-2.5">
@@ -485,7 +485,7 @@ function renderCarrito() {
         lista.innerHTML += `
             <div class="py-2.5 px-3 bg-forest-950/60 border border-emerald-500/10 rounded-2xl flex items-center justify-between gap-2.5 transition hover:border-emerald-500/30">
                 <div class="flex-1 min-w-0">
-                    <div class="font-bold text-white text-xs truncate">${item.nombreProducto}</div>
+                    <div class="font-bold text-slate-900 dark:text-white text-xs truncate">${item.nombreProducto}</div>
                     <div class="text-[11px] font-semibold text-emerald-400 flex items-center gap-1.5 flex-wrap mt-0.5">
                         <span>${item.nombrePresentacion} — Q${precioFormateado} c/u</span>
                         ${descuentoPct > 0 ? `<span class="bg-amber-500/20 text-amber-300 text-[10px] font-extrabold px-1.5 py-0.2 rounded border border-amber-500/30">-${descuentoPct}% desc</span>` : ''}
@@ -495,13 +495,13 @@ function renderCarrito() {
                 <!-- Controles de Cantidad -->
                 <div class="flex items-center border border-slate-700/80 rounded-xl overflow-hidden bg-forest-950/90 shadow-sm shrink-0">
                     <button class="btn-restar px-2 py-0.5 text-slate-300 hover:bg-slate-800 font-bold transition text-xs" data-id="${item.presentacionId}">-</button>
-                    <span class="px-2.5 py-0.5 text-xs font-bold text-white min-w-[1.75rem] text-center">${item.cantidad}</span>
+                    <span class="px-2.5 py-0.5 text-xs font-bold text-slate-900 dark:text-white min-w-[1.75rem] text-center">${item.cantidad}</span>
                     <button class="btn-sumar px-2 py-0.5 text-slate-300 hover:bg-slate-800 font-bold transition text-xs" data-id="${item.presentacionId}">+</button>
                 </div>
 
                 <!-- Subtotal y Botones Acción -->
                 <div class="text-right shrink-0 min-w-[4.5rem] flex flex-col items-end">
-                    <div class="font-extrabold text-white text-xs">Q${subtotalFormateado}</div>
+                    <div class="font-extrabold text-slate-900 dark:text-white text-xs">Q${subtotalFormateado}</div>
                     <div class="flex items-center gap-1 mt-1">
                         <button class="btn-descuento-item text-[10px] text-amber-300 hover:text-amber-200 font-extrabold transition px-1.5 py-0.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-md" data-id="${item.presentacionId}" title="Aplicar Descuento %">
                             🏷️ %

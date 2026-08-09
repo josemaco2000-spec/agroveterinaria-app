@@ -31,6 +31,9 @@ CREATE TABLE IF NOT EXISTS detalle_compras (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Asegurar columna lote_id en caso de que la tabla detalle_compras ya existiera previamente
+ALTER TABLE detalle_compras ADD COLUMN IF NOT EXISTS lote_id UUID REFERENCES lotes(id) ON DELETE SET NULL;
+
 -- Habilitar RLS y políticas
 ALTER TABLE proveedores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE compras ENABLE ROW LEVEL SECURITY;

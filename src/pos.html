@@ -77,12 +77,6 @@
 
         function updateThemeToggleButtons() {
             const isDark = document.documentElement.classList.contains('dark');
-            document.querySelectorAll('#theme-toggle-knob').forEach(knob => {
-                knob.style.transform = isDark ? 'translateX(0px)' : 'translateX(20px)';
-            });
-            document.querySelectorAll('#theme-toggle-icon').forEach(icon => {
-                icon.textContent = isDark ? '🌙' : '☀️';
-            });
             document.querySelectorAll('#theme-toggle-label').forEach(label => {
                 label.textContent = isDark ? 'Modo Oscuro' : 'Modo Claro';
             });
@@ -191,6 +185,10 @@
             color: #1e293b !important;
         }
 
+        html:not(.dark) .text-white:not(button):not(.btn-pago-opt):not([class*="bg-emerald"]):not([class*="bg-blue"]):not([class*="bg-rose"]):not([class*="bg-amber"]):not([class*="bg-slate-8"]) {
+            color: #0f172a !important;
+        }
+
         html:not(.dark) .bg-forest-950, 
         html:not(.dark) .bg-forest-950\/80, 
         html:not(.dark) .bg-forest-950\/90 {
@@ -200,6 +198,15 @@
         html:not(.dark) .border-slate-800, 
         html:not(.dark) .border-slate-700 {
             border-color: rgba(226, 232, 240, 0.9) !important;
+        }
+
+        /* Custom spring physics transitions for the theme toggle circle */
+        .ease-spring {
+            transition-timing-function: cubic-bezier(0.68, -0.6, 0.32, 1.6);
+        }
+        /* Fallback mapping for translate-x-4.5 (18px displacement) */
+        .dark .theme-toggle-circle {
+            transform: translateX(1.125rem) !important;
         }
 
         /* Estilos de Impresión Térmica (80mm / 58mm) */
@@ -339,21 +346,22 @@
 
         <!-- Bottom Section: Theme Switcher & Logout -->
         <div class="pt-4 border-t border-emerald-500/10 space-y-2">
-            <!-- Minimalist Sliding Theme Switcher -->
-            <button type="button" onclick="toggleTheme()" 
-                    title="Cambiar Tema"
-                    class="w-full flex items-center justify-between px-2.5 py-2 rounded-2xl glass-card border border-emerald-500/20 hover:border-emerald-400/50 hover:shadow-[0_0_15px_rgba(16,185,129,0.25)] transition-all duration-300 group/theme cursor-pointer overflow-hidden">
-                <div class="flex items-center gap-3">
-                    <div class="relative w-11 h-6 rounded-full bg-forest-950/80 border border-emerald-500/30 p-0.5 transition-colors duration-300 shadow-inner flex items-center shrink-0">
-                        <div id="theme-toggle-knob" class="w-5 h-5 rounded-full bg-gradient-to-tr from-emerald-500 to-emerald-400 text-forest-950 font-bold text-[10px] flex items-center justify-center shadow-md transform transition-transform duration-300">
-                            <span id="theme-toggle-icon">🌙</span>
-                        </div>
-                    </div>
-                    <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200 text-slate-300">
+            <!-- Premium Sliding Theme Switcher -->
+            <div class="group relative flex items-center w-max p-1.5 rounded-full transition-all duration-400 ease-in-out cursor-pointer overflow-hidden animate-[fadeIn_0.6s_ease-out] bg-gradient-to-b from-transparent to-slate-900/5 dark:to-white/5 border border-transparent dark:border-white/10 shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1)] hover:bg-white/40 dark:hover:bg-slate-800/40 backdrop-blur-sm hover:pr-4">
+                <!-- Toggle Switch (60% smaller, sculpted) -->
+                <button id="theme-toggle" type="button" onclick="toggleTheme()" class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-all duration-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.15)] bg-gradient-to-r from-slate-300 to-slate-400 dark:from-emerald-500 dark:to-emerald-800 dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),2px_0_12px_rgba(16,185,129,0.4)]" title="Cambiar Tema">
+                    <!-- The Knob -->
+                    <span class="theme-toggle-circle inline-block h-4 w-4 transform rounded-full bg-gradient-to-br from-white to-gray-100 shadow-md transition-transform duration-500 ease-spring translate-x-0.5 dark:translate-x-4.5"></span>
+                </button>
+                <!-- Expanding Text Container -->
+                <div class="grid grid-rows-[1fr] transition-all duration-400 ease-in-out max-w-0 opacity-0 group-hover:max-w-[150px] group-hover:opacity-100">
+                    <div class="overflow-hidden whitespace-nowrap pl-2.5 flex items-center space-x-1.5 text-xs font-semibold tracking-wide text-slate-600 dark:text-slate-300">
+                        <span class="text-[10px]">☀️</span>
                         <span id="theme-toggle-label">Modo Oscuro</span>
-                    </span>
+                        <span class="text-[10px]">🌙</span>
+                    </div>
                 </div>
-            </button>
+            </div>
 
             <!-- Logout Button -->
             <button id="btn-logout" 
@@ -382,7 +390,7 @@
                         <span class="text-xs text-slate-500">•</span>
                         <span id="status-conexion" class="text-xs text-emerald-400 font-semibold">🟢 En Línea</span>
                     </div>
-                    <h1 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight">Caja Registradora POS</h1>
+                    <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Caja Registradora POS</h1>
                 </div>
 
                 <div class="flex items-center gap-3">
@@ -436,7 +444,7 @@
                             <div class="flex items-center justify-between border-b border-emerald-500/10 pb-3">
                                 <div class="flex items-center gap-2.5">
                                     <span class="text-xl">🛒</span>
-                                    <h2 class="text-lg font-bold text-white">Carrito de Venta</h2>
+                                    <h2 class="text-lg font-bold text-slate-900 dark:text-white">Carrito de Venta</h2>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <button id="btn-aplicar-descuento-cart" class="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 transition flex items-center gap-1">
@@ -500,8 +508,8 @@
 
                             <!-- Total Display -->
                             <div class="p-4 rounded-3xl bg-forest-950/90 border border-amber-500/20 text-center shadow-inner">
-                                <span class="text-[11px] font-extrabold text-amber-400 uppercase tracking-widest">Total a Cobrar</span>
-                                <h2 id="total-carrito" class="text-4xl font-extrabold text-white tracking-tight font-sans mt-1">
+                                <span class="text-[11px] font-extrabold text-amber-500 dark:text-amber-400 uppercase tracking-widest">Total a Cobrar</span>
+                                <h2 id="total-carrito" class="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight font-sans mt-1">
                                     Q0.00
                                 </h2>
                             </div>

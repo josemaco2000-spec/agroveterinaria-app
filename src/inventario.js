@@ -6,24 +6,38 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 
 // Validar que sea el Dueño (Admin) el que está aquí
 async function validarAcceso() {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-        window.location.href = 'index.html'
-        return
-    }
+    try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+            window.location.href = 'index.html'
+            return
+        }
 
-    const { data: perfil, error } = await supabase
-        .from('perfiles')
-        .select('rol')
-        .eq('id', session.user.id)
-        .single()
+        const { data: perfil, error } = await supabase
+            .from('perfiles')
+            .select('rol, nombre_completo')
+            .eq('id', session.user.id)
+            .single()
 
-    if (error || perfil?.rol !== 'admin') {
-        window.location.href = 'pos.html'
-        return
+        if (error || perfil?.rol !== 'admin') {
+            window.location.href = 'pos.html'
+            return
+        }
+
+        const userInfoEl = document.getElementById('usuario-info') || document.getElementById('user-email')
+        if (userInfoEl) {
+            userInfoEl.textContent = perfil?.nombre_completo || session.user.email || 'Usuario Campo Alto'
+        }
+
+        cargarInventario()
+    } catch (err) {
+        console.error("Error en validarAcceso:", err)
+        const userInfoEl = document.getElementById('usuario-info') || document.getElementById('user-email')
+        if (userInfoEl) {
+            userInfoEl.textContent = 'Usuario Campo Alto'
+        }
+        cargarInventario()
     }
-    
-    cargarInventario()
 }
 
 // ----------------------------------------------------
@@ -225,38 +239,42 @@ document.getElementById('form-producto')?.addEventListener('submit', async (e) =
 // ----------------------------------------------------
 async function cargarInventario() {
     const tbody = document.getElementById('tabla-productos')
-    tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-500">Cargando inventario...</td></tr>'
+    const countBadge = document.getElementById('total-productos-count')
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Cargando inventario...</td></tr>'
+    if (countBadge) countBadge.textContent = 'Cargando...'
 
-    const { data: productos, error } = await supabase
-        .from('productos')
-        .select(`
-            *,
-            productos_costos (precio_costo)
-        `)
-        .order('created_at', { ascending: false })
+    try {
+        const { data: productos, error } = await supabase
+            .from('productos')
+            .select(`
+                *,
+                productos_costos (precio_costo)
+            `)
+            .order('created_at', { ascending: false })
 
-    if (error) {
-        console.error("Error cargando inventario:", error)
-        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-red-500 font-semibold">Error al cargar productos: ${error.message}</td></tr>`
-        return
-    }
+        if (error) throw error
 
-    tbody.innerHTML = ''
+        if (countBadge) {
+            countBadge.textContent = `${productos ? productos.length : 0} productos`
+        }
 
-    if (!productos || productos.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="6" class="p-0">
-                    <div class="py-12 px-6 rounded-3xl bg-forest-950/40 border border-dashed border-emerald-500/20 text-center flex flex-col items-center justify-center my-2">
-                        <svg class="w-16 h-16 text-slate-400 dark:text-slate-500 mb-3 stroke-[1.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                        </svg>
-                        <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">No hay productos registrados en Agrovet Campo Alto aún.</p>
-                    </div>
-                </td>
-            </tr>`
-        return
-    }
+        if (tbody) {
+            tbody.innerHTML = ''
+
+            if (!productos || productos.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="p-0">
+                            <div class="py-12 px-6 rounded-3xl bg-forest-950/40 border border-dashed border-emerald-500/20 text-center flex flex-col items-center justify-center my-2">
+                                <svg class="w-16 h-16 text-slate-400 dark:text-slate-500 mb-3 stroke-[1.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                </svg>
+                                <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">No hay productos registrados en Agrovet Campo Alto aún.</p>
+                            </div>
+                        </td>
+                    </tr>`
+                return
+            }
 
     productos.forEach(prod => {
         const costoObj = Array.isArray(prod.productos_costos) ? prod.productos_costos[0] : prod.productos_costos
@@ -307,11 +325,19 @@ async function cargarInventario() {
         })
     })
 
-    tbody.querySelectorAll('.btn-abrir-kardex').forEach(btn => {
-        btn.addEventListener('click', () => {
-            abrirModalKardex(btn.getAttribute('data-id'), btn.getAttribute('data-nombre'))
+        tbody.querySelectorAll('.btn-abrir-kardex').forEach(btn => {
+            btn.addEventListener('click', () => {
+                abrirModalKardex(btn.getAttribute('data-id'), btn.getAttribute('data-nombre'))
+            })
         })
-    })
+    }
+    } catch (err) {
+        console.error("Error cargando inventario:", err)
+        if (countBadge) countBadge.textContent = 'Error al cargar'
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-red-500 font-semibold">Error al cargar productos: ${err.message || err}</td></tr>`
+        }
+    }
 }
 
 // ----------------------------------------------------

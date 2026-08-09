@@ -223,8 +223,11 @@ async function abrirDetalleCompra(compraId) {
             </div>
         `
 
-        // Detalles
-        const { data: detalles, error: errD } = await supabase
+        // Detalles (Resiliente a variaciones de claves foráneas en Supabase)
+        let detalles = []
+
+        // Intento 1: embed con FK hint explícita lotes!lote_id
+        let { data: detData, error: errD } = await supabase
             .from('detalle_compras')
             .select(`
                 *,
@@ -232,15 +235,74 @@ async function abrirDetalleCompra(compraId) {
                     nombre,
                     unidad_base
                 ),
-                lotes (
+                lotes!lote_id (
                     numero_lote
                 )
             `)
             .eq('compra_id', compraId)
 
-        if (errD) throw errD
+        // Intento 2: embed simple
+        if (errD) {
+            const res2 = await supabase
+                .from('detalle_compras')
+                .select(`
+                    *,
+                    productos (
+                        nombre,
+                        unidad_base
+                    ),
+                    lotes (
+                        numero_lote
+                    )
+                `)
+                .eq('compra_id', compraId)
+            detData = res2.data
+            errD = res2.error
+        }
+
+        // Intento 3: Fallback si la relación de lotes no existe en el caché de PostgREST en Supabase
+        if (errD) {
+            console.warn("Embed de lotes falló en Supabase, realizando fallback manual:", errD.message || errD)
+            const { data: fallbackData, error: errFallback } = await supabase
+                .from('detalle_compras')
+                .select(`
+                    *,
+                    productos (
+                        nombre,
+                        unidad_base
+                    )
+                `)
+                .eq('compra_id', compraId)
+
+            if (errFallback) throw errFallback
+
+            const loteIds = [...new Set((fallbackData || []).map(d => d.lote_id).filter(Boolean))]
+            let mapLotes = {}
+            if (loteIds.length > 0) {
+                const { data: lotesData } = await supabase
+                    .from('lotes')
+                    .select('id, numero_lote')
+                    .in('id', loteIds)
+
+                if (lotesData) {
+                    lotesData.forEach(l => { mapLotes[l.id] = l.numero_lote })
+                }
+            }
+
+            detalles = (fallbackData || []).map(d => ({
+                ...d,
+                lotes: d.lote_id ? { numero_lote: mapLotes[d.lote_id] || '--' } : null
+            }))
+        } else {
+            detalles = detData || []
+        }
 
         tbody.innerHTML = ''
+        if (detalles.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">No hay renglones para esta compra.</td></tr>'
+            return
+        }
+
         detalles.forEach(d => {
             const subtotal = Number(d.subtotal) || 0
             tbody.innerHTML += `
@@ -255,8 +317,8 @@ async function abrirDetalleCompra(compraId) {
         })
 
     } catch (err) {
-        console.error("Error al cargar detalles de la compra:", err)
-        generalEl.innerHTML = '<span class="text-red-500">Error cargando detalles</span>'
+        console.error("Error al cargar detalles de la compra:", err.message || err, err)
+        generalEl.innerHTML = `<span class="text-red-500">Error cargando detalles: ${err.message || 'Error desconocido'}</span>`
     }
 }
 

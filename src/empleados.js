@@ -140,17 +140,17 @@ function renderTablaEmpleados(lista) {
             : `<span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">Vendedor</span>`
 
         return `
-            <tr class="hover:bg-slate-800/40 transition-colors group">
-                <td class="py-3.5 px-4 font-mono text-slate-300">
+            <tr class="glass-panel glass-panel-hover rounded-2xl transition-all duration-200 shadow-sm text-slate-200 group">
+                <td class="py-4 pl-6 font-mono text-slate-300">
                     ${correo}
                 </td>
-                <td class="py-3.5 px-4 font-bold text-white">
+                <td class="py-4 font-bold text-slate-800 dark:text-white">
                     ${nombre}
                 </td>
-                <td class="py-3.5 px-4 text-center">
+                <td class="py-4 text-center">
                     ${rolBadge}
                 </td>
-                <td class="py-3.5 px-4 text-center">
+                <td class="py-4 text-center">
                     <div class="inline-flex items-center justify-center gap-2">
                         <span class="pin-text font-mono font-bold tracking-widest text-slate-300" data-pin="${pin}">
                             ••••
@@ -160,7 +160,7 @@ function renderTablaEmpleados(lista) {
                         </button>
                     </div>
                 </td>
-                <td class="py-3.5 px-4 text-right">
+                <td class="py-4 pr-6 text-right">
                     <button type="button" 
                             data-id="${emp.id}" 
                             class="btn-editar-empleado px-3 py-1.5 rounded-xl bg-forest-950 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 hover:text-emerald-300 font-bold text-xs transition inline-flex items-center gap-1 shadow-sm">
