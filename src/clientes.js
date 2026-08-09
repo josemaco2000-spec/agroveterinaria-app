@@ -78,9 +78,14 @@ function renderListaClientes(list) {
     }
 
     listaEl.innerHTML = ''
-
     if (filtrados.length === 0) {
-        listaEl.innerHTML = '<div class="text-center py-12 text-gray-400 text-xs italic">No se encontraron clientes.</div>'
+        listaEl.innerHTML = `
+            <div class="py-12 px-6 rounded-3xl bg-forest-950/40 border border-dashed border-emerald-500/20 text-center flex flex-col items-center justify-center my-2">
+                <svg class="w-12 h-12 text-slate-400 dark:text-slate-500 mb-3 stroke-[1.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">No se encontraron clientes.</p>
+            </div>`
         return
     }
 
@@ -94,24 +99,24 @@ function renderListaClientes(list) {
 
         const tieneDeuda = saldo > 0
         const badgeDeuda = tieneDeuda
-            ? `<span class="text-xs font-extrabold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100">Saldo: Q${saldoFmt}</span>`
-            : `<span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">Al día (Q0.00)</span>`
+            ? `<span class="text-xs font-extrabold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-lg border border-rose-500/20">Saldo: Q${saldoFmt}</span>`
+            : `<span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">Al día (Q0.00)</span>`
 
         const activeClass = esSeleccionado
-            ? 'bg-green-100/70 border-l-4 border-green-700 shadow-sm'
-            : 'bg-white hover:bg-gray-100 border border-gray-200'
+            ? 'glass-panel border-l-4 border-emerald-500 bg-emerald-500/10 text-emerald-400 font-bold shadow-md'
+            : 'glass-card glass-panel-hover text-slate-800 dark:text-slate-200'
 
         listaEl.innerHTML += `
-            <div class="p-3.5 rounded-xl transition cursor-pointer ${activeClass} btn-seleccionar-cliente" data-id="${cli.id}">
+            <div class="p-3.5 rounded-2xl transition cursor-pointer shadow-sm ${activeClass} btn-seleccionar-cliente" data-id="${cli.id}">
                 <div class="flex justify-between items-start mb-1">
-                    <h3 class="font-bold text-gray-800 text-sm leading-snug truncate pr-2">${cli.nombre}</h3>
-                    <span class="text-[10px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">NIT: ${cli.nit || 'CF'}</span>
+                    <h3 class="font-bold text-slate-900 dark:text-white text-sm leading-snug truncate pr-2">${cli.nombre}</h3>
+                    <span class="text-[10px] font-mono text-slate-400 dark:text-slate-400 bg-forest-950/80 border border-emerald-500/20 px-1.5 py-0.5 rounded-md">NIT: ${cli.nit || 'CF'}</span>
                 </div>
-                <div class="text-xs text-gray-500 mb-2">
+                <div class="text-xs text-slate-600 dark:text-slate-300 mb-2">
                     <span>📞 ${cli.telefono || 'Sin teléfono'}</span>
                 </div>
-                <div class="flex justify-between items-center pt-1 border-t border-gray-100">
-                    <span class="text-[11px] text-gray-400">Límite: Q${limiteFmt}</span>
+                <div class="flex justify-between items-center pt-1 border-t border-emerald-500/10">
+                    <span class="text-[11px] text-slate-500 dark:text-slate-400">Límite: Q${limiteFmt}</span>
                     ${badgeDeuda}
                 </div>
             </div>
@@ -149,25 +154,25 @@ async function seleccionarCliente(clienteId) {
     // Calcular Gauge de Crédito
     const pctUsado = limite > 0 ? Math.min(100, Math.round((saldo / limite) * 100)) : 0
     let colorBarra = 'bg-emerald-500'
-    if (pctUsado > 85) colorBarra = 'bg-red-600'
-    else if (pctUsado > 50) colorBarra = 'bg-orange-500'
+    if (pctUsado > 85) colorBarra = 'bg-rose-500'
+    else if (pctUsado > 50) colorBarra = 'bg-amber-500'
 
     vistaDetalle.innerHTML = `
         <!-- Encabezado del Cliente Seleccionado -->
-        <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div class="glass-panel p-5 rounded-3xl border border-emerald-500/20 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
             <div>
                 <div class="flex items-center gap-2 mb-1">
-                    <h2 class="text-2xl font-extrabold text-gray-800">${cliente.nombre}</h2>
-                    <span class="text-xs font-mono bg-green-100 text-green-800 font-bold px-2 py-0.5 rounded">NIT: ${cliente.nit || 'CF'}</span>
+                    <h2 class="text-2xl font-extrabold text-slate-900 dark:text-white">${cliente.nombre}</h2>
+                    <span class="text-xs font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold px-2 py-0.5 rounded-lg">NIT: ${cliente.nit || 'CF'}</span>
                 </div>
-                <div class="text-xs text-gray-600 space-x-3">
+                <div class="text-xs text-slate-700 dark:text-slate-300 space-x-3">
                     <span>📞 <strong>${cliente.telefono || 'Sin registrar'}</strong></span>
                     <span>📍 <strong>${cliente.direccion || 'Fray Bartolomé de las Casas'}</strong></span>
                 </div>
             </div>
 
             <!-- Gauge de Crédito -->
-            <div class="w-full sm:w-64 bg-white p-3 rounded-xl border border-gray-200 shadow-sm shrink-0">
+            <div class="w-full sm:w-64 glass-card p-3 rounded-2xl border border-emerald-500/20 shadow-sm shrink-0">
                 <div class="flex justify-between text-xs font-bold text-gray-700 mb-1">
                     <span>Saldo: Q${saldoFmt}</span>
                     <span>Límite: Q${limiteFmt}</span>

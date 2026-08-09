@@ -100,7 +100,17 @@ function renderTabla() {
         const msg = estadoFiltroTab === 'pendiente' 
             ? 'No hay ventas pendientes por facturar.' 
             : 'No hay ventas facturadas registradas.'
-        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-gray-500 italic">${msg}</td></tr>`
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="p-0">
+                    <div class="py-12 px-6 rounded-3xl bg-forest-950/40 border border-dashed border-emerald-500/20 text-center flex flex-col items-center justify-center my-2">
+                        <svg class="w-16 h-16 text-slate-400 dark:text-slate-500 mb-3 stroke-[1.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">${msg}</p>
+                    </div>
+                </td>
+            </tr>`
         return
     }
 
@@ -116,31 +126,31 @@ function renderTabla() {
 
         const esPendiente = venta.estado_factura === 'pendiente'
         const badgeEstado = esPendiente
-            ? '<span class="inline-block bg-orange-100 text-orange-800 text-xs px-2.5 py-1 rounded-full font-bold">⏳ Pendiente</span>'
-            : '<span class="inline-block bg-green-100 text-green-800 text-xs px-2.5 py-1 rounded-full font-bold">✓ Facturada</span>'
+            ? '<span class="inline-block bg-amber-500/10 text-amber-600 dark:text-amber-300 border border-amber-500/20 text-xs px-2.5 py-1 rounded-full font-bold">⏳ Pendiente</span>'
+            : '<span class="inline-block bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20 text-xs px-2.5 py-1 rounded-full font-bold">✓ Facturada</span>'
 
         const numFacturaDisplay = venta.numero_factura_fisica
-            ? `<span class="font-mono font-bold text-gray-800 bg-gray-100 px-2 py-1 rounded">📄 ${venta.numero_factura_fisica}</span>`
-            : '<span class="text-xs text-gray-400 italic">Sin registrar</span>'
+            ? `<span class="font-mono font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700">📄 ${venta.numero_factura_fisica}</span>`
+            : '<span class="text-xs text-slate-400 dark:text-slate-500 italic">Sin registrar</span>'
 
         const botonFacturar = esPendiente
-            ? `<button class="btn-abrir-facturar bg-green-600 hover:bg-green-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition inline-flex items-center gap-1" data-id="${venta.id}" data-total="${totalFormateado}">
+            ? `<button class="btn-abrir-facturar bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow transition inline-flex items-center gap-1" data-id="${venta.id}" data-total="${totalFormateado}">
                 📝 Registrar Factura
                </button>`
-            : `<button class="btn-abrir-facturar bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition inline-flex items-center gap-1" data-id="${venta.id}" data-total="${totalFormateado}" data-num="${venta.numero_factura_fisica}">
+            : `<button class="btn-abrir-facturar bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-700 transition inline-flex items-center gap-1" data-id="${venta.id}" data-total="${totalFormateado}" data-num="${venta.numero_factura_fisica}">
                 ✏️ Editar Factura
                </button>`
 
         tbody.innerHTML += `
-            <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
-                <td class="p-4 font-mono text-xs font-bold text-gray-700">#${shortId}</td>
-                <td class="p-4 text-xs font-medium text-gray-600">${fechaFormat}</td>
-                <td class="p-4 font-extrabold text-green-700">Q${totalFormateado}</td>
-                <td class="p-4">${badgeEstado}</td>
-                <td class="p-4">${numFacturaDisplay}</td>
-                <td class="p-4 text-center">
+            <tr class="glass-panel glass-panel-hover rounded-2xl transition-all duration-200 shadow-sm text-slate-800 dark:text-slate-200 group">
+                <td class="p-3.5 pl-6 font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">#${shortId}</td>
+                <td class="p-3.5 text-xs font-medium text-slate-700 dark:text-slate-300">${fechaFormat}</td>
+                <td class="p-3.5 font-extrabold text-amber-600 dark:text-amber-400">Q${totalFormateado}</td>
+                <td class="p-3.5">${badgeEstado}</td>
+                <td class="p-3.5">${numFacturaDisplay}</td>
+                <td class="p-3.5 text-center">
                     <div class="flex items-center justify-center gap-2">
-                        <button class="btn-ver-detalle bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition inline-flex items-center gap-1" data-id="${venta.id}">
+                        <button class="btn-ver-detalle bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-300 border border-blue-500/20 text-xs font-bold px-3 py-1.5 rounded-xl transition inline-flex items-center gap-1" data-id="${venta.id}">
                             👁️ Detalle
                         </button>
                         ${botonFacturar}

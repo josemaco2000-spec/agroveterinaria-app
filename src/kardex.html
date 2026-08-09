@@ -120,12 +120,11 @@
             border-color: rgba(16, 185, 129, 0.3);
             box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px 0 rgba(16, 185, 129, 0.08);
         }
-
         .dark .active-nav-item {
-            background: linear-gradient(90deg, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0.03) 100%);
-            border-left: 3px solid #34d399;
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.22) 0%, rgba(16, 185, 129, 0.04) 100%);
+            border-left: 4px solid #10b981;
             color: #6ee7b7;
-            box-shadow: inset 8px 0 16px -6px rgba(16, 185, 129, 0.3);
+            box-shadow: inset 8px 0 16px -6px rgba(16, 185, 129, 0.35);
         }
 
         /* Glassmorphism Light Mode (Ultra-Premium Emerald Crystal) */
@@ -151,14 +150,14 @@
             box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.04);
         }
 
-        html:not(.dark) .glass-card:hover {
+        html:not(.dark) .glass-card:hover, html:not(.dark) .glass-panel-hover:hover {
             border-color: rgba(16, 185, 129, 0.45);
             box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.15);
         }
 
         html:not(.dark) .active-nav-item {
-            background: linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.02) 100%);
-            border-left: 3px solid #059669;
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0.03) 100%);
+            border-left: 4px solid #059669;
             color: #047857;
             box-shadow: inset 8px 0 16px -6px rgba(16, 185, 129, 0.2);
         }
@@ -174,10 +173,6 @@
         html:not(.dark) input::placeholder, 
         html:not(.dark) textarea::placeholder {
             color: #94a3b8 !important;
-        }
-
-        html:not(.dark) .text-white {
-            color: #0f172a !important;
         }
 
         html:not(.dark) .text-slate-300, 
@@ -215,10 +210,8 @@
         <div class="space-y-8">
             <!-- Brand Logo -->
             <div class="flex items-center gap-3 px-2">
-                <div class="relative flex-shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-forest-700 flex items-center justify-center shadow-lg shadow-emerald-900/40 border border-emerald-400/30">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                    </svg>
+                <div class="relative flex-shrink-0 w-12 h-12 rounded-2xl bg-forest-950/80 p-1 flex items-center justify-center shadow-lg shadow-emerald-900/40 border border-emerald-400/30 overflow-hidden">
+                    <img src="./assets/logo-campo-alto.png" alt="Logo Campo Alto" class="h-10 w-auto object-contain">
                     <span class="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-forest-950 shadow-sm animate-pulse"></span>
                 </div>
                 
@@ -299,6 +292,16 @@
                     </div>
                     <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Compras y Proveedores</span>
                 </a>
+
+                <!-- Empleados -->
+                <a href="empleados.html" class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
+                    <div class="w-6 flex justify-center">
+                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Empleados</span>
+                </a>
             </nav>
         </div>
 
@@ -342,19 +345,19 @@
                 <div>
                     <div class="flex items-center gap-2 mb-1">
                         <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            Auditoría & Kardex
+                            Auditoría de Inventarios
                         </span>
                         <span class="text-xs text-slate-500">•</span>
                         <span class="text-xs text-slate-400 font-medium">Agrovet Campo Alto</span>
                     </div>
-                    <h1 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight">Kardex y Auditoría de Inventario</h1>
+                    <h1 class="text-xl sm:text-2xl font-extrabold text-white tracking-tight">Kardex y Registro FEFO de Lotes</h1>
                 </div>
 
                 <div class="flex items-center gap-3">
 
                     <div class="flex items-center gap-2.5 px-3.5 py-2 rounded-full bg-forest-950/80 border border-emerald-500/20 text-xs">
-                        <span class="text-slate-400">Admin:</span>
-                        <strong id="admin-email" class="text-emerald-400 font-medium">Cargando...</strong>
+                        <span class="text-slate-400">Usuario:</span>
+                        <strong id="user-email" class="text-emerald-400 font-medium">Cargando...</strong>
                     </div>
                 </div>
             </div>
@@ -364,12 +367,12 @@
         <main class="p-4 sm:p-6 flex-1 max-w-[1700px] w-full mx-auto space-y-6">
             
             <!-- Tarjetas de Resumen (Bento Metrics) -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                 
                 <!-- Entradas -->
                 <div class="glass-panel rounded-3xl p-6 flex justify-between items-center shadow-xl border-l-4 border-emerald-500">
                     <div>
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Entradas (Compras)</span>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Entradas</span>
                         <p id="stat-total-entradas" class="text-3xl font-extrabold text-emerald-400 font-mono mt-1">0</p>
                         <p class="text-xs text-slate-400 mt-1">Unidades base ingresadas</p>
                     </div>
@@ -381,12 +384,24 @@
                 <!-- Salidas -->
                 <div class="glass-panel rounded-3xl p-6 flex justify-between items-center shadow-xl border-l-4 border-cyan-500">
                     <div>
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Salidas (Ventas FEFO)</span>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Salidas Venta</span>
                         <p id="stat-total-salidas" class="text-3xl font-extrabold text-cyan-400 font-mono mt-1">0</p>
                         <p class="text-xs text-slate-400 mt-1">Unidades base vendidas</p>
                     </div>
                     <div class="w-14 h-14 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-3xl shadow-inner">
                         📤
+                    </div>
+                </div>
+
+                <!-- Lotes -->
+                <div class="glass-panel rounded-3xl p-6 flex justify-between items-center shadow-xl border-l-4 border-violet-500">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Lotes Registrados</span>
+                        <p id="stat-lotes-activos" class="text-3xl font-extrabold text-violet-400 font-mono mt-1">0</p>
+                        <p class="text-xs text-slate-400 mt-1">Total lotes en sistema</p>
+                    </div>
+                    <div class="w-14 h-14 rounded-2xl bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-3xl shadow-inner">
+                        📦
                     </div>
                 </div>
 
@@ -464,7 +479,7 @@
                                 <th class="pb-2">Producto</th>
                                 <th class="pb-2">Lote / Vencimiento</th>
                                 <th class="pb-2">Tipo Movimiento</th>
-                                <th class="pb-2 text-right">Cantidad (Unidad Base)</th>
+                                <th class="pb-2 text-right">Cantidad</th>
                                 <th class="pb-2 pr-6">Referencia / Observaciones</th>
                             </tr>
                         </thead>

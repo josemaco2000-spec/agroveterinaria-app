@@ -244,7 +244,17 @@ async function cargarInventario() {
     tbody.innerHTML = ''
 
     if (!productos || productos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-500 italic">No hay productos registrados en Agrovet Campo Alto aún.</td></tr>'
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="p-0">
+                    <div class="py-12 px-6 rounded-3xl bg-forest-950/40 border border-dashed border-emerald-500/20 text-center flex flex-col items-center justify-center my-2">
+                        <svg class="w-16 h-16 text-slate-400 dark:text-slate-500 mb-3 stroke-[1.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                        </svg>
+                        <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">No hay productos registrados en Agrovet Campo Alto aún.</p>
+                    </div>
+                </td>
+            </tr>`
         return
     }
 
@@ -262,27 +272,27 @@ async function cargarInventario() {
                </div>`
 
         tbody.innerHTML += `
-            <tr class="border-b border-gray-100 hover:bg-green-50/50 transition">
-                <td class="p-4 pl-6">${imgHtml}</td>
-                <td class="p-4">
-                    <div class="font-semibold text-gray-800">${prod.nombre}</div>
-                    <div class="text-xs text-gray-400 font-mono mt-0.5">${prod.codigo_barras ? '📦 ' + prod.codigo_barras : 'Sin código'}</div>
+            <tr class="glass-panel glass-panel-hover rounded-2xl transition-all duration-200 shadow-sm text-slate-800 dark:text-slate-200 group">
+                <td class="p-3.5 pl-6">${imgHtml}</td>
+                <td class="p-3.5">
+                    <div class="font-bold text-slate-900 dark:text-white">${prod.nombre}</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">${prod.codigo_barras ? '📦 ' + prod.codigo_barras : 'Sin código'}</div>
                 </td>
-                <td class="p-4">
-                    <span class="inline-block bg-green-100 text-green-800 text-xs px-2.5 py-1 rounded-full font-medium">${prod.categoria || 'General'}</span>
+                <td class="p-3.5">
+                    <span class="inline-block bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20 text-xs px-2.5 py-1 rounded-full font-bold">${prod.categoria || 'General'}</span>
                 </td>
-                <td class="p-4 font-medium text-gray-700">
-                    ${prod.stock_base} <span class="text-xs text-gray-500 font-normal">${prod.unidad_base}</span>
+                <td class="p-3.5 font-semibold text-slate-700 dark:text-slate-200">
+                    ${prod.stock_base} <span class="text-xs text-slate-500 dark:text-slate-400 font-normal">${prod.unidad_base}</span>
                 </td>
-                <td class="p-4 font-bold text-red-600">
+                <td class="p-3.5 font-extrabold text-rose-600 dark:text-rose-400">
                     Q${costoFormateado}
                 </td>
-                <td class="p-4 text-center">
+                <td class="p-3.5 text-center">
                     <div class="flex items-center justify-center gap-2">
-                        <button class="btn-abrir-presentaciones bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow transition inline-flex items-center gap-1" data-id="${prod.id}" data-nombre="${prod.nombre}">
+                        <button class="btn-abrir-presentaciones bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow transition inline-flex items-center gap-1" data-id="${prod.id}" data-nombre="${prod.nombre}">
                             ⚙️ Presentaciones
                         </button>
-                        <button class="btn-abrir-kardex bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow transition inline-flex items-center gap-1" data-id="${prod.id}" data-nombre="${prod.nombre}">
+                        <button class="btn-abrir-kardex bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow transition inline-flex items-center gap-1" data-id="${prod.id}" data-nombre="${prod.nombre}">
                             📋 Lotes / Kardex
                         </button>
                     </div>

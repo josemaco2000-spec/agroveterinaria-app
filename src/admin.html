@@ -114,10 +114,10 @@
         }
 
         .dark .active-nav-item {
-            background: linear-gradient(90deg, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0.03) 100%);
-            border-left: 3px solid #34d399;
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.22) 0%, rgba(16, 185, 129, 0.04) 100%);
+            border-left: 4px solid #10b981;
             color: #6ee7b7;
-            box-shadow: inset 8px 0 16px -6px rgba(16, 185, 129, 0.3);
+            box-shadow: inset 8px 0 16px -6px rgba(16, 185, 129, 0.35);
         }
 
         /* Glassmorphism Light Mode (Ultra-Premium Emerald Crystal) */
@@ -149,8 +149,8 @@
         }
 
         html:not(.dark) .active-nav-item {
-            background: linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.02) 100%);
-            border-left: 3px solid #059669;
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0.03) 100%);
+            border-left: 4px solid #059669;
             color: #047857;
             box-shadow: inset 8px 0 16px -6px rgba(16, 185, 129, 0.2);
         }
@@ -166,10 +166,6 @@
         html:not(.dark) input::placeholder, 
         html:not(.dark) textarea::placeholder {
             color: #94a3b8 !important;
-        }
-
-        html:not(.dark) .text-white {
-            color: #0f172a !important;
         }
 
         html:not(.dark) .text-slate-300, 
@@ -207,10 +203,8 @@
         <div class="space-y-8">
             <!-- Brand Logo -->
             <div class="flex items-center gap-3 px-2">
-                <div class="relative flex-shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-forest-700 flex items-center justify-center shadow-lg shadow-emerald-900/40 border border-emerald-400/30">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                    </svg>
+                <div class="relative flex-shrink-0 w-12 h-12 rounded-2xl bg-forest-950/80 p-1 flex items-center justify-center shadow-lg shadow-emerald-900/40 border border-emerald-400/30 overflow-hidden">
+                    <img src="./assets/logo-campo-alto.png" alt="Logo Campo Alto" class="h-10 w-auto object-contain">
                     <!-- Active Dot Ring -->
                     <span class="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-forest-950 shadow-sm animate-pulse"></span>
                 </div>
@@ -292,6 +286,16 @@
                     </div>
                     <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Compras y Proveedores</span>
                 </a>
+
+                <!-- Empleados -->
+                <a href="empleados.html" class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
+                    <div class="w-6 flex justify-center">
+                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Empleados</span>
+                </a>
             </nav>
         </div>
 
@@ -300,10 +304,10 @@
             <!-- Minimalist Sliding Theme Switcher -->
             <button type="button" onclick="toggleTheme()" 
                     title="Cambiar Tema"
-                    class="w-full flex items-center justify-between px-2.5 py-2 rounded-2xl glass-card border border-emerald-500/20 hover:border-emerald-400/50 hover:shadow-[0_0_15px_rgba(16,185,129,0.25)] transition-all duration-300 group/theme cursor-pointer overflow-hidden">
+                    class="w-full flex items-center justify-between px-2.5 py-2 rounded-2xl glass-card border border-emerald-500/20 hover:border-emerald-400/50 hover:shadow-[0_0_15px_rgba(16,185,129,0.25)] transition-all duration-300 group/theme cursor-pointer">
                 <div class="flex items-center gap-3">
-                    <div class="relative w-11 h-6 rounded-full bg-forest-950/80 border border-emerald-500/30 p-0.5 transition-colors duration-300 shadow-inner flex items-center shrink-0">
-                        <div id="theme-toggle-knob" class="w-5 h-5 rounded-full bg-gradient-to-tr from-emerald-500 to-emerald-400 text-forest-950 font-bold text-[10px] flex items-center justify-center shadow-md transform transition-transform duration-300">
+                    <div class="relative w-12 h-7 rounded-full bg-forest-950/80 border border-emerald-500/30 p-1 transition-colors duration-300 shadow-inner flex items-center shrink-0">
+                        <div id="theme-toggle-knob" class="w-5 h-5 rounded-full aspect-square bg-gradient-to-tr from-emerald-500 to-emerald-400 text-forest-950 font-bold text-[10px] flex items-center justify-center shadow-md transform transition-transform duration-300 shrink-0">
                             <span id="theme-toggle-icon">🌙</span>
                         </div>
                     </div>
@@ -388,7 +392,6 @@
                 </div>
             </div>
         </header>
-
         <!-- DASHBOARD CONTAINER (Bento Grid KPIs + Floating Table) -->
         <main class="p-4 sm:p-6 space-y-6 flex-1 animate-fade-in">
             
@@ -401,14 +404,14 @@
                     <!-- Top Header Line -->
                     <div class="flex items-start justify-between z-10">
                         <div>
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-amber-400/90 flex items-center gap-1.5">
-                                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                                 Ventas Totales
                             </span>
                             <!-- Monto en Quetzales estilizado -->
-                            <h3 class="text-3xl font-extrabold text-white mt-2 tracking-tight" id="stat-ventas">Q0.00</h3>
+                            <h3 class="text-3xl font-extrabold text-slate-800 dark:text-white mt-2 tracking-tight" id="stat-ventas">Q0.00</h3>
                         </div>
-                        <div class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20 flex items-center gap-1">
+                        <div class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-300 border border-amber-500/20 flex items-center gap-1">
                             <span>📈 Ingresos</span>
                         </div>
                     </div>
@@ -428,9 +431,9 @@
                     </div>
 
                     <!-- Card Footer Subtext -->
-                    <div class="z-10 flex items-center justify-between text-xs text-slate-400 border-t border-slate-800/80 pt-3">
+                    <div class="z-10 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800/80 pt-3">
                         <span id="stat-ventas-sub">0 transacciones registradas</span>
-                        <span class="text-[10px] text-amber-400/80 font-semibold">Qtz / GT</span>
+                        <span class="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">Qtz / GT</span>
                     </div>
                 </div>
 
@@ -440,13 +443,13 @@
                     <!-- Top Header Line -->
                     <div class="flex items-start justify-between z-10">
                         <div>
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-violet-400/90 flex items-center gap-1.5">
-                                <span class="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse"></span>
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse"></span>
                                 Ganancia Neta
                             </span>
-                            <h3 class="text-3xl font-extrabold text-white mt-2 tracking-tight" id="stat-ganancia">Q0.00</h3>
+                            <h3 class="text-3xl font-extrabold text-slate-800 dark:text-white mt-2 tracking-tight" id="stat-ganancia">Q0.00</h3>
                         </div>
-                        <div class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-violet-500/10 text-violet-300 border border-violet-500/20">
+                        <div class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-violet-500/10 text-violet-600 dark:text-violet-300 border border-violet-500/20">
                             <span>Utilidad</span>
                         </div>
                     </div>
@@ -466,9 +469,9 @@
                     </div>
 
                     <!-- Card Footer Subtext -->
-                    <div class="z-10 flex items-center justify-between text-xs text-slate-400 border-t border-slate-800/80 pt-3">
-                        <span id="stat-ganancia-sub" class="text-violet-300 font-semibold">Margen Neto: 0.0%</span>
-                        <span class="text-[10px] text-violet-400/80 font-semibold">Deducido</span>
+                    <div class="z-10 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800/80 pt-3">
+                        <span id="stat-ganancia-sub" class="text-violet-600 dark:text-violet-300 font-semibold">Margen Neto: 0.0%</span>
+                        <span class="text-[10px] text-violet-600 dark:text-violet-400 font-semibold">Deducido</span>
                     </div>
                 </div>
 
@@ -478,13 +481,13 @@
                     <!-- Top Header Line -->
                     <div class="flex items-start justify-between z-10">
                         <div>
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-teal-400/90 flex items-center gap-1.5">
-                                <span class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse"></span>
                                 Facturación SAT
                             </span>
-                            <h3 class="text-3xl font-extrabold text-white mt-2 tracking-tight" id="stat-facturas">0</h3>
+                            <h3 class="text-3xl font-extrabold text-slate-800 dark:text-white mt-2 tracking-tight" id="stat-facturas">0</h3>
                         </div>
-                        <div class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-teal-500/10 text-teal-300 border border-teal-500/20">
+                        <div class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-teal-500/10 text-teal-600 dark:text-teal-300 border border-teal-500/20">
                             <span>Pendientes</span>
                         </div>
                     </div>
@@ -504,9 +507,9 @@
                     </div>
 
                     <!-- Card Footer Subtext -->
-                    <div class="z-10 flex items-center justify-between text-xs text-slate-400 border-t border-slate-800/80 pt-3">
+                    <div class="z-10 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800/80 pt-3">
                         <span id="stat-facturas-sub">0 pendientes de facturar SAT</span>
-                        <span class="text-[10px] text-teal-400/80 font-semibold">FEL</span>
+                        <span class="text-[10px] text-teal-600 dark:text-teal-400 font-semibold">FEL</span>
                     </div>
                 </div>
 
@@ -516,13 +519,13 @@
                     <!-- Top Header Line -->
                     <div class="flex items-start justify-between z-10">
                         <div>
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-rose-400/90 flex items-center gap-1.5">
-                                <span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse"></span>
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
                                 Alertas Stock
                             </span>
-                            <h3 class="text-3xl font-extrabold text-white mt-2 tracking-tight" id="stat-stock">0 productos</h3>
+                            <h3 class="text-3xl font-extrabold text-slate-800 dark:text-white mt-2 tracking-tight" id="stat-stock">0 productos</h3>
                         </div>
-                        <div class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-500/10 text-rose-300 border border-rose-500/20 flex items-center gap-1">
+                        <div class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-300 border border-rose-500/20 flex items-center gap-1">
                             <span>⚠️ Crítico</span>
                         </div>
                     </div>
@@ -542,9 +545,9 @@
                     </div>
 
                     <!-- Card Footer Subtext -->
-                    <div class="z-10 flex items-center justify-between text-xs text-slate-400 border-t border-slate-800/80 pt-3">
-                        <span id="stat-stock-sub" class="text-rose-300">Stock en niveles óptimos</span>
-                        <span class="text-[10px] text-rose-400/80 font-semibold">≤ 10 unids</span>
+                    <div class="z-10 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800/80 pt-3">
+                        <span id="stat-stock-sub" class="text-rose-600 dark:text-rose-300">Stock en niveles óptimos</span>
+                        <span class="text-[10px] text-rose-600 dark:text-rose-400 font-semibold">≤ 10 unids</span>
                     </div>
                 </div>
 
@@ -562,8 +565,8 @@
                             </svg>
                         </div>
                         <div>
-                            <h2 class="text-lg font-bold text-white tracking-wide">Últimas Ventas Registradas</h2>
-                            <p class="text-xs text-slate-400">Transacciones e ingresos netos calculados</p>
+                            <h2 class="text-lg font-bold text-slate-900 dark:text-white tracking-wide">Últimas Ventas Registradas</h2>
+                            <p class="text-xs text-slate-600 dark:text-slate-400">Transacciones e ingresos netos calculados</p>
                         </div>
                     </div>
 
@@ -574,7 +577,7 @@
                         
                         <!-- Toggle interactivo para probar la vista vacía -->
                         <button type="button" id="btn-toggle-demo" 
-                                class="text-xs px-3.5 py-1.5 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition shadow-sm">
+                                class="text-xs px-3.5 py-1.5 rounded-full bg-slate-800/80 hover:bg-slate-700 text-white border border-slate-700 transition shadow-sm">
                             👁️ Probar Vista Vacía
                         </button>
                     </div>
@@ -582,18 +585,18 @@
 
                 <!-- Tabla de Filas Flotantes -->
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-separate border-spacing-y-2.5">
+                    <table class="w-full text-left border-separate border-spacing-y-2">
                         <thead>
-                            <tr class="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-4">
+                            <tr class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-4">
                                 <th class="pb-2 pl-6 font-semibold">ID Venta</th>
                                 <th class="pb-2 font-semibold">Fecha / Hora</th>
                                 <th class="pb-2 text-center font-semibold">Ítems</th>
-                                <th class="pb-2 font-semibold">Total Venta</th>
+                                <th class="pb-2 font-semibold">Venta Total</th>
                                 <th class="pb-2 font-semibold">Ganancia Neta</th>
                                 <th class="pb-2 pr-6 font-semibold">Estado Factura</th>
                             </tr>
                         </thead>
-                        <tbody id="tabla-ventas-recientes" class="text-sm">
+                        <tbody id="tabla-ventas-recientes" class="text-xs font-medium">
                             <!-- Loader mientras carga JS -->
                             <tr>
                                 <td colspan="6" class="p-8 text-center text-slate-400">

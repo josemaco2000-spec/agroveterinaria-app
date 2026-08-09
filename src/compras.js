@@ -141,7 +141,17 @@ async function cargarCompras() {
         tbody.innerHTML = ''
 
         if (!compras || compras.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-400 italic">No se registran compras abastecidas en Agrovet Campo Alto.</td></tr>'
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="p-0">
+                        <div class="py-12 px-6 rounded-3xl bg-forest-950/40 border border-dashed border-emerald-500/20 text-center flex flex-col items-center justify-center my-2">
+                            <svg class="w-16 h-16 text-slate-400 dark:text-slate-500 mb-3 stroke-[1.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                            </svg>
+                            <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">No se registran compras abastecidas en Agrovet Campo Alto.</p>
+                        </div>
+                    </td>
+                </tr>`
             return
         }
 
@@ -150,13 +160,13 @@ async function cargarCompras() {
             const totalFmt = (Number(c.total) || 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
             tbody.innerHTML += `
-                <tr class="hover:bg-gray-50 border-b border-gray-100">
-                    <td class="p-4 font-mono text-xs text-gray-500">${fechaStr}</td>
-                    <td class="p-4 font-bold text-gray-800">${c.proveedores?.nombre || 'Proveedor dado de baja'}</td>
-                    <td class="p-4 font-mono text-gray-700 font-semibold">${c.no_comprobante || 'S/N'}</td>
-                    <td class="p-4 text-right font-extrabold text-blue-700">Q${totalFmt}</td>
-                    <td class="p-4 text-center">
-                        <button class="btn-ver-detalle bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-3 py-1 rounded transition text-xs" data-id="${c.id}">
+                <tr class="glass-panel glass-panel-hover rounded-2xl transition-all duration-200 shadow-sm text-slate-800 dark:text-slate-200 group">
+                    <td class="p-3.5 pl-6 font-mono text-xs text-slate-600 dark:text-slate-300">${fechaStr}</td>
+                    <td class="p-3.5 font-bold text-slate-900 dark:text-white">${c.proveedores?.nombre || 'Proveedor dado de baja'}</td>
+                    <td class="p-3.5 font-mono text-slate-700 dark:text-slate-200 font-semibold">${c.no_comprobante || 'S/N'}</td>
+                    <td class="p-3.5 text-right font-extrabold text-blue-600 dark:text-blue-400">Q${totalFmt}</td>
+                    <td class="p-3.5 text-center">
+                        <button class="btn-ver-detalle bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-bold px-3 py-1.5 rounded-xl border border-slate-700 transition text-xs inline-flex items-center gap-1" data-id="${c.id}">
                             👁️ Ver Renglones
                         </button>
                     </td>

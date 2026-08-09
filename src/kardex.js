@@ -113,7 +113,17 @@ async function cargarMovimientosKardex() {
         }
 
         if (list.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-500 italic">No se encontraron movimientos registrados en Kardex con los filtros aplicados.</td></tr>'
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="p-0">
+                        <div class="py-12 px-6 rounded-3xl bg-forest-950/40 border border-dashed border-emerald-500/20 text-center flex flex-col items-center justify-center my-2">
+                            <svg class="w-16 h-16 text-slate-400 dark:text-slate-500 mb-3 stroke-[1.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            <p class="text-xs text-slate-400 dark:text-slate-500 font-medium">No se encontraron movimientos registrados en Kardex con los filtros aplicados.</p>
+                        </div>
+                    </td>
+                </tr>`
             actualizarMetricasResumen([])
             return
         }
@@ -133,45 +143,45 @@ async function cargarMovimientosKardex() {
             switch (m.tipo_movimiento) {
                 case 'ENTRADA_COMPRA':
                 case 'AJUSTE_ENTRADA':
-                    badgeTipo = '<span class="inline-block bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full">📥 ENTRADA COMPRA</span>'
+                    badgeTipo = '<span class="inline-block bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20 text-xs font-bold px-2.5 py-1 rounded-full">📥 ENTRADA COMPRA</span>'
                     signoCantidad = '+'
-                    colorCantidad = 'text-emerald-600 font-extrabold'
+                    colorCantidad = 'text-emerald-600 dark:text-emerald-400 font-extrabold'
                     break
                 case 'SALIDA_VENTA':
-                    badgeTipo = '<span class="inline-block bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-1 rounded-full">📤 SALIDA VENTA (FEFO)</span>'
+                    badgeTipo = '<span class="inline-block bg-blue-500/10 text-blue-600 dark:text-blue-300 border border-blue-500/20 text-xs font-bold px-2.5 py-1 rounded-full">📤 SALIDA VENTA (FEFO)</span>'
                     signoCantidad = '-'
-                    colorCantidad = 'text-blue-600 font-extrabold'
+                    colorCantidad = 'text-blue-600 dark:text-blue-400 font-extrabold'
                     break
                 case 'MERMA_VENCIDO':
                 case 'AJUSTE_SALIDA':
-                    badgeTipo = '<span class="inline-block bg-red-100 text-red-800 text-xs font-bold px-2.5 py-1 rounded-full">⚠️ MERMA / VENCIDO</span>'
+                    badgeTipo = '<span class="inline-block bg-rose-500/10 text-rose-600 dark:text-rose-300 border border-rose-500/20 text-xs font-bold px-2.5 py-1 rounded-full">⚠️ MERMA / VENCIDO</span>'
                     signoCantidad = '-'
-                    colorCantidad = 'text-red-600 font-extrabold'
+                    colorCantidad = 'text-rose-600 dark:text-rose-400 font-extrabold'
                     break
                 default:
-                    badgeTipo = `<span class="inline-block bg-gray-100 text-gray-800 text-xs font-bold px-2.5 py-1 rounded-full">${m.tipo_movimiento}</span>`
+                    badgeTipo = `<span class="inline-block bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold px-2.5 py-1 rounded-full border border-slate-700">${m.tipo_movimiento}</span>`
                     signoCantidad = ''
-                    colorCantidad = 'text-gray-800 font-bold'
+                    colorCantidad = 'text-slate-800 dark:text-slate-200 font-bold'
             }
 
             const loteDisplay = lote 
-                ? `<div><strong class="font-mono text-gray-800">${lote.numero_lote}</strong></div><div class="text-[11px] text-gray-400">Venc: ${lote.fecha_vencimiento}</div>`
-                : '<span class="text-gray-400 italic">Sin lote asignado</span>'
+                ? `<div><strong class="font-mono text-slate-800 dark:text-slate-200">${lote.numero_lote}</strong></div><div class="text-[11px] text-slate-500 dark:text-slate-400">Venc: ${lote.fecha_vencimiento}</div>`
+                : '<span class="text-slate-400 dark:text-slate-500 italic">Sin lote asignado</span>'
 
             const refDisplay = m.referencia_id 
-                ? `<span class="font-mono text-xs text-gray-500 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">Ref #${m.referencia_id.substring(0, 8)}</span>`
-                : '<span class="text-xs text-gray-400">Registro automático</span>'
+                ? `<span class="font-mono text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">Ref #${m.referencia_id.substring(0, 8)}</span>`
+                : '<span class="text-xs text-slate-400 dark:text-slate-500">Registro automático</span>'
 
             tbody.innerHTML += `
-                <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
-                    <td class="p-4 font-mono text-xs text-gray-600">${fechaStr}</td>
-                    <td class="p-4 font-bold text-gray-800">${prod?.nombre || 'Producto no encontrado'}</td>
-                    <td class="p-4 text-xs">${loteDisplay}</td>
-                    <td class="p-4">${badgeTipo}</td>
-                    <td class="p-4 text-right ${colorCantidad}">
-                        ${signoCantidad}${m.cantidad} <span class="text-xs text-gray-400 font-normal">${prod?.unidad_base || ''}</span>
+                <tr class="glass-panel glass-panel-hover rounded-2xl transition-all duration-200 shadow-sm text-slate-800 dark:text-slate-200 group">
+                    <td class="p-3.5 pl-6 font-mono text-xs text-slate-600 dark:text-slate-300">${fechaStr}</td>
+                    <td class="p-3.5 font-bold text-slate-900 dark:text-white">${prod?.nombre || 'Producto no encontrado'}</td>
+                    <td class="p-3.5 text-xs">${loteDisplay}</td>
+                    <td class="p-3.5">${badgeTipo}</td>
+                    <td class="p-3.5 text-right ${colorCantidad}">
+                        ${signoCantidad}${m.cantidad} <span class="text-xs text-slate-500 dark:text-slate-400 font-normal">${prod?.unidad_base || ''}</span>
                     </td>
-                    <td class="p-4">${refDisplay}</td>
+                    <td class="p-3.5 pr-6">${refDisplay}</td>
                 </tr>
             `
         })
