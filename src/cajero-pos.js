@@ -1,0 +1,939 @@
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+const supabaseUrl = 'https://tioqayfuqigkrakxlecx.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpb3FheWZ1cWlna3Jha3hsZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNTE5NDksImV4cCI6MjEwMTcyNzk0OX0.HD_36_xe7Ms7_K0hefJ_H3vKx1SPnmvMeML55kcINUI'
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+// Estado Global de POS
+let catalogo = []
+let carrito = []
+let listaClientesPOS = []
+let clienteSeleccionadoId = ''
+let fincaSeleccionadaId = ''
+let tipoPagoSeleccionado = 'EFECTIVO'
+let isSyncing = false
+
+// 1. Guard de Autenticación y Rol Vendedor
+async function validarSesion() {
+    try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+        if (sessionError || !session) {
+            window.location.href = 'index.html'
+            return
+        }
+
+        // Verificar rol en perfiles
+        const { data: perfil, error: perfilError } = await supabase
+            .from('perfiles')
+            .select('rol')
+            .eq('id', session.user.id)
+            .single()
+
+        if (perfilError) {
+            console.error("Error al verificar perfil:", perfilError.message)
+        } else if (perfil && perfil.rol === 'admin') {
+            window.location.href = 'admin.html'
+            return
+        }
+
+        const cajeroEmailEl = document.getElementById('cajero-email')
+        if (cajeroEmailEl) {
+            cajeroEmailEl.textContent = session.user.email
+        }
+
+        // Cargar datos del POS
+        await Promise.all([
+            cargarCatalogo(),
+            cargarClientesPOS()
+        ])
+
+    } catch (err) {
+        console.error("Error en validación de sesión POS:", err)
+        window.location.href = 'index.html'
+    }
+}
+
+// 2. Cargar Catálogo de Productos y Presentaciones
+async function cargarCatalogo() {
+    const grid = document.getElementById('grid-productos')
+    if (!grid) return
+
+    grid.innerHTML = `
+        <div class="col-span-full bg-white rounded-3xl p-12 text-center text-slate-500 font-bold border border-slate-200 shadow-sm flex items-center justify-center gap-2">
+            <span class="inline-block animate-spin text-2xl">⏳</span> Cargando catálogo de productos...
+        </div>
+    `
+
+    try {
+        if (!navigator.onLine) {
+            cargarCatalogodesdeCache()
+            return
+        }
+
+        const { data: presentaciones, error } = await supabase
+            .from('presentaciones')
+            .select(`
+                *,
+                productos!inner (
+                    id,
+                    nombre,
+                    codigo_barras,
+                    categoria,
+                    unidad_base,
+                    stock_base,
+                    imagen_url
+                )
+            `)
+            .order('nombre_presentacion', { ascending: true })
+
+        if (error) throw error
+
+        catalogo = (presentaciones || []).filter(p => p.productos && Number(p.productos.stock_base) > 0)
+        actualizarCacheCatalogoLocal()
+        renderCatalogo(catalogo)
+
+    } catch (err) {
+        console.error("Error al cargar catálogo:", err)
+        cargarCatalogodesdeCache()
+    }
+}
+
+function cargarCatalogodesdeCache() {
+    const cachedData = localStorage.getItem('adnova_catalogo_cache')
+    if (cachedData) {
+        try {
+            catalogo = JSON.parse(cachedData)
+            renderCatalogo(catalogo)
+            return
+        } catch (e) {
+            console.error("Error parsing cached catalog:", e)
+        }
+    }
+    const grid = document.getElementById('grid-productos')
+    if (grid) {
+        grid.innerHTML = `
+            <div class="col-span-full bg-white rounded-3xl p-12 text-center text-rose-500 font-bold border border-slate-200 shadow-sm">
+                ❌ Sin conexión a internet y sin catálogo en caché.
+            </div>
+        `
+    }
+}
+
+function actualizarCacheCatalogoLocal() {
+    localStorage.setItem('adnova_catalogo_cache', JSON.stringify(catalogo))
+}
+
+// 3. Renderizar Catálogo de Tarjetas Gran Formato
+function renderCatalogo(items) {
+    const grid = document.getElementById('grid-productos')
+    if (!grid) return
+
+    grid.innerHTML = ''
+
+    if (items.length === 0) {
+        grid.innerHTML = `
+            <div class="col-span-full bg-white rounded-3xl p-12 text-center text-slate-400 font-bold border border-slate-200">
+                No hay productos disponibles en esta búsqueda.
+            </div>
+        `
+        return
+    }
+
+    items.forEach(pres => {
+        const prod = pres.productos
+        const precioUnitario = Number(pres.precio_venta || 0)
+        const precioFmt = precioUnitario.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+        const imagenHtml = prod.imagen_url
+            ? `<img src="${prod.imagen_url}" alt="${prod.nombre}" class="w-20 h-20 object-cover rounded-2xl border border-slate-200 shadow-sm shrink-0">`
+            : `<div class="w-20 h-20 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-4xl font-bold shrink-0">📦</div>`
+
+        grid.innerHTML += `
+            <div class="bg-white hover:bg-emerald-50/50 border-2 border-slate-200 hover:border-emerald-400 rounded-3xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-4 group">
+                <div class="flex items-start gap-4">
+                    ${imagenHtml}
+                    <div class="flex-1 min-w-0">
+                        <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block truncate">${prod.categoria || 'General'}</span>
+                        <h3 class="text-base font-black text-slate-900 leading-snug line-clamp-2">${prod.nombre}</h3>
+                        <span class="inline-block mt-1.5 bg-slate-100 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-lg border border-slate-200">
+                            ${pres.nombre_presentacion}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-2 border-t border-slate-100 gap-2">
+                    <div>
+                        <span class="text-[10px] font-extrabold text-slate-400 block uppercase">Precio</span>
+                        <span class="text-2xl font-black text-emerald-600 font-sans">Q ${precioFmt}</span>
+                    </div>
+
+                    <button class="btn-agregar-carrito bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-sm px-4 py-2.5 rounded-2xl shadow-md transition flex items-center gap-1.5"
+                            data-id="${pres.id}">
+                        <span>➕ Agregar</span>
+                    </button>
+                </div>
+            </div>
+        `
+    })
+
+    grid.querySelectorAll('.btn-agregar-carrito').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-id')
+            const presItem = catalogo.find(p => p.id === id)
+            if (presItem) agregarAlCarrito(presItem)
+        })
+    })
+}
+
+// Buscador en Tiempo Real
+const inputBusqueda = document.getElementById('input-busqueda')
+if (inputBusqueda) {
+    inputBusqueda.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim()
+        const filtrados = catalogo.filter(p => {
+            const nombreProd = (p.productos?.nombre || '').toLowerCase()
+            const nombrePres = (p.nombre_presentacion || '').toLowerCase()
+            const codigo = (p.productos?.codigo_barras || '').toLowerCase()
+            return nombreProd.includes(query) || nombrePres.includes(query) || codigo.includes(query)
+        })
+        renderCatalogo(filtrados)
+    })
+}
+
+// 4. Lógica de Carrito de Compras
+function agregarAlCarrito(presItem) {
+    const prod = presItem.productos
+    const stockBaseTotal = Number(prod.stock_base)
+
+    const stockBaseUsado = carrito
+        .filter(item => item.productoId === prod.id)
+        .reduce((sum, item) => sum + (item.cantidad * item.factorConversion), 0)
+
+    const factor = Number(presItem.factor_conversion || 1)
+    if ((stockBaseUsado + factor) > stockBaseTotal) {
+        alert(`⚠️ Stock insuficiente. El stock base disponible de "${prod.nombre}" es de ${stockBaseTotal} ${prod.unidad_base}.`)
+        return
+    }
+
+    const itemEnCarrito = carrito.find(item => item.presentacionId === presItem.id)
+
+    if (itemEnCarrito) {
+        itemEnCarrito.cantidad += 1
+    } else {
+        carrito.push({
+            presentacionId: presItem.id,
+            productoId: prod.id,
+            nombreProducto: prod.nombre,
+            nombrePresentacion: presItem.nombre_presentacion,
+            precioVenta: Number(presItem.precio_venta),
+            factorConversion: factor,
+            unidadBase: prod.unidad_base,
+            cantidad: 1,
+            descuentoPorcentaje: 0
+        })
+    }
+
+    renderCarrito()
+}
+
+function cambiarCantidad(presentacionId, cambio) {
+    const item = carrito.find(i => i.presentacionId === presentacionId)
+    if (!item) return
+
+    const nuevaCant = item.cantidad + cambio
+    if (nuevaCant <= 0) {
+        solicitarEliminacionItem(presentacionId)
+        return
+    }
+
+    const presItem = catalogo.find(p => p.id === presentacionId)
+    if (presItem) {
+        const prod = presItem.productos
+        const stockBaseTotal = Number(prod.stock_base)
+        const stockBaseUsadoSinEste = carrito
+            .filter(i => i.productoId === prod.id && i.presentacionId !== presentacionId)
+            .reduce((sum, i) => sum + (i.cantidad * i.factorConversion), 0)
+
+        const requirienteBase = stockBaseUsadoSinEste + (nuevaCant * item.factorConversion)
+        if (requirienteBase > stockBaseTotal) {
+            alert(`⚠️ Stock insuficiente. El stock base disponible de "${prod.nombre}" es de ${stockBaseTotal} ${prod.unidad_base}.`)
+            return
+        }
+    }
+
+    item.cantidad = nuevaCant
+    renderCarrito()
+}
+
+function vaciarCarrito() {
+    carrito = []
+    renderCarrito()
+}
+
+document.getElementById('btn-vaciar-carrito')?.addEventListener('click', () => {
+    if (carrito.length > 0 && confirm("¿Deseas vaciar el carrito de compras?")) {
+        vaciarCarrito()
+    }
+})
+
+// Renderizar Carrito
+function renderCarrito() {
+    const lista = document.getElementById('lista-carrito')
+    const totalEl = document.getElementById('total-carrito')
+    const btnCompletar = document.getElementById('btn-completar-venta')
+
+    if (!lista || !totalEl) return
+    lista.innerHTML = ''
+
+    if (carrito.length === 0) {
+        lista.innerHTML = `
+            <div class="bg-slate-50 rounded-2xl p-8 text-center text-slate-400 border border-slate-200">
+                <span class="text-4xl block mb-2">🛒</span>
+                <p class="text-sm font-extrabold text-slate-700">El carrito está vacío</p>
+                <p class="text-xs text-slate-500 mt-1">Haz clic en "+ Agregar" en los productos del catálogo</p>
+            </div>
+        `
+        totalEl.textContent = 'Q0.00'
+        if (btnCompletar) btnCompletar.disabled = true
+        return
+    }
+
+    let granTotal = 0
+
+    carrito.forEach(item => {
+        const desc = Number(item.descuentoPorcentaje) || 0
+        const precioEfectivo = item.precioVenta * (1 - desc / 100)
+        const subtotal = item.cantidad * precioEfectivo
+        granTotal += subtotal
+
+        const subtotalFormateado = subtotal.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        const precioFormateado = item.precioVenta.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+        lista.innerHTML += `
+            <div class="p-3 bg-slate-50 border-2 border-slate-200 rounded-2xl flex items-center justify-between gap-3 transition hover:border-emerald-300">
+                <div class="flex-1 min-w-0">
+                    <div class="font-extrabold text-slate-900 text-sm truncate">${item.nombreProducto}</div>
+                    <div class="text-xs font-bold text-emerald-700 flex items-center gap-1.5 flex-wrap mt-0.5">
+                        <span>${item.nombrePresentacion} — Q${precioFormateado} c/u</span>
+                        ${desc > 0 ? `<span class="bg-amber-100 text-amber-900 text-[10px] font-black px-1.5 py-0.5 rounded border border-amber-300">-${desc}% desc</span>` : ''}
+                    </div>
+                </div>
+
+                <!-- Controles de Cantidad -->
+                <div class="flex items-center border-2 border-slate-300 rounded-xl overflow-hidden bg-white shadow-sm shrink-0">
+                    <button class="btn-restar px-3 py-1 text-slate-700 hover:bg-slate-100 font-black transition text-sm" data-id="${item.presentacionId}">-</button>
+                    <span class="px-3 py-1 text-xs font-black text-slate-900 min-w-[2rem] text-center">${item.cantidad}</span>
+                    <button class="btn-sumar px-3 py-1 text-slate-700 hover:bg-slate-100 font-black transition text-sm" data-id="${item.presentacionId}">+</button>
+                </div>
+
+                <!-- Subtotal y Botones Acción -->
+                <div class="text-right shrink-0 min-w-[5rem] flex flex-col items-end">
+                    <div class="font-black text-slate-900 text-sm">Q${subtotalFormateado}</div>
+                    <div class="flex items-center gap-1.5 mt-1">
+                        <button class="btn-descuento-item text-xs text-amber-800 hover:text-amber-900 font-extrabold transition px-2 py-0.5 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-lg" data-id="${item.presentacionId}" title="Aplicar Descuento %">
+                            🏷️ %
+                        </button>
+                        <button class="btn-eliminar text-xs text-rose-700 hover:text-rose-900 font-extrabold transition px-2 py-0.5 bg-rose-100 hover:bg-rose-200 border border-rose-300 rounded-lg" data-id="${item.presentacionId}" title="Eliminar ítem">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `
+    })
+
+    const totalFormateado = granTotal.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    totalEl.textContent = `Q${totalFormateado}`
+    if (btnCompletar) btnCompletar.disabled = false
+
+    lista.querySelectorAll('.btn-restar').forEach(btn => {
+        btn.addEventListener('click', () => cambiarCantidad(btn.getAttribute('data-id'), -1))
+    })
+    lista.querySelectorAll('.btn-sumar').forEach(btn => {
+        btn.addEventListener('click', () => cambiarCantidad(btn.getAttribute('data-id'), 1))
+    })
+    lista.querySelectorAll('.btn-descuento-item').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault()
+            solicitarDescuentoItem(btn.getAttribute('data-id'))
+        })
+    })
+    lista.querySelectorAll('.btn-eliminar').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault()
+            solicitarEliminacionItem(btn.getAttribute('data-id'))
+        })
+    })
+}
+
+// 5. Cargar Clientes y Fincas
+async function cargarClientesPOS() {
+    const selectCliente = document.getElementById('select-cliente')
+    if (!selectCliente) return
+
+    try {
+        const { data: clientes, error } = await supabase
+            .from('clientes')
+            .select('*')
+            .order('nombre', { ascending: true })
+
+        if (error) throw error
+
+        listaClientesPOS = clientes || []
+        selectCliente.innerHTML = '<option value="">Consumidor Final (CF)</option>'
+
+        listaClientesPOS.forEach(cli => {
+            selectCliente.innerHTML += `<option value="${cli.id}">${cli.nombre} ${cli.nit ? `(NIT: ${cli.nit})` : ''}</option>`
+        })
+    } catch (err) {
+        console.error("Error al cargar clientes en POS:", err)
+    }
+}
+
+// Evento cambio de cliente
+document.getElementById('select-cliente')?.addEventListener('change', async (e) => {
+    clienteSeleccionadoId = e.target.value
+    const containerFinca = document.getElementById('container-finca')
+    const selectFinca = document.getElementById('select-finca')
+    const badgeCredito = document.getElementById('badge-credito-cliente')
+
+    fincaSeleccionadaId = ''
+
+    if (!clienteSeleccionadoId) {
+        containerFinca?.classList.add('hidden')
+        badgeCredito?.classList.add('hidden')
+        return
+    }
+
+    const cliente = listaClientesPOS.find(c => c.id === clienteSeleccionadoId)
+    if (cliente && badgeCredito) {
+        const limite = Number(cliente.limite_credito) || 0
+        const saldo = Number(cliente.saldo_actual) || 0
+        const disponible = Math.max(0, limite - saldo)
+
+        badgeCredito.textContent = `Crédito Disp: Q${disponible.toFixed(2)}`
+        badgeCredito.className = `text-[11px] font-bold px-2 py-0.5 rounded ${disponible > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`
+        badgeCredito.classList.remove('hidden')
+    }
+
+    // Cargar fincas del cliente
+    try {
+        const { data: fincas, error } = await supabase
+            .from('fincas')
+            .select('*')
+            .eq('cliente_id', clienteSeleccionadoId)
+            .order('nombre_finca', { ascending: true })
+
+        if (error) throw error
+
+        if (fincas && fincas.length > 0 && selectFinca) {
+            selectFinca.innerHTML = '<option value="">Sin finca específica</option>'
+            fincas.forEach(f => {
+                selectFinca.innerHTML += `<option value="${f.id}">🏡 ${f.nombre_finca} (${f.ubicacion || 'Sin ubicación'})</option>`
+            })
+            containerFinca?.classList.remove('hidden')
+        } else {
+            containerFinca?.classList.add('hidden')
+        }
+    } catch (err) {
+        console.error("Error al cargar fincas de cliente:", err)
+        containerFinca?.classList.add('hidden')
+    }
+})
+
+document.getElementById('select-finca')?.addEventListener('change', (e) => {
+    fincaSeleccionadaId = e.target.value
+})
+
+// Selector de Método de Pago
+document.querySelectorAll('.btn-pago-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.btn-pago-opt').forEach(b => {
+            b.classList.remove('bg-emerald-600', 'text-white', 'shadow-md')
+            b.classList.add('text-slate-700', 'hover:bg-slate-200')
+        })
+        btn.classList.remove('text-slate-700', 'hover:bg-slate-200')
+        btn.classList.add('bg-emerald-600', 'text-white', 'shadow-md')
+        tipoPagoSeleccionado = btn.getAttribute('data-tipo') || 'EFECTIVO'
+    })
+})
+
+// 6. Flujo de Cobro y Registro de Venta
+document.getElementById('btn-completar-venta')?.addEventListener('click', async () => {
+    if (carrito.length === 0) return
+
+    const btnCompletar = document.getElementById('btn-completar-venta')
+    const textoOriginal = btnCompletar.innerHTML
+    btnCompletar.innerHTML = '<span>⏳ Procesando...</span>'
+    btnCompletar.disabled = true
+
+    try {
+        const totalVenta = carrito.reduce((sum, item) => {
+            const desc = Number(item.descuentoPorcentaje) || 0
+            const precioEfectivo = item.precioVenta * (1 - desc / 100)
+            return sum + (item.cantidad * precioEfectivo)
+        }, 0)
+
+        // FALLBACK MODO OFFLINE
+        if (!navigator.onLine) {
+            if (tipoPagoSeleccionado === 'CREDITO' && !clienteSeleccionadoId) {
+                alert("⚠️ No se puede realizar una venta a crédito a Consumidor Final.")
+                btnCompletar.innerHTML = textoOriginal
+                btnCompletar.disabled = false
+                return
+            }
+
+            const localId = 'local-' + crypto.randomUUID()
+            carrito.forEach(item => {
+                const pres = catalogo.find(p => p.id === item.presentacionId)
+                if (pres && pres.productos) {
+                    pres.productos.stock_base = Math.max(0, Number(pres.productos.stock_base) - (item.cantidad * item.factorConversion))
+                }
+            })
+
+            actualizarCacheCatalogoLocal()
+            renderCatalogo(catalogo)
+
+            const pendingSales = JSON.parse(localStorage.getItem('adnova_pending_sales') || '[]')
+            pendingSales.push({
+                id: localId,
+                total: totalVenta,
+                cliente_id: clienteSeleccionadoId || null,
+                finca_id: fincaSeleccionadaId || null,
+                tipo_pago: tipoPagoSeleccionado,
+                carrito: [...carrito]
+            })
+            localStorage.setItem('adnova_pending_sales', JSON.stringify(pendingSales))
+
+            renderizarTicket(localId, [...carrito], totalVenta)
+            vaciarCarrito()
+
+            const modalExito = document.getElementById('modal-exito')
+            const detalleExito = document.getElementById('mensaje-exito-detalle')
+            if (detalleExito) {
+                detalleExito.textContent = `La venta offline por Q${totalVenta.toFixed(2)} se guardó localmente. Se sincronizará al recuperar internet.`
+            }
+            modalExito?.classList.remove('hidden')
+            btnCompletar.innerHTML = textoOriginal
+            btnCompletar.disabled = true
+            return
+        }
+
+        // VALIDACIÓN ONLINE DE CRÉDITO
+        if (tipoPagoSeleccionado === 'CREDITO') {
+            if (!clienteSeleccionadoId) {
+                alert("⚠️ No se puede realizar una venta a crédito a Consumidor Final.")
+                btnCompletar.innerHTML = textoOriginal
+                btnCompletar.disabled = false
+                return
+            }
+
+            const { data: clienteFresh } = await supabase
+                .from('clientes')
+                .select('saldo_actual, limite_credito, nombre')
+                .eq('id', clienteSeleccionadoId)
+                .single()
+
+            if (clienteFresh) {
+                const saldoActual = Number(clienteFresh.saldo_actual) || 0
+                const limiteCredito = Number(clienteFresh.limite_credito) || 0
+                if ((saldoActual + totalVenta) > limiteCredito) {
+                    const disponible = Math.max(0, limiteCredito - saldoActual)
+                    alert(`⚠️ Límite de crédito excedido para "${clienteFresh.nombre}". Crédito disponible: Q${disponible.toFixed(2)}.`)
+                    btnCompletar.innerHTML = textoOriginal
+                    btnCompletar.disabled = false
+                    return
+                }
+            }
+        }
+
+        // 1. Insert en `ventas`
+        const { data: nuevaVenta, error: errorVenta } = await supabase
+            .from('ventas')
+            .insert([{
+                total: totalVenta,
+                estado_factura: 'pendiente',
+                cliente_id: clienteSeleccionadoId || null,
+                finca_id: fincaSeleccionadaId || null,
+                tipo_pago: tipoPagoSeleccionado
+            }])
+            .select()
+            .single()
+
+        if (errorVenta) throw errorVenta
+
+        if (tipoPagoSeleccionado === 'CREDITO' && clienteSeleccionadoId) {
+            const { data: cliData } = await supabase.from('clientes').select('saldo_actual').eq('id', clienteSeleccionadoId).single()
+            const nuevoSaldo = (Number(cliData?.saldo_actual) || 0) + totalVenta
+            await supabase.from('clientes').update({ saldo_actual: nuevoSaldo }).eq('id', clienteSeleccionadoId)
+        }
+
+        // 2. Bulk INSERT en `detalle_ventas`
+        const detalles = carrito.map(item => {
+            const desc = Number(item.descuentoPorcentaje) || 0
+            const precioEfectivo = item.precioVenta * (1 - desc / 100)
+            return {
+                venta_id: nuevaVenta.id,
+                presentacion_id: item.presentacionId,
+                cantidad: item.cantidad,
+                subtotal: item.cantidad * precioEfectivo
+            }
+        })
+
+        const { error: errorDetalle } = await supabase
+            .from('detalle_ventas')
+            .insert(detalles)
+
+        if (errorDetalle) throw errorDetalle
+
+        // 3. Salida FEFO por RPC
+        const { data: { session } } = await supabase.auth.getSession()
+        const usuarioId = session?.user?.id || null
+
+        for (const item of carrito) {
+            const cantidadBase = item.cantidad * item.factorConversion
+            await supabase.rpc('procesar_salida_fefo', {
+                p_producto_id: item.productoId,
+                p_cantidad_base: cantidadBase,
+                p_referencia_id: nuevaVenta.id,
+                p_usuario_id: usuarioId
+            })
+        }
+
+        // 4. Ticket y Éxito
+        renderizarTicket(nuevaVenta.id, [...carrito], totalVenta)
+        vaciarCarrito()
+
+        const modalExito = document.getElementById('modal-exito')
+        const detalleExito = document.getElementById('mensaje-exito-detalle')
+        if (detalleExito) {
+            detalleExito.textContent = `Venta #${nuevaVenta.id.slice(0, 8)} completada exitosamente. Total: Q${totalVenta.toFixed(2)}.`
+        }
+        modalExito?.classList.remove('hidden')
+
+        await cargarCatalogo()
+
+    } catch (err) {
+        console.error("Error al procesar la venta:", err)
+        alert(`❌ Error al completar la venta: ${err.message || err}`)
+    } finally {
+        btnCompletar.innerHTML = textoOriginal
+        btnCompletar.disabled = carrito.length === 0
+    }
+})
+
+// Ticket Térmico Render
+function renderizarTicket(ventaId, cartItems, total) {
+    const ticketContainer = document.getElementById('ticket-impresion')
+    if (!ticketContainer) return
+
+    const shortId = (ventaId || '').slice(0, 8).toUpperCase()
+    const fechaHora = new Date().toLocaleString('es-GT')
+    const cajeroEmail = document.getElementById('cajero-email')?.textContent || 'Cajero'
+    
+    let nombreClienteStr = 'Consumidor Final (CF)'
+    if (clienteSeleccionadoId) {
+        const cliObj = listaClientesPOS.find(c => c.id === clienteSeleccionadoId)
+        if (cliObj) nombreClienteStr = cliObj.nombre
+    }
+
+    const totalForm = total.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+    let filasHtml = ''
+    cartItems.forEach(item => {
+        const desc = Number(item.descuentoPorcentaje) || 0
+        const precioEfectivo = item.precioVenta * (1 - desc / 100)
+        const subtotal = item.cantidad * precioEfectivo
+        const subtotalForm = subtotal.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        
+        filasHtml += `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                <span style="font-weight: bold;">${item.cantidad}x ${item.nombreProducto}</span>
+                <span>Q${subtotalForm}</span>
+            </div>
+            <div style="font-size: 10px; color: #444; margin-bottom: 4px; padding-left: 8px;">
+                ${item.nombrePresentacion} @ Q${precioEfectivo.toFixed(2)} c/u
+            </div>
+        `
+    })
+
+    ticketContainer.innerHTML = `
+        <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px;">
+            <h2 style="font-size: 14px; font-weight: bold; margin: 0; text-transform: uppercase;">Agrovet Campo Alto</h2>
+            <p style="font-size: 10px; margin: 2px 0 0 0;">Terminal POS Vendedor</p>
+        </div>
+
+        <div style="font-size: 10px; border-bottom: 1px dashed #000; padding-bottom: 6px; margin-bottom: 8px;">
+            <div><strong>Ticket No:</strong> #${shortId}</div>
+            <div><strong>Fecha:</strong> ${fechaHora}</div>
+            <div><strong>Atendido por:</strong> ${cajeroEmail}</div>
+            <div><strong>Cliente:</strong> ${nombreClienteStr}</div>
+            <div><strong>Pago:</strong> ${tipoPagoSeleccionado}</div>
+        </div>
+
+        <div style="border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px;">
+            ${filasHtml}
+        </div>
+
+        <div style="text-align: right; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px;">
+            <div style="font-size: 14px; font-weight: bold;">TOTAL: Q${totalForm}</div>
+        </div>
+
+        <div style="text-align: center; font-size: 10px; margin-top: 8px;">
+            <p style="margin: 0; font-weight: bold;">*** Comprobante de Caja ***</p>
+            <p style="margin: 2px 0 0 0;">¡Gracias por su compra!</p>
+        </div>
+    `
+}
+
+// 7. SISTEMA DE AUTORIZACIÓN DE SUPERVISOR (PIN RESTRICTED)
+const modalPinSupervisor = document.getElementById('modal-pin-supervisor')
+const modalPinContent = document.getElementById('modal-pin-content')
+const formPinSupervisor = document.getElementById('form-pin-supervisor')
+const inputPinSupervisor = document.getElementById('input-pin-supervisor')
+const errorPinSupervisor = document.getElementById('error-pin-supervisor')
+const descAccionPin = document.getElementById('desc-accion-pin')
+const btnCancelarPin = document.getElementById('btn-cancelar-pin')
+const btnAplicarDescuentoCart = document.getElementById('btn-aplicar-descuento-cart')
+
+function mostrarToast(mensaje, tipo = 'success') {
+    let container = document.getElementById('toast-container')
+    if (!container) {
+        container = document.createElement('div')
+        container.id = 'toast-container'
+        container.className = 'fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none'
+        document.body.appendChild(container)
+    }
+
+    const toast = document.createElement('div')
+    toast.className = `pointer-events-auto px-4 py-3 rounded-2xl text-xs font-extrabold text-white shadow-2xl flex items-center gap-2 border transition-all duration-300 transform translate-y-4 opacity-0 ${
+        tipo === 'success' 
+            ? 'bg-emerald-900 border-emerald-500 text-emerald-100' 
+            : 'bg-rose-900 border-rose-500 text-rose-100'
+    }`
+    toast.innerHTML = `<span>${tipo === 'success' ? '✅' : '⚠️'}</span><span>${mensaje}</span>`
+    container.appendChild(toast)
+
+    requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-4', 'opacity-0')
+    })
+
+    setTimeout(() => {
+        toast.classList.add('translate-y-4', 'opacity-0')
+        setTimeout(() => toast.remove(), 300)
+    }, 3000)
+}
+
+function abrirModalPinSupervisor(accion, targetId, valor = null, descripcion = '') {
+    if (!modalPinSupervisor) return
+
+    modalPinSupervisor.setAttribute('data-action', accion)
+    modalPinSupervisor.setAttribute('data-target', targetId || '')
+    modalPinSupervisor.setAttribute('data-value', valor !== null ? String(valor) : '')
+
+    if (descAccionPin) {
+        descAccionPin.textContent = descripcion || 'Ingresa el PIN de 4 dígitos para autorizar la acción'
+    }
+
+    if (errorPinSupervisor) {
+        errorPinSupervisor.classList.add('hidden')
+    }
+
+    if (inputPinSupervisor) {
+        inputPinSupervisor.value = ''
+    }
+
+    modalPinSupervisor.classList.remove('hidden', 'opacity-0')
+    modalPinSupervisor.classList.add('flex', 'opacity-100')
+
+    setTimeout(() => {
+        inputPinSupervisor?.focus()
+    }, 100)
+}
+
+function cerrarModalPinSupervisor() {
+    if (!modalPinSupervisor) return
+
+    modalPinSupervisor.classList.add('hidden')
+    modalPinSupervisor.classList.remove('flex', 'opacity-100')
+    modalPinSupervisor.setAttribute('data-action', '')
+    modalPinSupervisor.setAttribute('data-target', '')
+    modalPinSupervisor.setAttribute('data-value', '')
+
+    if (inputPinSupervisor) {
+        inputPinSupervisor.value = ''
+    }
+}
+
+function solicitarEliminacionItem(presentacionId) {
+    const item = carrito.find(i => i.presentacionId === presentacionId)
+    const nombreItem = item ? item.nombreProducto : 'el ítem'
+    abrirModalPinSupervisor(
+        'delete_item', 
+        presentacionId, 
+        null, 
+        `Autorizar eliminación de "${nombreItem}" del carrito`
+    )
+}
+
+function solicitarDescuentoItem(presentacionId) {
+    const item = carrito.find(i => i.presentacionId === presentacionId)
+    if (!item) return
+
+    const actualDesc = item.descuentoPorcentaje || 0
+    const pctStr = prompt(`Porcentaje de descuento para "${item.nombreProducto}" (0 - 100%):`, actualDesc ? String(actualDesc) : '10')
+
+    if (pctStr === null) return
+    const pct = parseFloat(pctStr)
+
+    if (isNaN(pct) || pct < 0 || pct > 100) {
+        alert("⚠️ Ingrese un porcentaje de descuento válido (entre 0% y 100%).")
+        return
+    }
+
+    abrirModalPinSupervisor(
+        'discount_item',
+        presentacionId,
+        pct,
+        `Autorizar descuento de ${pct}% para "${item.nombreProducto}"`
+    )
+}
+
+function solicitarDescuentoGlobal() {
+    if (carrito.length === 0) return
+
+    const pctStr = prompt('Porcentaje de descuento global para todo el carrito (0 - 100%):', '10')
+    if (pctStr === null) return
+
+    const pct = parseFloat(pctStr)
+    if (isNaN(pct) || pct < 0 || pct > 100) {
+        alert("⚠️ Ingrese un porcentaje de descuento válido (entre 0% y 100%).")
+        return
+    }
+
+    abrirModalPinSupervisor(
+        'discount_global',
+        'cart',
+        pct,
+        `Autorizar descuento global de ${pct}% a todos los ítems`
+    )
+}
+
+function eliminarDelCarritoDirecto(presentacionId) {
+    carrito = carrito.filter(item => item.presentacionId !== presentacionId)
+    renderCarrito()
+}
+
+// Form PIN Submit Engine
+if (formPinSupervisor) {
+    formPinSupervisor.addEventListener('submit', async (e) => {
+        e.preventDefault()
+
+        const inputPin = inputPinSupervisor ? inputPinSupervisor.value.trim() : ''
+
+        if (!inputPin || inputPin.length !== 4 || !/^\d+$/.test(inputPin)) {
+            if (errorPinSupervisor) {
+                errorPinSupervisor.textContent = '⚠️ El PIN debe ser exactamente de 4 dígitos numéricos.'
+                errorPinSupervisor.classList.remove('hidden')
+            }
+            if (modalPinContent) {
+                modalPinContent.classList.remove('animate-shake')
+                void modalPinContent.offsetWidth
+                modalPinContent.classList.add('animate-shake')
+            }
+            return
+        }
+
+        const btnAutorizar = document.getElementById('btn-autorizar-pin')
+        const textoOriginal = btnAutorizar ? btnAutorizar.innerHTML : 'Autorizar'
+        if (btnAutorizar) {
+            btnAutorizar.disabled = true
+            btnAutorizar.innerHTML = '<span>⏳ Validando...</span>'
+        }
+
+        try {
+            const { data: isValid, error } = await supabase.rpc('validar_pin_supervisor', { p_pin: inputPin })
+
+            if (error) {
+                console.error("Error al validar PIN de supervisor:", error)
+                throw error
+            }
+
+            if (isValid === true) {
+                const accion = modalPinSupervisor.getAttribute('data-action')
+                const targetId = modalPinSupervisor.getAttribute('data-target')
+                const valor = modalPinSupervisor.getAttribute('data-value')
+
+                cerrarModalPinSupervisor()
+
+                if (accion === 'delete_item') {
+                    eliminarDelCarritoDirecto(targetId)
+                } else if (accion === 'discount_item') {
+                    const item = carrito.find(i => i.presentacionId === targetId)
+                    if (item) {
+                        item.descuentoPorcentaje = parseFloat(valor) || 0
+                        renderCarrito()
+                    }
+                } else if (accion === 'discount_global') {
+                    const descPct = parseFloat(valor) || 0
+                    carrito.forEach(item => {
+                        item.descuentoPorcentaje = descPct
+                    })
+                    renderCarrito()
+                }
+
+                mostrarToast("Autorización de Admin aceptada", "success")
+
+            } else {
+                if (inputPinSupervisor) {
+                    inputPinSupervisor.value = ''
+                }
+                if (errorPinSupervisor) {
+                    errorPinSupervisor.textContent = '⚠️ PIN Incorrecto.'
+                    errorPinSupervisor.classList.remove('hidden')
+                }
+                if (modalPinContent) {
+                    modalPinContent.classList.remove('animate-shake')
+                    void modalPinContent.offsetWidth
+                    modalPinContent.classList.add('animate-shake')
+                }
+                setTimeout(() => inputPinSupervisor?.focus(), 150)
+            }
+        } catch (err) {
+            console.error("Excepción en validación de PIN:", err)
+            if (errorPinSupervisor) {
+                errorPinSupervisor.textContent = '⚠️ Error al verificar PIN. Verifique su conexión.'
+                errorPinSupervisor.classList.remove('hidden')
+            }
+        } finally {
+            if (btnAutorizar) {
+                btnAutorizar.disabled = false
+                btnAutorizar.innerHTML = textoOriginal
+            }
+        }
+    })
+}
+
+if (btnCancelarPin) {
+    btnCancelarPin.addEventListener('click', cerrarModalPinSupervisor)
+}
+
+if (btnAplicarDescuentoCart) {
+    btnAplicarDescuentoCart.addEventListener('click', solicitarDescuentoGlobal)
+}
+
+// Listeners Modal Exito
+document.getElementById('btn-imprimir-ticket')?.addEventListener('click', () => {
+    window.print()
+    document.getElementById('modal-exito')?.classList.add('hidden')
+})
+
+document.getElementById('btn-nueva-venta')?.addEventListener('click', () => {
+    document.getElementById('modal-exito')?.classList.add('hidden')
+})
+
+// Inicializar la aplicación POS
+document.addEventListener('DOMContentLoaded', () => {
+    validarSesion()
+})

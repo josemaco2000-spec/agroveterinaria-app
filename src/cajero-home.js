@@ -52,13 +52,13 @@ function inicializarNavegacion() {
 
     if (cardNuevaVenta) {
         cardNuevaVenta.addEventListener('click', () => {
-            window.location.href = 'pos.html'
+            window.location.href = 'cajero-pos.html'
         })
     }
 
     if (cardBuscarCliente) {
         cardBuscarCliente.addEventListener('click', () => {
-            window.location.href = 'clientes.html?mode=readonly'
+            window.location.href = 'cajero-clientes.html'
         })
     }
 
@@ -70,7 +70,7 @@ function inicializarNavegacion() {
 
     if (cardCierreCaja) {
         cardCierreCaja.addEventListener('click', () => {
-            window.location.href = 'cierre.html'
+            window.location.href = 'cajero-cierre.html'
         })
     }
 
@@ -86,7 +86,7 @@ function inicializarNavegacion() {
 const modalPrecio = document.getElementById('modal-precio')
 const modalPrecioBox = document.getElementById('modal-precio-box')
 const btnCerrarModalPrecio = document.getElementById('btn-cerrar-modal-precio')
-const inputBusquedaPrecio = document.getElementById('input-busqueda-precio')
+const searchPrecioInput = document.getElementById('search-precio') || document.getElementById('input-busqueda-precio')
 const resultadosPrecioContainer = document.getElementById('resultados-precio')
 
 async function abrirModalPrecio() {
@@ -100,9 +100,9 @@ async function abrirModalPrecio() {
         modalPrecioBox.classList.add('scale-100')
     }
 
-    if (inputBusquedaPrecio) {
-        inputBusquedaPrecio.value = ''
-        setTimeout(() => inputBusquedaPrecio.focus(), 150)
+    if (searchPrecioInput) {
+        searchPrecioInput.value = ''
+        setTimeout(() => searchPrecioInput.focus(), 150)
     }
 
     if (catalogoPresentaciones.length === 0) {
@@ -128,8 +128,8 @@ async function cargarCatalogoPrecios() {
     if (!resultadosPrecioContainer) return
 
     resultadosPrecioContainer.innerHTML = `
-        <div class="text-center py-12 text-slate-500 font-medium flex items-center justify-center gap-2">
-            <span class="inline-block animate-spin">⏳</span> Cargando catálogo de precios...
+        <div class="col-span-full text-center py-12 text-slate-500 font-medium flex items-center justify-center gap-2">
+            <span class="inline-block animate-spin text-2xl">⏳</span> Cargando catálogo de precios...
         </div>
     `
 
@@ -142,7 +142,7 @@ async function cargarCatalogoPrecios() {
                     id,
                     nombre,
                     codigo_barras,
-                    unidad_base
+                    imagen_url
                 )
             `)
             .order('nombre_presentacion', { ascending: true })
@@ -154,7 +154,7 @@ async function cargarCatalogoPrecios() {
     } catch (err) {
         console.error("Error al cargar presentaciones para consulta de precio:", err)
         resultadosPrecioContainer.innerHTML = `
-            <div class="text-center py-8 text-rose-500 font-medium">
+            <div class="col-span-full text-center py-8 text-rose-500 font-medium">
                 ❌ Error al cargar los precios. Intente nuevamente.
             </div>
         `
@@ -178,32 +178,35 @@ function renderizarPrecios(filtroText) {
 
     if (filtrados.length === 0) {
         resultadosPrecioContainer.innerHTML = `
-            <div class="text-center py-12 text-slate-400 font-medium">
-                No se encontraron productos o presentaciones para "${filtroText}"
+            <div class="col-span-full text-center py-12 text-slate-400 font-medium">
+                No se encontraron precios para "${filtroText}"
             </div>
         `
         return
     }
 
-    resultadosPrecioContainer.innerHTML = filtrados.slice(0, 50).map(item => {
+    resultadosPrecioContainer.innerHTML = filtrados.slice(0, 60).map(item => {
         const precioUnitario = Number(item.precio_venta || 0)
         const nombreProducto = item.productos?.nombre || 'Producto Desconocido'
         const nombrePresentacion = item.nombre_presentacion || 'Unidad Base'
-        const factor = Number(item.factor_conversion || 1)
+        const imagenUrl = item.productos?.imagen_url
+
+        const imagenHtml = imagenUrl 
+            ? `<img src="${imagenUrl}" alt="${nombreProducto}" class="w-16 h-16 object-cover rounded-xl border border-slate-200 shadow-sm shrink-0">`
+            : `<div class="w-16 h-16 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-3xl font-bold shrink-0">📦</div>`
 
         return `
-            <div class="bg-slate-50 hover:bg-emerald-50/70 border border-slate-200/80 hover:border-emerald-300 rounded-2xl p-4 transition flex items-center justify-between gap-4">
+            <div class="bg-white hover:bg-emerald-50/60 border-2 border-slate-100 hover:border-emerald-300 rounded-2xl p-4 transition shadow-sm hover:shadow-md flex items-center gap-4">
+                ${imagenHtml}
                 <div class="flex-1 min-w-0">
-                    <h4 class="text-lg font-extrabold text-slate-900 truncate">${nombreProducto}</h4>
-                    <div class="flex items-center gap-2 mt-1">
-                        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-0.5 rounded-md">
-                            ${nombrePresentacion} (${factor} base)
-                        </span>
-                    </div>
+                    <h4 class="text-base font-extrabold text-slate-900 leading-snug truncate">${nombreProducto}</h4>
+                    <span class="inline-block mt-1 bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-0.5 rounded-lg border border-slate-200">
+                        ${nombrePresentacion}
+                    </span>
                 </div>
-                <div class="text-right flex-shrink-0">
-                    <span class="text-xs font-semibold text-slate-500 block uppercase tracking-wider">Precio Venta</span>
-                    <span class="text-2xl font-black text-emerald-600">Q ${precioUnitario.toFixed(2)}</span>
+                <div class="text-right shrink-0">
+                    <span class="text-[10px] font-extrabold text-slate-400 block uppercase tracking-wider">Precio Venta</span>
+                    <span class="text-2xl font-black text-emerald-600 font-sans">Q ${precioUnitario.toFixed(2)}</span>
                 </div>
             </div>
         `
@@ -229,8 +232,8 @@ document.addEventListener('keydown', (e) => {
     }
 })
 
-if (inputBusquedaPrecio) {
-    inputBusquedaPrecio.addEventListener('input', (e) => {
+if (searchPrecioInput) {
+    searchPrecioInput.addEventListener('input', (e) => {
         renderizarPrecios(e.target.value)
     })
 }

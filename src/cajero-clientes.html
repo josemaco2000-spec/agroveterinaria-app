@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADNova - Directores de Clientes (Caja)</title>
+
+    <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', '"Inter"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-emerald-200">
+
+    <!-- TOP NAVBAR (SIN SIDEBAR) -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 sm:px-8 py-3.5 shadow-sm">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            <!-- Left: Botón Volver al Inicio -->
+            <a href="cajero-home.html" class="bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-900 font-extrabold text-base px-5 py-2.5 rounded-2xl border border-slate-300 shadow-sm transition active:scale-95 flex items-center gap-2.5 shrink-0">
+                <span class="text-xl">⬅️</span>
+                <span>Volver al Inicio</span>
+            </a>
+
+            <!-- Center: Titulo -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-xl font-black shadow-md shadow-blue-600/20">
+                    👥
+                </div>
+                <div>
+                    <h1 class="text-xl font-black text-slate-900 tracking-tight leading-none">Directorio de Clientes</h1>
+                    <span class="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Terminal Vendedor</span>
+                </div>
+            </div>
+
+            <!-- Right: Cajero Email -->
+            <div class="flex items-center gap-2 bg-slate-100 border border-slate-300 px-4 py-2 rounded-full">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span id="cajero-email" class="text-xs sm:text-sm font-bold text-slate-800">Cargando...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-8 space-y-6">
+        
+        <!-- Buscador Gran Formato -->
+        <div class="bg-white rounded-3xl p-4 border-2 border-slate-200 shadow-md">
+            <div class="relative w-full">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-2xl text-slate-400">🔍</span>
+                <input type="text" id="input-busqueda-cliente" autofocus 
+                       placeholder="Buscar cliente por nombre o número de NIT..." 
+                       class="w-full bg-slate-50 border-2 border-slate-200 focus:border-blue-500 focus:bg-white rounded-2xl pl-14 pr-4 py-4 text-lg md:text-xl font-bold text-slate-900 placeholder-slate-400 outline-none transition shadow-inner">
+            </div>
+        </div>
+
+        <!-- Grid de Tarjetas de Clientes -->
+        <div id="grid-clientes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="col-span-full bg-white rounded-3xl p-12 text-center text-slate-400 font-bold border border-slate-200 shadow-sm">
+                ⏳ Cargando directorio de clientes...
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL DE NUEVO ABONO -->
+    <div id="modal-abono" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-8 space-y-6 border border-slate-200">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">💵</span>
+                    <div>
+                        <h3 class="text-xl font-black text-slate-900">Registrar Abono a Crédito</h3>
+                        <p id="abono-cliente-nombre" class="text-xs text-blue-700 font-extrabold truncate max-w-[280px]">Cliente</p>
+                    </div>
+                </div>
+                <button id="btn-cerrar-modal-abono" class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xl flex items-center justify-center transition">✕</button>
+            </div>
+
+            <form id="form-abono" class="space-y-4">
+                <input type="hidden" id="abono-cliente-id">
+
+                <div>
+                    <label for="abono-monto" class="block text-xs font-extrabold text-slate-700 uppercase tracking-wide mb-1">Monto del Abono (Q):</label>
+                    <input type="number" id="abono-monto" step="0.01" min="0.01" required placeholder="0.00" class="w-full bg-slate-50 border-2 border-slate-300 focus:border-emerald-500 rounded-2xl p-3.5 text-2xl font-black text-emerald-600 outline-none transition shadow-inner">
+                </div>
+
+                <div>
+                    <label for="abono-metodo" class="block text-xs font-extrabold text-slate-700 uppercase tracking-wide mb-1">Método de Pago:</label>
+                    <select id="abono-metodo" class="w-full bg-slate-50 border-2 border-slate-300 focus:border-emerald-500 rounded-2xl p-3 text-sm font-bold text-slate-800 outline-none cursor-pointer">
+                        <option value="EFECTIVO">💵 Efectivo</option>
+                        <option value="TRANSFERENCIA">🏦 Transferencia Bancaria</option>
+                        <option value="CHEQUE">📜 Cheque</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="abono-referencia" class="block text-xs font-extrabold text-slate-700 uppercase tracking-wide mb-1">No. Referencia / Boleta (Opcional):</label>
+                    <input type="text" id="abono-referencia" placeholder="Ej: Transf #98234" class="w-full bg-slate-50 border-2 border-slate-300 focus:border-emerald-500 rounded-2xl p-3 text-sm font-bold text-slate-800 outline-none">
+                </div>
+
+                <div>
+                    <label for="abono-observaciones" class="block text-xs font-extrabold text-slate-700 uppercase tracking-wide mb-1">Observaciones (Opcional):</label>
+                    <input type="text" id="abono-observaciones" placeholder="Nota adicional..." class="w-full bg-slate-50 border-2 border-slate-300 focus:border-emerald-500 rounded-2xl p-3 text-sm font-bold text-slate-800 outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 pt-3">
+                    <button type="button" id="btn-cancelar-abono" class="py-3.5 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-sm transition">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="btn-guardar-abono" class="py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-lg shadow-emerald-600/30 transition">
+                        Guardar Abono
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL VER FINCAS (READ-ONLY) -->
+    <div id="modal-fincas" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-xl w-full p-6 sm:p-8 space-y-6 border border-slate-200">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">🏡</span>
+                    <div>
+                        <h3 class="text-xl font-black text-slate-900">Fincas Registradas</h3>
+                        <p id="fincas-cliente-nombre" class="text-xs text-blue-700 font-extrabold">Cliente</p>
+                    </div>
+                </div>
+                <button id="btn-cerrar-modal-fincas" class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xl flex items-center justify-center transition">✕</button>
+            </div>
+
+            <div id="lista-fincas-modal" class="space-y-3 max-h-80 overflow-y-auto pr-1">
+                <div class="text-center py-8 text-slate-400 font-medium">Cargando fincas...</div>
+            </div>
+
+            <div class="pt-2 text-right">
+                <button id="btn-cerrar-fincas-footer" class="py-3 px-6 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-sm transition">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="cajero-clientes.js"></script>
+</body>
+</html>

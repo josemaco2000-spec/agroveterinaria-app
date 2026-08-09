@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADNova - Cierre de Caja (Arqueo Ciego)</title>
+
+    <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', '"Inter"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-emerald-200">
+
+    <!-- TOP NAVBAR (SIN SIDEBAR) -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 sm:px-8 py-3.5 shadow-sm">
+        <div class="max-w-4xl mx-auto flex items-center justify-between gap-4">
+            <!-- Left: Botón Volver al Inicio -->
+            <a href="cajero-home.html" class="bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-900 font-extrabold text-base px-5 py-2.5 rounded-2xl border border-slate-300 shadow-sm transition active:scale-95 flex items-center gap-2.5 shrink-0">
+                <span class="text-xl">⬅️</span>
+                <span>Volver al Inicio</span>
+            </a>
+
+            <!-- Center: Titulo -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-rose-600 flex items-center justify-center text-white text-xl font-black shadow-md shadow-rose-600/20">
+                    🔒
+                </div>
+                <div>
+                    <h1 class="text-xl font-black text-slate-900 tracking-tight leading-none">Cierre de Caja</h1>
+                    <span class="text-[11px] font-bold text-rose-700 uppercase tracking-wider">Arqueo Ciego</span>
+                </div>
+            </div>
+
+            <!-- Right: Cajero Email -->
+            <div class="flex items-center gap-2 bg-slate-100 border border-slate-300 px-4 py-2 rounded-full">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span id="cajero-email" class="text-xs sm:text-sm font-bold text-slate-800">Cargando...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT: ARQUEO CIEGO -->
+    <main class="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-8 space-y-6">
+        
+        <div class="text-center space-y-2">
+            <h2 class="text-3xl font-black text-slate-900 tracking-tight">Declaración de Efectivo en Caja</h2>
+            <p class="text-slate-600 font-bold text-base max-w-xl mx-auto">
+                Ingresa la cantidad física de billetes y monedas que entregas al finalizar tu turno.
+            </p>
+        </div>
+
+        <form id="form-cierre-ciego" class="space-y-6">
+            <!-- Grid de Billetes y Monedas -->
+            <div class="bg-white rounded-3xl p-6 sm:p-8 border-2 border-slate-200 shadow-xl space-y-4">
+                <h3 class="text-lg font-black text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
+                    <span>💵</span> Desglose Físico de Dinero
+                </h3>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Billetes Q200 -->
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl font-black text-rose-700 bg-rose-100 px-3 py-1.5 rounded-xl">Q200</span>
+                            <span class="text-xs font-extrabold text-slate-500">Billetes</span>
+                        </div>
+                        <input type="number" id="cant-200" min="0" value="0" class="input-billete w-24 min-h-12 bg-white border-2 border-slate-300 focus:border-rose-500 rounded-xl text-center text-xl font-black text-slate-900 outline-none transition shadow-inner">
+                    </div>
+
+                    <!-- Billetes Q100 -->
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl font-black text-amber-700 bg-amber-100 px-3 py-1.5 rounded-xl">Q100</span>
+                            <span class="text-xs font-extrabold text-slate-500">Billetes</span>
+                        </div>
+                        <input type="number" id="cant-100" min="0" value="0" class="input-billete w-24 min-h-12 bg-white border-2 border-slate-300 focus:border-rose-500 rounded-xl text-center text-xl font-black text-slate-900 outline-none transition shadow-inner">
+                    </div>
+
+                    <!-- Billetes Q50 -->
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl font-black text-orange-700 bg-orange-100 px-3 py-1.5 rounded-xl">Q50</span>
+                            <span class="text-xs font-extrabold text-slate-500">Billetes</span>
+                        </div>
+                        <input type="number" id="cant-50" min="0" value="0" class="input-billete w-24 min-h-12 bg-white border-2 border-slate-300 focus:border-rose-500 rounded-xl text-center text-xl font-black text-slate-900 outline-none transition shadow-inner">
+                    </div>
+
+                    <!-- Billetes Q20 -->
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl font-black text-blue-700 bg-blue-100 px-3 py-1.5 rounded-xl">Q20</span>
+                            <span class="text-xs font-extrabold text-slate-500">Billetes</span>
+                        </div>
+                        <input type="number" id="cant-20" min="0" value="0" class="input-billete w-24 min-h-12 bg-white border-2 border-slate-300 focus:border-rose-500 rounded-xl text-center text-xl font-black text-slate-900 outline-none transition shadow-inner">
+                    </div>
+
+                    <!-- Billetes Q10 -->
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl font-black text-teal-700 bg-teal-100 px-3 py-1.5 rounded-xl">Q10</span>
+                            <span class="text-xs font-extrabold text-slate-500">Billetes</span>
+                        </div>
+                        <input type="number" id="cant-10" min="0" value="0" class="input-billete w-24 min-h-12 bg-white border-2 border-slate-300 focus:border-rose-500 rounded-xl text-center text-xl font-black text-slate-900 outline-none transition shadow-inner">
+                    </div>
+
+                    <!-- Billetes Q5 -->
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl font-black text-purple-700 bg-purple-100 px-3 py-1.5 rounded-xl">Q5</span>
+                            <span class="text-xs font-extrabold text-slate-500">Billetes</span>
+                        </div>
+                        <input type="number" id="cant-5" min="0" value="0" class="input-billete w-24 min-h-12 bg-white border-2 border-slate-300 focus:border-rose-500 rounded-xl text-center text-xl font-black text-slate-900 outline-none transition shadow-inner">
+                    </div>
+
+                    <!-- Monedas Q1 -->
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between gap-4 sm:col-span-2">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl font-black text-slate-800 bg-slate-200 px-3 py-1.5 rounded-xl">Q1</span>
+                            <span class="text-xs font-extrabold text-slate-500">Monedas / Billetes Q1</span>
+                        </div>
+                        <input type="number" id="cant-1" min="0" value="0" class="input-billete w-24 min-h-12 bg-white border-2 border-slate-300 focus:border-rose-500 rounded-xl text-center text-xl font-black text-slate-900 outline-none transition shadow-inner">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Calculado en Pantalla -->
+            <div class="p-6 rounded-3xl bg-rose-50 border-2 border-rose-200 text-center shadow-inner space-y-1">
+                <span class="text-xs font-extrabold text-rose-800 uppercase tracking-widest block">Total Efectivo Declarado</span>
+                <h3 id="total-monto-real" class="text-4xl sm:text-5xl font-black text-rose-600 font-sans tracking-tight">
+                    Q 0.00
+                </h3>
+            </div>
+
+            <!-- Botón Enviar Cierre -->
+            <button type="submit" id="btn-enviar-cierre" 
+                    class="w-full min-h-12 py-4 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xl md:text-2xl shadow-xl shadow-rose-600/30 transition active:scale-98 flex items-center justify-center gap-3">
+                <span>🔒 ENVIAR CIERRE DE TURNO</span>
+            </button>
+        </form>
+    </main>
+
+    <!-- MODAL ÉXITO CIERRE DE CAJA -->
+    <div id="modal-cierre-exito" class="hidden fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-8 text-center space-y-5 shadow-2xl border border-slate-200">
+            <div class="w-20 h-20 bg-rose-100 text-rose-600 border border-rose-300 rounded-full flex items-center justify-center mx-auto text-4xl font-extrabold shadow-md">
+                🔒
+            </div>
+            <h3 class="text-2xl font-black text-slate-900 tracking-tight">¡Cierre Registrado!</h3>
+            <p class="text-sm font-bold text-slate-600 leading-relaxed">
+                Tu declaración de efectivo fue enviada con éxito. Tu sesión ha finalizado.
+            </p>
+            <button id="btn-salir-cierre" class="w-full py-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-base transition shadow-lg">
+                Entendido / Salir
+            </button>
+        </div>
+    </div>
+
+    <script type="module" src="cajero-cierre.js"></script>
+</body>
+</html>
