@@ -306,72 +306,86 @@ async function cargarCatalogo() {
 }
 
 // Renderizar las tarjetas del catálogo
+// ─────────────────────────────────────────────────────────────────────────────
+// renderCatalogo ─ agrupa presentaciones por producto_id
+// Muestra 1 tarjeta por producto. Si tiene >1 presentación abre modal rápido.
+// ─────────────────────────────────────────────────────────────────────────────
 function renderCatalogo(items) {
     const grid = document.getElementById('grid-productos')
     grid.innerHTML = ''
 
-    if (items.length === 0) {
+    if (!items || items.length === 0) {
         grid.innerHTML = '<div class="col-span-full text-center py-12 text-gray-400 font-medium italic">No se encontraron productos disponibles con stock.</div>'
         return
     }
 
+    // 1. Agrupar presentaciones por producto_id
+    const grupos = new Map()   // Map<productoId, { prod, presentaciones[] }>
     items.forEach(pres => {
         const prod = pres.productos
-        const precioNum = Number(pres.precio_venta) || 0
-        const precioFormateado = precioNum.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-        
-        // Calcular cuántas unidades de esta presentación se pueden formar con el stock_base
-        const factor = Number(pres.factor_conversion) || 1
-        const maxPresentaciones = Math.floor(Number(prod.stock_base) / factor)
+        if (!grupos.has(prod.id)) {
+            grupos.set(prod.id, { prod, presentaciones: [] })
+        }
+        grupos.get(prod.id).presentaciones.push(pres)
+    })
 
-        // Ocultar texto redundante si presentación es igual a la unidad base (ej: Libra = Libra)
-        const esMismaUnidad = (pres.nombre_presentacion || '').toLowerCase().trim() === (prod.unidad_base || '').toLowerCase().trim() || factor === 1
-        const textoConversion = esMismaUnidad ? '' : ` <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">(~${maxPresentaciones} ${pres.nombre_presentacion})</span>`
+    // 2. Renderizar una tarjeta por grupo
+    grupos.forEach(({ prod, presentaciones }) => {
+        const stockBase = Number(prod.stock_base) || 0
+        const tieneVarias = presentaciones.length > 1
 
-        const imgTopHtml = prod.imagen_url
+        // Imagen / placeholder
+        const imgHtml = prod.imagen_url
             ? `<img src="${prod.imagen_url}" alt="${prod.nombre}" class="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300">`
             : `<div class="w-full h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 bg-slate-200/60 dark:bg-forest-950/80">
-                <svg class="w-10 h-10 opacity-40 text-emerald-500 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-10 h-10 opacity-40 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                 </svg>
                </div>`
 
+        // Indicador de presentaciones disponibles
+        const badgePres = tieneVarias
+            ? `<span class="text-[10px] text-sky-400 font-bold">${presentaciones.length} presentaciones</span>`
+            : `<span class="text-xs font-bold text-emerald-400">${presentaciones[0].nombre_presentacion}</span>`
+
+        // Botón: si hay 1 presentación muestra el precio; si hay varias muestra "Ver opciones"
+        const pres0 = presentaciones[0]
+        const precio0Fmt = Number(pres0.precio_venta || 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        const btnLabel = tieneVarias
+            ? `<span class="text-sm leading-none">📦</span><span>Ver presentaciones</span>`
+            : `<span class="text-sm leading-none">+</span><span>Agregar &mdash; Q${precio0Fmt}</span>`
+
         grid.innerHTML += `
-            <div class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between border border-slate-200 dark:border-slate-800/80 hover:border-emerald-500/50 transition duration-300 group shadow-md hover:shadow-xl bg-white/80 dark:bg-slate-900/40">
-                <!-- Card Top: Image container -->
-                <div class="w-full h-32 object-cover rounded-t-lg bg-slate-100 dark:bg-forest-950 flex items-center justify-center overflow-hidden relative border-b border-slate-200 dark:border-slate-800/60">
-                    ${imgTopHtml}
+            <div class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between border border-slate-200 dark:border-slate-800/80 hover:border-emerald-500/50 transition duration-300 group shadow-md hover:shadow-xl bg-white/80 dark:bg-slate-900/40"
+                 data-producto-id="${prod.id}">
+                <!-- Imagen -->
+                <div class="w-full h-32 bg-slate-100 dark:bg-forest-950 flex items-center justify-center overflow-hidden relative border-b border-slate-200 dark:border-slate-800/60">
+                    ${imgHtml}
                     <span class="absolute top-2 left-2 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30 backdrop-blur-xs shadow-xs">
                         ${prod.categoria || 'General'}
                     </span>
-                    ${prod.codigo_barras ? `<span class="absolute top-2 right-2 text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-900/90 dark:bg-black/75 text-white dark:text-slate-200 backdrop-blur-xs font-bold shadow-xs">📦 ${prod.codigo_barras}</span>` : ''}
+                    ${prod.codigo_barras ? `<span class="absolute top-2 right-2 text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-900/90 text-white backdrop-blur-xs font-bold shadow-xs">📦 ${prod.codigo_barras}</span>` : ''}
                 </div>
 
-                <!-- Card Body -->
+                <!-- Cuerpo -->
                 <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
                     <div>
                         <h3 class="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base leading-snug line-clamp-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">${prod.nombre}</h3>
-                        <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-1">${pres.nombre_presentacion}</p>
+                        <div class="mt-1">${badgePres}</div>
                     </div>
 
                     <div class="space-y-2.5">
-                        <!-- Available Stock Badge & Price -->
                         <div class="flex items-center justify-between text-xs pt-2.5 border-t border-slate-200 dark:border-slate-800/60">
                             <div class="flex flex-col">
                                 <span class="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Stock Base</span>
-                                <span class="font-bold text-slate-800 dark:text-slate-200">${Number(prod.stock_base).toFixed(3)} ${prod.unidad_base}${textoConversion}</span>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider block">Precio</span>
-                                <span class="text-lg font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight">Q${precioFormateado}</span>
+                                <span class="font-bold text-slate-800 dark:text-slate-200">${stockBase.toFixed(3)} ${prod.unidad_base}</span>
                             </div>
                         </div>
 
-                        <!-- Big full-width "+ Agregar" button -->
+                        <!-- Botón: directo (1 pres) o abre modal (>1 pres) -->
                         <button class="btn-agregar-carrito w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 active:scale-[0.98] text-white font-bold text-xs shadow-md shadow-emerald-900/20 transition duration-200 flex items-center justify-center gap-1.5"
-                                data-pres-id="${pres.id}">
-                            <span class="text-sm leading-none">+</span>
-                            <span>Agregar</span>
+                                data-producto-id="${prod.id}">
+                            ${btnLabel}
                         </button>
                     </div>
                 </div>
@@ -379,19 +393,91 @@ function renderCatalogo(items) {
         `
     })
 
-    // Event listeners para los botones "+ Agregar"
+    // 3. Asignar eventos
     grid.querySelectorAll('.btn-agregar-carrito').forEach(btn => {
         btn.addEventListener('click', () => {
-            const presId = btn.getAttribute('data-pres-id')
-            const presItem = catalogo.find(p => p.id === presId)
-            if (presItem) {
-                agregarAlCarrito(presItem)
+            const prodId = btn.getAttribute('data-producto-id')
+            const grupo = grupos.get(prodId)
+            if (!grupo) return
+
+            if (grupo.presentaciones.length === 1) {
+                // Agregar directo sin modal
+                agregarAlCarrito(grupo.presentaciones[0])
+            } else {
+                // Abrir modal de selección de presentación
+                abrirModalPresentacionesPOS(grupo.prod, grupo.presentaciones)
             }
         })
     })
 }
 
-// 3. Filtro de Búsqueda en tiempo real
+// ─────────────────────────────────────────────────────────────────────────────
+// Modal rápido de selección de presentación (POS)
+// Se inyecta una única vez en el DOM; se reutiliza para cada producto.
+// ─────────────────────────────────────────────────────────────────────────────
+;(function inyectarModalPresentacionesPOS() {
+    if (document.getElementById('modal-pres-pos')) return   // ya existe
+    const el = document.createElement('div')
+    el.id = 'modal-pres-pos'
+    el.className = 'hidden fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4'
+    el.innerHTML = `
+        <div class="bg-slate-900 border border-emerald-500/30 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-pop-in">
+            <!-- Header -->
+            <div class="flex items-start justify-between px-5 pt-5 pb-3 border-b border-slate-800">
+                <div>
+                    <h3 id="modal-pres-pos-titulo" class="font-extrabold text-white text-base leading-snug">Seleccionar presentación</h3>
+                    <p id="modal-pres-pos-stock" class="text-xs text-slate-400 mt-0.5"></p>
+                </div>
+                <button id="modal-pres-pos-cerrar" class="text-slate-400 hover:text-white text-2xl leading-none ml-4 shrink-0">&times;</button>
+            </div>
+            <!-- Lista de presentaciones -->
+            <div id="modal-pres-pos-lista" class="p-4 flex flex-col gap-2 max-h-72 overflow-y-auto"></div>
+        </div>
+    `
+    document.body.appendChild(el)
+
+    // Cerrar al hacer clic fuera del panel o en el botón X
+    el.addEventListener('click', e => { if (e.target === el) el.classList.add('hidden') })
+    document.getElementById('modal-pres-pos-cerrar').addEventListener('click', () => el.classList.add('hidden'))
+})()
+
+/** Abre el modal rápido mostrando las presentaciones del producto. */
+function abrirModalPresentacionesPOS(prod, presentaciones) {
+    const modal   = document.getElementById('modal-pres-pos')
+    const titulo  = document.getElementById('modal-pres-pos-titulo')
+    const stockEl = document.getElementById('modal-pres-pos-stock')
+    const lista   = document.getElementById('modal-pres-pos-lista')
+
+    titulo.textContent  = prod.nombre
+    stockEl.textContent = `Stock: ${Number(prod.stock_base).toFixed(3)} ${prod.unidad_base}`
+
+    // Construir botones por presentación
+    lista.innerHTML = ''
+    presentaciones.forEach(pres => {
+        const factor    = Number(pres.factor_conversion) || 1
+        const precio    = Number(pres.precio_venta || 0)
+        const precioFmt = precio.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        // Mostrar equivalencia en unidad base si difiere del nombre de la presentación
+        const esMisma   = pres.nombre_presentacion.toLowerCase().trim() === prod.unidad_base?.toLowerCase().trim() || factor === 1
+        const hint      = esMisma ? '' : ` <span class="text-emerald-400 font-bold">(${factor} ${prod.unidad_base})</span>`
+
+        const btn = document.createElement('button')
+        btn.className = 'w-full flex items-center justify-between bg-slate-800 hover:bg-emerald-700/30 border border-slate-700 hover:border-emerald-500 text-white text-sm font-semibold px-4 py-3 rounded-2xl transition active:scale-[0.98]'
+        btn.innerHTML = `
+            <span>${pres.nombre_presentacion}${hint}</span>
+            <span class="text-emerald-400 font-black text-base">Q${precioFmt}</span>
+        `
+        btn.addEventListener('click', () => {
+            agregarAlCarrito(pres)                                // mantiene factor_conversion, precio_venta, presentacion_id
+            document.getElementById('modal-pres-pos').classList.add('hidden')
+        })
+        lista.appendChild(btn)
+    })
+
+    modal.classList.remove('hidden')
+}
+
+// 3. Filtro de Búsqueda en tiempo real (opera sobre grupos de productos)
 const inputBusqueda = document.getElementById('input-busqueda')
 inputBusqueda?.addEventListener('input', (e) => {
     const query = e.target.value.toLowerCase().trim()
@@ -402,12 +488,12 @@ inputBusqueda?.addEventListener('input', (e) => {
 
     const filtrados = catalogo.filter(pres => {
         const prod = pres.productos
-        const nombreProd = prod.nombre.toLowerCase()
-        const codigo = (prod.codigo_barras || '').toLowerCase()
-        const nombrePres = pres.nombre_presentacion.toLowerCase()
-        const cat = (prod.categoria || '').toLowerCase()
-
-        return nombreProd.includes(query) || codigo.includes(query) || nombrePres.includes(query) || cat.includes(query)
+        return (
+            (prod.nombre || '').toLowerCase().includes(query) ||
+            (prod.codigo_barras || '').toLowerCase().includes(query) ||
+            (pres.nombre_presentacion || '').toLowerCase().includes(query) ||
+            (prod.categoria || '').toLowerCase().includes(query)
+        )
     })
 
     renderCatalogo(filtrados)

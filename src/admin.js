@@ -40,12 +40,12 @@ async function validarAccesoAdmin() {
     const avatarInitialsEl = document.getElementById('user-avatar-initials')
     if (avatarInitialsEl && nombreUsuario) {
         const partes = nombreUsuario.trim().split(' ')
-        const iniciales = partes.length >= 2 
-            ? (partes[0][0] + partes[1][0]).toUpperCase() 
+        const iniciales = partes.length >= 2
+            ? (partes[0][0] + partes[1][0]).toUpperCase()
             : nombreUsuario.substring(0, 2).toUpperCase()
         avatarInitialsEl.textContent = iniciales
     }
-    
+
     // Cargar información inicial de Ventas, Compras y Stock
     await Promise.all([
         cargarVentasYGanancias(),
@@ -142,8 +142,8 @@ function calcularMetricasVenta(venta) {
                 costoTotalVenta += (cant * Number(det.costo_unitario))
             } else if (pres) {
                 const factor = Number(pres.factor_conversion) || 1
-                const costoObj = Array.isArray(prod?.productos_costos) 
-                    ? prod.productos_costos[0] 
+                const costoObj = Array.isArray(prod?.productos_costos)
+                    ? prod.productos_costos[0]
                     : prod?.productos_costos
                 const precioCostoBase = Number(costoObj?.precio_costo) || 0
                 costoTotalVenta += (cant * factor * precioCostoBase)
@@ -208,7 +208,7 @@ function procesarYRenderizarDashboard() {
         }
     })
 
-    const margenPorcentaje = acumuladoVentas > 0 
+    const margenPorcentaje = acumuladoVentas > 0
         ? ((acumuladoGanancia / acumuladoVentas) * 100)
         : 0
 
@@ -388,8 +388,8 @@ async function cargarAlertaStockBajo() {
 
         const count = prodsBajos ? prodsBajos.length : 0
         document.getElementById('stat-stock').textContent = `${count} productos`
-        document.getElementById('stat-stock-sub').textContent = count > 0 
-            ? `${count} ítems con stock ≤ 10` 
+        document.getElementById('stat-stock-sub').textContent = count > 0
+            ? `${count} ítems con stock ≤ 10`
             : 'Stock en niveles óptimos'
 
     } catch (err) {
@@ -408,31 +408,49 @@ const vCompras = document.getElementById('vista-container-compras')
 const vImpuestos = document.getElementById('vista-container-impuestos')
 
 function cambiarVistaFinanciera(vista) {
-    [btnGanancias, btnCompras, btnImpuestos].forEach(b => {
-        b?.classList.remove('bg-emerald-600', 'text-white', 'shadow-md')
-        b?.classList.add('text-slate-400')
-    })
-    [vGanancias, vCompras, vImpuestos].forEach(v => v?.classList.add('hidden'))
+    const btnGanancias = document.getElementById('btn-vista-ganancias');
+    const btnCompras = document.getElementById('btn-vista-compras');
+    const btnImpuestos = document.getElementById('btn-vista-impuestos');
 
+    const vGanancias = document.getElementById('vista-container-ganancias');
+    const vCompras = document.getElementById('vista-container-compras');
+    const vImpuestos = document.getElementById('vista-container-impuestos');
+
+    const botones = [btnGanancias, btnCompras, btnImpuestos].filter(Boolean);
+    const vistas = [vGanancias, vCompras, vImpuestos].filter(Boolean);
+
+    // Resetear estilos de todos los botones y ocultar todas las vistas
+    botones.forEach(b => {
+        b.classList.remove('bg-emerald-600', 'text-white', 'shadow-md');
+        b.classList.add('text-slate-400');
+    });
+    vistas.forEach(v => v.classList.add('hidden'));
+
+    // Activar la vista y estilo del botón seleccionado
     if (vista === 'ganancias') {
-        btnGanancias?.classList.add('bg-emerald-600', 'text-white', 'shadow-md')
-        btnGanancias?.classList.remove('text-slate-400')
-        vGanancias?.classList.remove('hidden')
+        btnGanancias?.classList.add('bg-emerald-600', 'text-white', 'shadow-md');
+        btnGanancias?.classList.remove('text-slate-400');
+        vGanancias?.classList.remove('hidden');
     } else if (vista === 'compras') {
-        btnCompras?.classList.add('bg-emerald-600', 'text-white', 'shadow-md')
-        btnCompras?.classList.remove('text-slate-400')
-        vCompras?.classList.remove('hidden')
+        btnCompras?.classList.add('bg-emerald-600', 'text-white', 'shadow-md');
+        btnCompras?.classList.remove('text-slate-400');
+        vCompras?.classList.remove('hidden');
     } else if (vista === 'impuestos') {
-        btnImpuestos?.classList.add('bg-emerald-600', 'text-white', 'shadow-md')
-        btnImpuestos?.classList.remove('text-slate-400')
-        vImpuestos?.classList.remove('hidden')
+        btnImpuestos?.classList.add('bg-emerald-600', 'text-white', 'shadow-md');
+        btnImpuestos?.classList.remove('text-slate-400');
+        vImpuestos?.classList.remove('hidden');
     }
 }
 
-btnGanancias?.addEventListener('click', () => cambiarVistaFinanciera('ganancias'))
-btnCompras?.addEventListener('click', () => cambiarVistaFinanciera('compras'))
-btnImpuestos?.addEventListener('click', () => cambiarVistaFinanciera('impuestos'))
+// Event listeners asignados con los IDs exactos del HTML
+document.getElementById('btn-vista-ganancias')?.addEventListener('click', () => cambiarVistaFinanciera('ganancias'));
+document.getElementById('btn-vista-compras')?.addEventListener('click', () => cambiarVistaFinanciera('compras'));
+document.getElementById('btn-vista-impuestos')?.addEventListener('click', () => cambiarVistaFinanciera('impuestos'));
 
+// Listeners con captura segura
+document.getElementById('btnGanancias')?.addEventListener('click', () => cambiarVistaFinanciera('ganancias'));
+document.getElementById('btnCompras')?.addEventListener('click', () => cambiarVistaFinanciera('compras'));
+document.getElementById('btnImpuestos')?.addEventListener('click', () => cambiarVistaFinanciera('impuestos'));
 // Globalizar funciones
 window.procesarYRenderizarDashboard = procesarYRenderizarDashboard
 

@@ -291,6 +291,29 @@ async function asegurarPresentacionesDefecto() {
 }
 
 // ----------------------------------------------------
+// UTILIDAD: Formatear cantidades de peso
+// Regla: unidad base 'libra' / 'lb' y cantidad >= 100 → mostrar en quintales
+// ----------------------------------------------------
+/**
+ * @param {number} cantidad  – valor en la unidad base del producto
+ * @param {string} unidadBase – ej. 'libra', 'lb', 'unidad', 'litro'…
+ * @returns {string}  texto formateado, ej. "3.50 quintales" | "45.00 lb" | "12.00 unidades"
+ */
+function formatearPeso(cantidad, unidadBase) {
+    const u = (unidadBase || '').toLowerCase().trim()
+    const esLibra = u === 'libra' || u === 'libras' || u === 'lb'
+
+    if (esLibra && cantidad > 99.99) {
+        const qq = cantidad / 100
+        const sufijo = qq === 1 ? 'quintal' : 'quintales'
+        return `${qq.toFixed(2)} ${sufijo}`
+    }
+
+    // Otras unidades o libras < 100: formato numérico normal
+    return `${cantidad.toFixed(2)} ${unidadBase}`
+}
+
+// ----------------------------------------------------
 // CARGAR LA TABLA DE INVENTARIO
 // ----------------------------------------------------
 async function cargarInventario() {
@@ -374,13 +397,17 @@ async function cargarInventario() {
                     <span class="inline-block bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20 text-xs px-2.5 py-1 rounded-full font-bold">${prod.categoria || 'General'}</span>
                 </td>
                 <td class="p-3.5 font-semibold text-slate-700 dark:text-slate-200">
-                    <div class="font-bold text-slate-900 dark:text-white">${stockTotal.toFixed(2)} ${prod.unidad_base}</div>
+                    <!-- Stock total: convierte lb→qq si aplica; tooltip muestra valor raw -->
+                    <div class="font-bold text-slate-900 dark:text-white"
+                         title="${stockTotal.toFixed(2)} ${prod.unidad_base}">
+                        ${formatearPeso(stockTotal, prod.unidad_base)}
+                    </div>
                     <div class="flex items-center gap-1.5 flex-wrap mt-1 text-[10px]">
                         <span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 font-mono font-bold" title="Stock en Bodega Central">
-                            🏢 Bodega: ${stockBodega.toFixed(2)}
+                            🏢 Bodega: ${formatearPeso(stockBodega, prod.unidad_base)}
                         </span>
                         <span class="px-2 py-0.5 rounded ${stockPos > 0 ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20' : 'bg-slate-800 text-slate-400 border border-slate-700'} font-mono font-bold" title="Stock disponible para el POS">
-                            🛒 POS: ${stockPos.toFixed(2)}
+                            🛒 POS: ${formatearPeso(stockPos, prod.unidad_base)}
                         </span>
                     </div>
                 </td>

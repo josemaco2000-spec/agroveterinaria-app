@@ -151,13 +151,16 @@ function actualizarCacheCatalogoLocal() {
 }
 
 // 3. Renderizar Catálogo de Tarjetas Gran Formato
+// ─────────────────────────────────────────────────────────────────────────────
+// renderCatalogo ─ agrupa presentaciones por producto_id
+// 1 tarjeta por producto. Si tiene >1 presentación abre modal rápido.
+// ─────────────────────────────────────────────────────────────────────────────
 function renderCatalogo(items) {
     const grid = document.getElementById('grid-productos')
     if (!grid) return
-
     grid.innerHTML = ''
 
-    if (items.length === 0) {
+    if (!items || items.length === 0) {
         grid.innerHTML = `
             <div class="col-span-full bg-white rounded-3xl p-12 text-center text-slate-400 font-bold border border-slate-200">
                 No hay productos disponibles en esta búsqueda.
@@ -166,56 +169,143 @@ function renderCatalogo(items) {
         return
     }
 
+    // 1. Agrupar presentaciones por producto_id
+    const grupos = new Map()
     items.forEach(pres => {
         const prod = pres.productos
-        const precioUnitario = Number(pres.precio_venta || 0)
-        const precioFmt = precioUnitario.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        if (!grupos.has(prod.id)) grupos.set(prod.id, { prod, presentaciones: [] })
+        grupos.get(prod.id).presentaciones.push(pres)
+    })
+
+    // 2. Renderizar una tarjeta por producto
+    grupos.forEach(({ prod, presentaciones }) => {
+        const stockBase   = Number(prod.stock_base) || 0
+        const tieneVarias = presentaciones.length > 1
 
         const imagenHtml = prod.imagen_url
             ? `<img src="${prod.imagen_url}" alt="${prod.nombre}" class="w-20 h-20 object-cover rounded-2xl border border-slate-200 shadow-sm shrink-0">`
             : `<div class="w-20 h-20 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-4xl font-bold shrink-0">📦</div>`
 
+        // Badge presentaciónúnica o contador de opciones
+        const badgePres = tieneVarias
+            ? `<span class="inline-block mt-1.5 bg-sky-100 text-sky-700 text-xs font-extrabold px-2.5 py-0.5 rounded-lg border border-sky-200">${presentaciones.length} presentaciones</span>`
+            : `<span class="inline-block mt-1.5 bg-slate-100 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-lg border border-slate-200">${presentaciones[0].nombre_presentacion}</span>`
+
+        // Botón con precio (1 pres) o "Elegir" (varias)
+        const pres0      = presentaciones[0]
+        const precio0Fmt = Number(pres0.precio_venta || 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        const btnLabel   = tieneVarias
+            ? '<span>📦 Elegir presentación</span>'
+            : `<span>➕ Agregar — Q${precio0Fmt}</span>`
+        const btnClass   = tieneVarias
+            ? 'bg-sky-600 hover:bg-sky-500'
+            : 'bg-emerald-600 hover:bg-emerald-500'
+
         grid.innerHTML += `
-            <div class="bg-white hover:bg-emerald-50/50 border-2 border-slate-200 hover:border-emerald-400 rounded-3xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-4 group">
+            <div class="bg-white hover:bg-emerald-50/50 border-2 border-slate-200 hover:border-emerald-400 rounded-3xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-4 group"
+                 data-producto-id="${prod.id}">
                 <div class="flex items-start gap-4">
                     ${imagenHtml}
                     <div class="flex-1 min-w-0">
                         <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block truncate">${prod.categoria || 'General'}</span>
                         <h3 class="text-base font-black text-slate-900 leading-snug line-clamp-2">${prod.nombre}</h3>
-                        <span class="inline-block mt-1.5 bg-slate-100 text-slate-700 text-xs font-extrabold px-2.5 py-0.5 rounded-lg border border-slate-200">
-                            ${pres.nombre_presentacion}
-                        </span>
+                        ${badgePres}
                     </div>
                 </div>
 
                 <div class="flex items-center justify-between pt-2 border-t border-slate-100 gap-2">
                     <div class="min-w-0 flex-1">
-                        <span class="text-[10px] font-extrabold text-slate-400 block uppercase">Precio</span>
-                        <div class="flex items-baseline space-x-1 whitespace-nowrap text-ellipsis overflow-hidden">
-                            <span class="text-xs font-extrabold text-emerald-600">Q</span>
-                            <span class="text-xl md:text-2xl font-black text-emerald-600 font-sans tracking-tight">${precioFmt}</span>
-                        </div>
+                        <span class="text-[10px] font-extrabold text-slate-400 block uppercase">Stock</span>
+                        <span class="text-sm font-black text-slate-700">${stockBase.toFixed(3)} ${prod.unidad_base}</span>
                     </div>
 
-                    <button class="btn-agregar-carrito bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-sm px-4 py-2.5 rounded-2xl shadow-md transition flex items-center gap-1.5 shrink-0"
-                            data-id="${pres.id}">
-                        <span>➕ Agregar</span>
+                    <button class="btn-agregar-carrito ${btnClass} active:scale-95 text-white font-black text-sm px-4 py-2.5 rounded-2xl shadow-md transition flex items-center gap-1.5 shrink-0"
+                            data-producto-id="${prod.id}">
+                        ${btnLabel}
                     </button>
                 </div>
             </div>
         `
     })
 
+    // 3. Eventos
     grid.querySelectorAll('.btn-agregar-carrito').forEach(btn => {
         btn.addEventListener('click', () => {
-            const id = btn.getAttribute('data-id')
-            const presItem = catalogo.find(p => p.id === id)
-            if (presItem) agregarAlCarrito(presItem)
+            const prodId = btn.getAttribute('data-producto-id')
+            const grupo  = grupos.get(prodId)
+            if (!grupo) return
+
+            if (grupo.presentaciones.length === 1) {
+                agregarAlCarrito(grupo.presentaciones[0])   // directo
+            } else {
+                abrirModalPresentacionesPOS(grupo.prod, grupo.presentaciones)
+            }
         })
     })
 }
 
-// Buscador en Tiempo Real
+// ─────────────────────────────────────────────────────────────────────────────
+// Modal rápido de selección de presentación — se inyecta 1 vez en el DOM
+// ─────────────────────────────────────────────────────────────────────────────
+;(function inyectarModalPresentacionesPOS() {
+    if (document.getElementById('modal-pres-pos')) return
+    const el = document.createElement('div')
+    el.id = 'modal-pres-pos'
+    el.className = 'hidden fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4'
+    el.innerHTML = `
+        <div class="bg-white border-2 border-slate-200 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
+            <!-- Header -->
+            <div class="flex items-start justify-between px-5 pt-5 pb-3 border-b border-slate-100">
+                <div>
+                    <h3 id="modal-pres-pos-titulo" class="font-black text-slate-900 text-base leading-snug">Seleccionar presentación</h3>
+                    <p id="modal-pres-pos-stock" class="text-xs text-slate-400 mt-0.5"></p>
+                </div>
+                <button id="modal-pres-pos-cerrar" class="text-slate-400 hover:text-slate-700 text-2xl leading-none ml-4 shrink-0">&times;</button>
+            </div>
+            <!-- Opciones -->
+            <div id="modal-pres-pos-lista" class="p-4 flex flex-col gap-2 max-h-72 overflow-y-auto"></div>
+        </div>
+    `
+    document.body.appendChild(el)
+    el.addEventListener('click', e => { if (e.target === el) el.classList.add('hidden') })
+    document.getElementById('modal-pres-pos-cerrar').addEventListener('click', () => el.classList.add('hidden'))
+})()
+
+/** Carga las presentaciones en el modal y lo muestra. */
+function abrirModalPresentacionesPOS(prod, presentaciones) {
+    const modal   = document.getElementById('modal-pres-pos')
+    const titulo  = document.getElementById('modal-pres-pos-titulo')
+    const stockEl = document.getElementById('modal-pres-pos-stock')
+    const lista   = document.getElementById('modal-pres-pos-lista')
+
+    titulo.textContent  = prod.nombre
+    stockEl.textContent = `Stock disponible: ${Number(prod.stock_base).toFixed(3)} ${prod.unidad_base}`
+
+    lista.innerHTML = ''
+    presentaciones.forEach(pres => {
+        const factor    = Number(pres.factor_conversion) || 1
+        const precio    = Number(pres.precio_venta || 0)
+        const precioFmt = precio.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        const esMisma   = pres.nombre_presentacion.toLowerCase().trim() === prod.unidad_base?.toLowerCase().trim() || factor === 1
+        const hint      = esMisma ? '' : ` <span class="text-emerald-600 font-bold">(${factor} ${prod.unidad_base})</span>`
+
+        const btn = document.createElement('button')
+        btn.className = 'w-full flex items-center justify-between bg-slate-50 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-400 text-slate-900 text-sm font-semibold px-4 py-3.5 rounded-2xl transition active:scale-[0.98]'
+        btn.innerHTML = `
+            <span>${pres.nombre_presentacion}${hint}</span>
+            <span class="text-emerald-600 font-black text-base">Q${precioFmt}</span>
+        `
+        btn.addEventListener('click', () => {
+            agregarAlCarrito(pres)   // preserva factor_conversion + precio_venta + presentacion_id
+            document.getElementById('modal-pres-pos').classList.add('hidden')
+        })
+        lista.appendChild(btn)
+    })
+
+    modal.classList.remove('hidden')
+}
+
+// Buscador en Tiempo Real (agrupa por producto — filtra en nivel de presentación)
 const inputBusqueda = document.getElementById('input-busqueda')
 if (inputBusqueda) {
     inputBusqueda.addEventListener('input', (e) => {
@@ -223,7 +313,7 @@ if (inputBusqueda) {
         const filtrados = catalogo.filter(p => {
             const nombreProd = (p.productos?.nombre || '').toLowerCase()
             const nombrePres = (p.nombre_presentacion || '').toLowerCase()
-            const codigo = (p.productos?.codigo_barras || '').toLowerCase()
+            const codigo     = (p.productos?.codigo_barras || '').toLowerCase()
             return nombreProd.includes(query) || nombrePres.includes(query) || codigo.includes(query)
         })
         renderCatalogo(filtrados)
