@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="es" class="dark">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventario & Costos - Agrovet Campo Alto</title>
-    
+
     <!-- Google Fonts: Inter & Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap"
+        rel="stylesheet">
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -54,14 +57,14 @@
 
     <!-- Theme Controller Script -->
     <script>
-        (function() {
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'light') {
-                document.documentElement.classList.remove('dark');
-            } else {
-                document.documentElement.classList.add('dark');
-            }
-        })();
+            (function () {
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme === 'light') {
+                    document.documentElement.classList.remove('dark');
+                } else {
+                    document.documentElement.classList.add('dark');
+                }
+            })();
 
         function toggleTheme() {
             const isDark = document.documentElement.classList.toggle('dark');
@@ -85,17 +88,20 @@
             width: 6px;
             height: 6px;
         }
+
         ::-webkit-scrollbar-track {
             background: rgba(3, 9, 7, 0.6);
         }
+
         ::-webkit-scrollbar-thumb {
             background: rgba(16, 185, 129, 0.25);
             border-radius: 9999px;
         }
+
         ::-webkit-scrollbar-thumb:hover {
             background: rgba(16, 185, 129, 0.45);
         }
-        
+
         .dark .glass-panel {
             background: rgba(15, 23, 42, 0.65);
             backdrop-filter: blur(20px);
@@ -109,7 +115,7 @@
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.07);
         }
-        
+
         .dark .glass-card:hover {
             border-color: rgba(16, 185, 129, 0.3);
             box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px 0 rgba(16, 185, 129, 0.08);
@@ -145,7 +151,8 @@
             box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.04);
         }
 
-        html:not(.dark) .glass-card:hover, html:not(.dark) .glass-panel-hover:hover {
+        html:not(.dark) .glass-card:hover,
+        html:not(.dark) .glass-panel-hover:hover {
             border-color: rgba(16, 185, 129, 0.45);
             box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.15);
         }
@@ -157,20 +164,20 @@
             box-shadow: inset 8px 0 16px -6px rgba(16, 185, 129, 0.2);
         }
 
-        html:not(.dark) input:not([type="checkbox"]), 
-        html:not(.dark) select, 
+        html:not(.dark) input:not([type="checkbox"]),
+        html:not(.dark) select,
         html:not(.dark) textarea {
             background-color: rgba(255, 255, 255, 0.95) !important;
             color: #0f172a !important;
             border-color: rgba(203, 213, 225, 0.9) !important;
         }
 
-        html:not(.dark) input::placeholder, 
+        html:not(.dark) input::placeholder,
         html:not(.dark) textarea::placeholder {
             color: #94a3b8 !important;
         }
 
-        html:not(.dark) .text-slate-300:not([class*="bg-black"]):not([class*="bg-slate-9"]):not([class*="bg-slate-8"]), 
+        html:not(.dark) .text-slate-300:not([class*="bg-black"]):not([class*="bg-slate-9"]):not([class*="bg-slate-8"]),
         html:not(.dark) .text-slate-400:not([class*="bg-black"]):not([class*="bg-slate-9"]):not([class*="bg-slate-8"]) {
             color: #475569 !important;
         }
@@ -192,13 +199,13 @@
             color: #f8fafc !important;
         }
 
-        html:not(.dark) .bg-forest-950, 
-        html:not(.dark) .bg-forest-950\/80, 
+        html:not(.dark) .bg-forest-950,
+        html:not(.dark) .bg-forest-950\/80,
         html:not(.dark) .bg-forest-950\/90 {
             background-color: rgba(241, 245, 249, 0.95) !important;
         }
 
-        html:not(.dark) .border-slate-800, 
+        html:not(.dark) .border-slate-800,
         html:not(.dark) .border-slate-700 {
             border-color: rgba(226, 232, 240, 0.9) !important;
         }
@@ -207,118 +214,175 @@
         .ease-spring {
             transition-timing-function: cubic-bezier(0.68, -0.6, 0.32, 1.6);
         }
+
         /* Fallback mapping for translate-x-4.5 (18px displacement) */
         .dark .theme-toggle-circle {
             transform: translateX(1.125rem) !important;
         }
     </style>
 </head>
-<body class="bg-forest-950 text-slate-100 font-sans min-h-screen flex overflow-x-hidden antialiased bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-forest-900/30 via-forest-950 to-[#010403] selection:bg-emerald-500 selection:text-white">
+
+<body
+    class="bg-forest-950 text-slate-100 font-sans min-h-screen flex overflow-x-hidden antialiased bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-forest-900/30 via-forest-950 to-[#010403] selection:bg-emerald-500 selection:text-white">
 
     <!-- Ambient background glows -->
-    <div class="fixed top-0 left-1/3 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[150px] pointer-events-none"></div>
-    <div class="fixed bottom-0 right-1/4 w-[400px] h-[400px] bg-amber-500/5 rounded-full blur-[140px] pointer-events-none"></div>
+    <div
+        class="fixed top-0 left-1/3 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[150px] pointer-events-none">
+    </div>
+    <div
+        class="fixed bottom-0 right-1/4 w-[400px] h-[400px] bg-amber-500/5 rounded-full blur-[140px] pointer-events-none">
+    </div>
 
     <!-- SIDEBAR RETRÁCTIL (Glassmorphic & Compact by Default) -->
-    <aside id="main-sidebar" 
-           class="group/sidebar fixed top-0 left-0 bottom-0 z-40 w-20 hover:w-64 transition-all duration-300 ease-in-out glass-panel border-r border-emerald-500/10 flex flex-col justify-between py-6 px-3 shadow-2xl overflow-hidden">
-        
+    <aside id="main-sidebar"
+        class="group/sidebar fixed top-0 left-0 bottom-0 z-40 w-20 hover:w-64 transition-all duration-300 ease-in-out glass-panel border-r border-emerald-500/10 flex flex-col justify-between py-6 px-3 shadow-2xl overflow-hidden">
+
         <!-- Top Section: Brand & Navigation -->
         <div class="space-y-8">
             <!-- Brand Logo -->
             <div class="flex items-center gap-3 px-2">
-                <div class="relative flex-shrink-0 w-12 h-12 rounded-2xl bg-forest-950/80 p-1 flex items-center justify-center shadow-lg shadow-emerald-900/40 border border-emerald-400/30 overflow-hidden">
+                <div
+                    class="relative flex-shrink-0 w-12 h-12 rounded-2xl bg-forest-950/80 p-1 flex items-center justify-center shadow-lg shadow-emerald-900/40 border border-emerald-400/30 overflow-hidden">
                     <img src="./assets/logo-campo-alto.png" alt="Logo Campo Alto" class="h-10 w-auto object-contain">
                     <!-- Active Dot Ring -->
-                    <span class="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-forest-950 shadow-sm animate-pulse"></span>
+                    <span
+                        class="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-forest-950 shadow-sm animate-pulse"></span>
                 </div>
-                
-                <div class="opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 whitespace-nowrap overflow-hidden">
+
+                <div
+                    class="opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 whitespace-nowrap overflow-hidden">
                     <h2 class="text-base font-bold text-white tracking-wide leading-none">Campo Alto</h2>
-                    <span class="text-[10px] font-semibold text-emerald-400 tracking-wider uppercase">Agroveterinaria</span>
+                    <span
+                        class="text-[10px] font-semibold text-emerald-400 tracking-wider uppercase">Agroveterinaria</span>
                 </div>
             </div>
 
             <!-- Navigation Links -->
             <nav class="space-y-1.5">
                 <!-- Resumen General -->
-                <a href="admin.html" class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
+                <a href="admin.html"
+                    class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
                     <div class="w-6 flex justify-center">
-                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z">
+                            </path>
                         </svg>
                     </div>
-                    <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Resumen General</span>
+                    <span
+                        class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Resumen
+                        General</span>
                 </a>
 
                 <!-- Inventario (Activo) -->
-                <a href="inventario.html" class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl transition-all duration-200 active-nav-item group/item">
+                <a href="inventario.html"
+                    class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl transition-all duration-200 active-nav-item group/item">
                     <div class="w-6 flex justify-center text-emerald-400">
-                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                         </svg>
                     </div>
-                    <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Inventario y Costos</span>
+                    <span
+                        class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Inventario
+                        y Costos</span>
                 </a>
 
                 <!-- POS -->
-                <a href="pos.html" class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
+                <a href="pos.html"
+                    class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
                     <div class="w-6 flex justify-center">
-                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z">
+                            </path>
                         </svg>
                     </div>
-                    <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Punto de Venta (POS)</span>
+                    <span
+                        class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Punto
+                        de Venta (POS)</span>
                 </a>
 
                 <!-- Facturación -->
-                <a href="facturacion.html" class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
+                <a href="facturacion.html"
+                    class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
                     <div class="w-6 flex justify-center">
-                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                            </path>
                         </svg>
                     </div>
-                    <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Facturación Manual</span>
+                    <span
+                        class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Facturación
+                        Manual</span>
                 </a>
 
                 <!-- Kardex -->
-                <a href="kardex.html" class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
+                <a href="kardex.html"
+                    class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
                     <div class="w-6 flex justify-center">
-                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                            </path>
                         </svg>
                     </div>
-                    <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Kardex y Auditoría</span>
+                    <span
+                        class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Kardex
+                        y Auditoría</span>
                 </a>
 
                 <!-- Clientes -->
-                <a href="clientes.html" class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
+                <a href="clientes.html"
+                    class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
                     <div class="w-6 flex justify-center">
-                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                            </path>
                         </svg>
                     </div>
-                    <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Clientes y Fincas</span>
+                    <span
+                        class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Clientes
+                        y Fincas</span>
                 </a>
 
                 <!-- Compras -->
-                <a href="compras.html" class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
+                <a href="compras.html"
+                    class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
                     <div class="w-6 flex justify-center">
-                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0 0l3-3m-3 3L9 8m-5 5h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293h3.172a1 1 0 00.707-.293l2.414-2.414a1 1 0 01.707-.293H20"></path>
+                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0 0l3-3m-3 3L9 8m-5 5h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293h3.172a1 1 0 00.707-.293l2.414-2.414a1 1 0 01.707-.293H20">
+                            </path>
                         </svg>
                     </div>
-                    <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Compras y Proveedores</span>
+                    <span
+                        class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Compras
+                        y Proveedores</span>
                 </a>
 
                 <!-- Empleados -->
-                <a href="empleados.html" class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
+                <a href="empleados.html"
+                    class="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all duration-200 group/item">
                     <div class="w-6 flex justify-center">
-                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        <svg class="w-5 h-5 transition-transform duration-200 group-hover/item:scale-110" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                            </path>
                         </svg>
                     </div>
-                    <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Empleados</span>
+                    <span
+                        class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Empleados</span>
                 </a>
             </nav>
         </div>
@@ -326,15 +390,21 @@
         <!-- Bottom Section: Theme Switcher & Logout -->
         <div class="pt-4 border-t border-emerald-500/10 space-y-2">
             <!-- Premium Sliding Theme Switcher -->
-            <div class="group relative flex items-center w-max p-1.5 rounded-full transition-all duration-400 ease-in-out cursor-pointer overflow-hidden animate-[fadeIn_0.6s_ease-out] bg-gradient-to-b from-transparent to-slate-900/5 dark:to-white/5 border border-transparent dark:border-white/10 shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1)] hover:bg-white/40 dark:hover:bg-slate-800/40 backdrop-blur-sm hover:pr-4">
+            <div
+                class="group relative flex items-center w-max p-1.5 rounded-full transition-all duration-400 ease-in-out cursor-pointer overflow-hidden animate-[fadeIn_0.6s_ease-out] bg-gradient-to-b from-transparent to-slate-900/5 dark:to-white/5 border border-transparent dark:border-white/10 shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1)] hover:bg-white/40 dark:hover:bg-slate-800/40 backdrop-blur-sm hover:pr-4">
                 <!-- Toggle Switch (60% smaller, sculpted) -->
-                <button id="theme-toggle" type="button" onclick="toggleTheme()" class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-all duration-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.15)] bg-gradient-to-r from-slate-300 to-slate-400 dark:from-emerald-500 dark:to-emerald-800 dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),2px_0_12px_rgba(16,185,129,0.4)]" title="Cambiar Tema">
+                <button id="theme-toggle" type="button" onclick="toggleTheme()"
+                    class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-all duration-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.15)] bg-gradient-to-r from-slate-300 to-slate-400 dark:from-emerald-500 dark:to-emerald-800 dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3),2px_0_12px_rgba(16,185,129,0.4)]"
+                    title="Cambiar Tema">
                     <!-- The Knob -->
-                    <span class="theme-toggle-circle inline-block h-4 w-4 transform rounded-full bg-gradient-to-br from-white to-gray-100 shadow-md transition-transform duration-500 ease-spring translate-x-0.5 dark:translate-x-4.5"></span>
+                    <span
+                        class="theme-toggle-circle inline-block h-4 w-4 transform rounded-full bg-gradient-to-br from-white to-gray-100 shadow-md transition-transform duration-500 ease-spring translate-x-0.5 dark:translate-x-4.5"></span>
                 </button>
                 <!-- Expanding Text Container -->
-                <div class="grid grid-rows-[1fr] transition-all duration-400 ease-in-out max-w-0 opacity-0 group-hover:max-w-[150px] group-hover:opacity-100">
-                    <div class="overflow-hidden whitespace-nowrap pl-2.5 flex items-center space-x-1.5 text-xs font-semibold tracking-wide text-slate-600 dark:text-slate-300">
+                <div
+                    class="grid grid-rows-[1fr] transition-all duration-400 ease-in-out max-w-0 opacity-0 group-hover:max-w-[150px] group-hover:opacity-100">
+                    <div
+                        class="overflow-hidden whitespace-nowrap pl-2.5 flex items-center space-x-1.5 text-xs font-semibold tracking-wide text-slate-600 dark:text-slate-300">
                         <span class="text-[10px]">☀️</span>
                         <span id="theme-toggle-label">Modo Oscuro</span>
                         <span class="text-[10px]">🌙</span>
@@ -343,14 +413,19 @@
             </div>
 
             <!-- Logout Button -->
-            <button id="btn-logout" 
-                    class="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-rose-400 hover:text-rose-200 hover:bg-rose-500/10 transition-all duration-200 group/btn">
+            <button id="btn-logout"
+                class="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-2xl text-rose-400 hover:text-rose-200 hover:bg-rose-500/10 transition-all duration-200 group/btn">
                 <div class="w-6 flex justify-center">
-                    <svg class="w-5 h-5 transition-transform duration-200 group-hover/btn:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                    <svg class="w-5 h-5 transition-transform duration-200 group-hover/btn:-translate-x-0.5" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                        </path>
                     </svg>
                 </div>
-                <span class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Cerrar Sesión</span>
+                <span
+                    class="text-xs font-semibold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200">Cerrar
+                    Sesión</span>
             </button>
         </div>
     </aside>
@@ -360,36 +435,44 @@
 
         <!-- CONTENT MAIN WRAPPER -->
         <main class="flex-1 flex flex-col w-full p-6 lg:p-8 space-y-6 animate-[fadeIn_0.3s_ease-in-out]">
-            
+
             <!-- HEADER ROW (FULL WIDTH) -->
-            <header class="flex flex-wrap justify-between items-center w-full glass-panel rounded-3xl p-6 shadow-xl gap-4">
+            <header
+                class="flex flex-wrap justify-between items-center w-full glass-panel rounded-3xl p-6 shadow-xl gap-4">
                 <div>
                     <div class="flex items-center gap-2 mb-1">
-                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <span
+                            class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                             Inventario Central
                         </span>
                         <span class="text-xs text-slate-500">•</span>
                         <span class="text-xs text-slate-400 font-medium">Agrovet Campo Alto</span>
                     </div>
-                    <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Catálogo de Productos y Costos</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Control centralizado de medicamentos, alimentos y unidades base</p>
+                    <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                        Catálogo de Productos y Costos</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Control centralizado de medicamentos,
+                        alimentos y unidades base</p>
                 </div>
 
                 <div class="flex items-center gap-3 flex-wrap">
-                    <button id="btn-abrir-traslado" class="px-4 py-2.5 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold text-xs shadow-md transition flex items-center gap-2 whitespace-nowrap">
+                    <button id="btn-abrir-traslado"
+                        class="px-4 py-2.5 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold text-xs shadow-md transition flex items-center gap-2 whitespace-nowrap">
                         <span>📦 Realizar Traslado</span>
                     </button>
 
-                    <button id="btn-ver-historial-traslados" class="px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs shadow-md transition flex items-center gap-2 whitespace-nowrap">
+                    <button id="btn-ver-historial-traslados"
+                        class="px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs shadow-md transition flex items-center gap-2 whitespace-nowrap">
                         <span>📜 Historial Traslados</span>
                     </button>
 
-                    <button id="btn-nuevo-producto" class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-900/40 transition transform hover:-translate-y-0.5 flex items-center gap-2 whitespace-nowrap">
+                    <button id="btn-nuevo-producto"
+                        class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-900/40 transition transform hover:-translate-y-0.5 flex items-center gap-2 whitespace-nowrap">
                         <span class="text-base leading-none">+</span>
                         <span>Nuevo Producto</span>
                     </button>
 
-                    <div class="flex items-center gap-2.5 px-3.5 py-2 rounded-full bg-forest-950/80 border border-emerald-500/20 text-xs">
+                    <div
+                        class="flex items-center gap-2.5 px-3.5 py-2 rounded-full bg-forest-950/80 border border-emerald-500/20 text-xs">
                         <span class="text-slate-400">Usuario:</span>
                         <strong id="usuario-info" class="text-emerald-400 font-medium">Cargando...</strong>
                     </div>
@@ -399,14 +482,18 @@
             <!-- Tabla de Inventario Bento Glass (100% Width Stretch) -->
             <div class="glass-panel rounded-3xl p-6 shadow-2xl space-y-4 w-full">
                 <div class="flex justify-between items-center pb-2 border-b border-emerald-500/10">
-                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Listado de Productos Registrados</span>
-                    <span class="text-xs font-semibold px-3 py-1 rounded-full bg-forest-950/80 text-emerald-400 border border-emerald-500/20" id="total-productos-count">Cargando...</span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Listado
+                        de Productos Registrados</span>
+                    <span
+                        class="text-xs font-semibold px-3 py-1 rounded-full bg-forest-950/80 text-emerald-400 border border-emerald-500/20"
+                        id="total-productos-count">Cargando...</span>
                 </div>
 
                 <div class="overflow-x-auto w-full">
                     <table class="w-full text-left border-separate border-spacing-y-2">
                         <thead>
-                            <tr class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            <tr
+                                class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                                 <th class="pb-2 pl-6 w-16">Vista</th>
                                 <th class="pb-2">Producto</th>
                                 <th class="pb-2">Categoría</th>
@@ -432,13 +519,16 @@
     <!-- ========================================== -->
 
     <!-- MODAL 1: NUEVO PRODUCTO -->
-    <div id="modal-producto" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md items-center justify-center p-4 overflow-y-auto">
-        <div class="glass-panel rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl border border-emerald-500/30 animate-pop-in max-h-[90vh] overflow-y-auto my-auto">
+    <div id="modal-producto"
+        class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md items-center justify-center p-4 overflow-y-auto">
+        <div
+            class="glass-panel rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl border border-emerald-500/30 animate-pop-in max-h-[90vh] overflow-y-auto my-auto">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <h3 class="text-lg font-bold text-white flex items-center gap-2">
                     📦 Registrar Nuevo Producto
                 </h3>
-                <button type="button" id="btn-cerrar-modal-x" class="text-slate-400 hover:text-white font-bold text-lg">&times;</button>
+                <button type="button" id="btn-cerrar-modal-x"
+                    class="text-slate-400 hover:text-white font-bold text-lg">&times;</button>
             </div>
 
             <form id="form-producto" class="space-y-4">
@@ -446,12 +536,17 @@
                     <div class="col-span-2">
                         <label class="block font-bold text-slate-300 mb-1">Imagen del Producto</label>
                         <input type="file" id="prod-imagen" accept="image/*" class="hidden">
-                        <div id="dropzone-imagen" class="border-2 border-dashed border-slate-700 hover:border-emerald-500/50 rounded-2xl p-3 text-center cursor-pointer bg-forest-950/60 transition group flex flex-col items-center justify-center min-h-[90px]">
+                        <div id="dropzone-imagen"
+                            class="border-2 border-dashed border-slate-700 hover:border-emerald-500/50 rounded-2xl p-3 text-center cursor-pointer bg-forest-950/60 transition group flex flex-col items-center justify-center min-h-[90px]">
                             <div id="preview-imagen" class="flex flex-col items-center justify-center w-full">
-                                <svg class="w-8 h-8 text-slate-500 group-hover:text-emerald-400 transition-colors mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                <svg class="w-8 h-8 text-slate-500 group-hover:text-emerald-400 transition-colors mb-1"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                    </path>
                                 </svg>
-                                <span class="text-xs text-slate-400 font-medium group-hover:text-slate-200">Haz clic para seleccionar una imagen</span>
+                                <span class="text-xs text-slate-400 font-medium group-hover:text-slate-200">Haz clic
+                                    para seleccionar una imagen</span>
                                 <span class="text-[10px] text-slate-500 mt-0.5">PNG, JPG, WEBP</span>
                             </div>
                         </div>
@@ -459,17 +554,22 @@
 
                     <div class="col-span-2">
                         <label class="block font-bold text-slate-300 mb-1">Nombre del Producto</label>
-                        <input type="text" id="prod-nombre" required class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-emerald-500" placeholder="Ej. Multivitamínico Agrovet 500ml">
+                        <input type="text" id="prod-nombre" required
+                            class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-emerald-500"
+                            placeholder="Ej. Multivitamínico Agrovet 500ml">
                     </div>
-                    
+
                     <div>
                         <label class="block font-bold text-slate-300 mb-1">Código de Barras</label>
-                        <input type="text" id="prod-codigo" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-emerald-500" placeholder="Opcional">
+                        <input type="text" id="prod-codigo"
+                            class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-emerald-500"
+                            placeholder="Opcional">
                     </div>
 
                     <div>
                         <label class="block font-bold text-slate-300 mb-1">Categoría</label>
-                        <select id="prod-categoria" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-emerald-500">
+                        <select id="prod-categoria"
+                            class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-emerald-500">
                             <option value="Vacunas">Vacunas</option>
                             <option value="Medicamentos">Medicamentos</option>
                             <option value="Concentrados">Concentrados</option>
@@ -481,7 +581,8 @@
 
                     <div>
                         <label class="block font-bold text-slate-300 mb-1">Unidad Base</label>
-                        <select id="prod-unidad" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-emerald-500">
+                        <select id="prod-unidad"
+                            class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-emerald-500">
                             <option value="ml">Mililitros (ml)</option>
                             <option value="dosis">Dosis</option>
                             <option value="libra">Libras (lb)</option>
@@ -491,22 +592,28 @@
 
                     <div>
                         <label class="block font-bold text-slate-300 mb-1">Stock Inicial</label>
-                        <input type="number" id="prod-stock" required min="0" step="0.01" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-emerald-500" placeholder="Ej. 100">
+                        <input type="number" id="prod-stock" required min="0" step="0.01"
+                            class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-emerald-500"
+                            placeholder="Ej. 100">
                     </div>
 
                     <div>
                         <label class="block font-bold text-slate-300 mb-1">No. Lote Inicial</label>
-                        <input type="text" id="prod-lote" required class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono outline-none focus:border-emerald-500" placeholder="Ej. LOTE-2026-A">
+                        <input type="text" id="prod-lote" required
+                            class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono outline-none focus:border-emerald-500"
+                            placeholder="Ej. LOTE-2026-A">
                     </div>
 
                     <div class="col-span-2">
                         <label class="block font-bold text-slate-300 mb-1">Fecha de Vencimiento (FEFO)</label>
-                        <input type="date" id="prod-vencimiento" required class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono outline-none focus:border-emerald-500">
+                        <input type="date" id="prod-vencimiento" required
+                            class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-mono outline-none focus:border-emerald-500">
                     </div>
 
                     <div>
                         <label class="block font-bold text-slate-300 mb-1">Régimen Fiscal (SAT GT)</label>
-                        <select id="prod-afecto-iva" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-emerald-500 font-medium">
+                        <select id="prod-afecto-iva"
+                            class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-emerald-500 font-medium">
                             <option value="true" selected>🇬🇹 Afecto a IVA (12%)</option>
                             <option value="false">🌱 Exento de IVA (Agro/Especial)</option>
                         </select>
@@ -514,71 +621,96 @@
 
                     <div class="col-span-2 pt-3 border-t border-slate-800 space-y-3">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">💰 Capa de Costos & Precios (Margen en Tiempo Real)</span>
-                            <span id="preview-margen-badge" class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Margen: Q0.00 (0.0%)</span>
+                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">💰 Capa de Costos &
+                                Precios (Margen en Tiempo Real)</span>
+                            <span id="preview-margen-badge"
+                                class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Margen:
+                                Q0.00 (0.0%)</span>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div>
                                 <label class="block font-bold text-slate-300 mb-1">Precio Costo (Q)</label>
-                                <input type="number" id="prod-costo" required min="0" step="0.01" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-amber-400 font-bold outline-none focus:border-emerald-500" placeholder="Ej. 150.00">
+                                <input type="number" id="prod-costo" required min="0" step="0.01"
+                                    class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-amber-400 font-bold outline-none focus:border-emerald-500"
+                                    placeholder="Ej. 150.00">
                             </div>
                             <div>
                                 <label class="block font-bold text-slate-300 mb-1">Margen Objetivo (%)</label>
-                                <input type="number" id="prod-margen-pct" min="0" step="0.1" value="25" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-violet-300 font-bold outline-none focus:border-emerald-500" placeholder="Ej. 25%">
+                                <input type="number" id="prod-margen-pct" min="0" step="0.1" value="25"
+                                    class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-violet-300 font-bold outline-none focus:border-emerald-500"
+                                    placeholder="Ej. 25%">
                             </div>
                             <div>
                                 <label class="block font-bold text-slate-300 mb-1">Precio Venta (Q)</label>
-                                <input type="number" id="prod-precio-venta" required min="0" step="0.01" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-emerald-400 font-bold outline-none focus:border-emerald-500" placeholder="Ej. 187.50">
+                                <input type="number" id="prod-precio-venta" required min="0" step="0.01"
+                                    class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-emerald-400 font-bold outline-none focus:border-emerald-500"
+                                    placeholder="Ej. 187.50">
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
-                    <button type="button" id="btn-cerrar-modal" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition">Cancelar</button>
-                    <button type="submit" id="btn-guardar" class="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-900/40 transition">Guardar Producto</button>
+                    <button type="button" id="btn-cerrar-modal"
+                        class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition">Cancelar</button>
+                    <button type="submit" id="btn-guardar"
+                        class="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-900/40 transition">Guardar
+                        Producto</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- MODAL 2: GESTIÓN DE PRESENTACIONES -->
-    <div id="modal-presentaciones" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md items-center justify-center p-4 overflow-y-auto">
-        <div class="glass-panel rounded-3xl max-w-2xl w-full p-6 space-y-6 shadow-2xl border border-emerald-500/30 animate-pop-in max-h-[90vh] overflow-y-auto my-auto">
+    <div id="modal-presentaciones"
+        class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md items-center justify-center p-4 overflow-y-auto">
+        <div
+            class="glass-panel rounded-3xl max-w-2xl w-full p-6 space-y-6 shadow-2xl border border-emerald-500/30 animate-pop-in max-h-[90vh] overflow-y-auto my-auto">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div>
                     <h3 class="text-lg font-bold text-white">Presentaciones de Venta</h3>
                     <p id="pres-producto-nombre" class="text-xs font-bold text-emerald-400 mt-0.5">Producto</p>
                     <!-- Badge unidad base: se rellena dinámicamente desde inventario.js -->
-                    <p id="pres-unidad-base-badge" class="hidden mt-1 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-sky-500/15 text-sky-300 border border-sky-500/30 px-2.5 py-0.5 rounded-full">
+                    <p id="pres-unidad-base-badge"
+                        class="hidden mt-1 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-sky-500/15 text-sky-300 border border-sky-500/30 px-2.5 py-0.5 rounded-full">
                         📐 Unidad Base: <span id="pres-unidad-base-texto"></span>
                     </p>
                 </div>
-                <button type="button" id="btn-cerrar-modal-pres-x" class="text-slate-400 hover:text-white font-bold text-lg">&times;</button>
+                <button type="button" id="btn-cerrar-modal-pres-x"
+                    class="text-slate-400 hover:text-white font-bold text-lg">&times;</button>
             </div>
 
             <!-- Formulario para agregar presentación -->
             <form id="form-presentacion" class="glass-card p-4 rounded-2xl space-y-3">
-                <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Agregar Nueva Presentación</h4>
+                <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Agregar Nueva Presentación
+                </h4>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                     <div>
                         <label class="block font-bold text-slate-300 mb-1">Nombre Presentación</label>
-                        <input type="text" id="pres-nombre" required class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500" placeholder="Ej. Frasco 1 Litro">
+                        <input type="text" id="pres-nombre" required
+                            class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500"
+                            placeholder="Ej. Frasco 1 Litro">
                     </div>
                     <div>
                         <!-- El label se actualiza dinámicamente mostrando la unidad base del producto -->
-                        <label id="label-pres-factor" class="block font-bold text-slate-300 mb-1">Factor de Conversión</label>
-                        <input type="number" id="pres-factor" required min="0.01" step="0.01" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500" placeholder="Ej. 100">
+                        <label id="label-pres-factor" class="block font-bold text-slate-300 mb-1">Factor de
+                            Conversión</label>
+                        <input type="number" id="pres-factor" required min="0.01" step="0.01"
+                            class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500"
+                            placeholder="Ej. 100">
                         <!-- Hint dinámico: se muestra desde inventario.js -->
                         <p id="pres-factor-hint" class="hidden mt-1 text-[10px] text-amber-400 leading-tight"></p>
                     </div>
                     <div>
                         <label class="block font-bold text-slate-300 mb-1">Precio Venta (Q)</label>
-                        <input type="number" id="pres-precio" required min="0" step="0.01" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-amber-400 font-bold outline-none focus:border-emerald-500" placeholder="Ej. 75.00">
+                        <input type="number" id="pres-precio" required min="0" step="0.01"
+                            class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-amber-400 font-bold outline-none focus:border-emerald-500"
+                            placeholder="Ej. 75.00">
                     </div>
                 </div>
                 <div class="flex justify-end pt-1">
-                    <button type="submit" id="btn-guardar-pres" class="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 text-white text-xs font-bold py-2 px-4 rounded-xl shadow-md transition">
+                    <button type="submit" id="btn-guardar-pres"
+                        class="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 text-white text-xs font-bold py-2 px-4 rounded-xl shadow-md transition">
                         + Agregar Presentación
                     </button>
                 </div>
@@ -587,44 +719,54 @@
             <!-- Tabla de Presentaciones Existentes -->
             <div class="glass-card rounded-2xl overflow-hidden max-h-64 overflow-y-auto">
                 <table class="w-full text-left border-collapse text-xs">
-                    <thead class="sticky top-0 bg-forest-950 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                    <thead
+                        class="sticky top-0 bg-forest-950 text-slate-400 uppercase tracking-wider border-b border-slate-800">
                         <tr>
                             <th class="p-3 font-semibold">Presentación</th>
-                            <th class="p-3 font-semibold" title="Cuántas unidades base contiene esta presentación">Factor (u.base)</th>
+                            <th class="p-3 font-semibold" title="Cuántas unidades base contiene esta presentación">
+                                Factor (u.base)</th>
                             <th class="p-3 font-semibold">Precio Venta</th>
                             <th class="p-3 font-semibold text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="tabla-presentaciones" class="divide-y divide-slate-800 text-slate-200">
-                        <tr><td colspan="4" class="p-4 text-center text-slate-400">Cargando presentaciones...</td></tr>
+                        <tr>
+                            <td colspan="4" class="p-4 text-center text-slate-400">Cargando presentaciones...</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
 
             <div class="flex justify-end pt-2 border-t border-slate-800">
-                <button type="button" id="btn-cerrar-modal-pres" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition">Cerrar</button>
+                <button type="button" id="btn-cerrar-modal-pres"
+                    class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition">Cerrar</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL 3: LOTES Y KARDEX -->
-    <div id="modal-kardex" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md items-center justify-center p-4">
-        <div class="glass-panel rounded-3xl max-w-3xl w-full p-6 space-y-6 shadow-2xl border border-emerald-500/30 animate-pop-in max-h-[90vh] flex flex-col">
+    <div id="modal-kardex"
+        class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md items-center justify-center p-4">
+        <div
+            class="glass-panel rounded-3xl max-w-3xl w-full p-6 space-y-6 shadow-2xl border border-emerald-500/30 animate-pop-in max-h-[90vh] flex flex-col">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3 shrink-0">
                 <div>
                     <h3 class="text-lg font-bold text-white">Lotes y Kardex de Movimientos</h3>
                     <p id="kardex-producto-nombre" class="text-xs font-bold text-emerald-400 mt-0.5">Producto</p>
                 </div>
-                <button type="button" id="btn-cerrar-modal-kardex-x" class="text-slate-400 hover:text-white font-bold text-lg">&times;</button>
+                <button type="button" id="btn-cerrar-modal-kardex-x"
+                    class="text-slate-400 hover:text-white font-bold text-lg">&times;</button>
             </div>
 
             <div class="flex-1 overflow-y-auto space-y-6 pr-1">
                 <!-- Sección Lotes Activos (FEFO) -->
                 <div>
-                    <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">🏷️ Lotes de Inventario (Vencimientos FEFO)</h4>
+                    <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">🏷️ Lotes de
+                        Inventario (Vencimientos FEFO)</h4>
                     <div class="glass-card rounded-2xl overflow-hidden">
                         <table class="w-full text-left border-collapse text-xs">
-                            <thead class="bg-forest-950 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                            <thead
+                                class="bg-forest-950 text-slate-400 uppercase tracking-wider border-b border-slate-800">
                                 <tr>
                                     <th class="p-3 font-semibold">No. Lote</th>
                                     <th class="p-3 font-semibold">Fecha Vencimiento</th>
@@ -634,7 +776,9 @@
                                 </tr>
                             </thead>
                             <tbody id="tabla-lotes-producto" class="divide-y divide-slate-800 text-slate-200">
-                                <tr><td colspan="5" class="p-4 text-center text-slate-400">Cargando lotes...</td></tr>
+                                <tr>
+                                    <td colspan="5" class="p-4 text-center text-slate-400">Cargando lotes...</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -642,10 +786,12 @@
 
                 <!-- Sección Kardex de Movimientos -->
                 <div>
-                    <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">📋 Historial de Movimientos (Kardex)</h4>
+                    <h4 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">📋 Historial de
+                        Movimientos (Kardex)</h4>
                     <div class="glass-card rounded-2xl overflow-hidden">
                         <table class="w-full text-left border-collapse text-xs">
-                            <thead class="bg-forest-950 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                            <thead
+                                class="bg-forest-950 text-slate-400 uppercase tracking-wider border-b border-slate-800">
                                 <tr>
                                     <th class="p-3 font-semibold">Fecha / Hora</th>
                                     <th class="p-3 font-semibold">Tipo Movimiento</th>
@@ -654,7 +800,9 @@
                                 </tr>
                             </thead>
                             <tbody id="tabla-movimientos-kardex" class="divide-y divide-slate-800 text-slate-200">
-                                <tr><td colspan="4" class="p-4 text-center text-slate-400">Cargando Kardex...</td></tr>
+                                <tr>
+                                    <td colspan="4" class="p-4 text-center text-slate-400">Cargando Kardex...</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -662,50 +810,61 @@
             </div>
 
             <div class="flex justify-end pt-2 border-t border-slate-800 shrink-0">
-                <button type="button" id="btn-cerrar-modal-kardex" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition">Cerrar</button>
+                <button type="button" id="btn-cerrar-modal-kardex"
+                    class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition">Cerrar</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL 4: TRASLADO ENTRE UBICACIONES -->
-    <div id="modal-traslado" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md items-center justify-center p-4 overflow-y-auto">
-        <div class="glass-panel rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl border border-emerald-500/30 animate-pop-in max-h-[90vh] overflow-y-auto my-auto">
+    <div id="modal-traslado"
+        class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md items-center justify-center p-4 overflow-y-auto">
+        <div
+            class="glass-panel rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl border border-emerald-500/30 animate-pop-in max-h-[90vh] overflow-y-auto my-auto">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <h3 class="text-lg font-bold text-white flex items-center gap-2">
                     📦 Traslado de Inventario entre Ubicaciones
                 </h3>
-                <button type="button" id="btn-cerrar-modal-traslado-x" class="text-slate-400 hover:text-white font-bold text-lg">&times;</button>
+                <button type="button" id="btn-cerrar-modal-traslado-x"
+                    class="text-slate-400 hover:text-white font-bold text-lg">&times;</button>
             </div>
 
             <form id="form-traslado" class="space-y-4 text-xs">
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-bold text-slate-300 mb-1">Ubicación Origen</label>
-                        <select id="traslado-origen" required class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-bold">
-                            <option value="11111111-1111-1111-1111-111111111111" selected>🏢 Bodega Central (Almacenamiento)</option>
+                        <select id="traslado-origen" required
+                            class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-bold">
+                            <option value="11111111-1111-1111-1111-111111111111" selected>🏢 Bodega Central
+                                (Almacenamiento)</option>
                             <option value="22222222-2222-2222-2222-222222222222">🛒 Área de Venta (POS)</option>
                         </select>
                     </div>
 
                     <div>
                         <label class="block font-bold text-slate-300 mb-1">Ubicación Destino</label>
-                        <select id="traslado-destino" required class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-bold">
-                            <option value="22222222-2222-2222-2222-222222222222" selected>🛒 Área de Venta (POS)</option>
-                            <option value="11111111-1111-1111-1111-111111111111">🏢 Bodega Central (Almacenamiento)</option>
+                        <select id="traslado-destino" required
+                            class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-bold">
+                            <option value="22222222-2222-2222-2222-222222222222" selected>🛒 Área de Venta (POS)
+                            </option>
+                            <option value="11111111-1111-1111-1111-111111111111">🏢 Bodega Central (Almacenamiento)
+                            </option>
                         </select>
                     </div>
                 </div>
 
                 <div>
                     <label class="block font-bold text-slate-300 mb-1">Producto</label>
-                    <select id="traslado-producto" required class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-medium">
+                    <select id="traslado-producto" required
+                        class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-medium">
                         <option value="">Seleccione un producto...</option>
                     </select>
                 </div>
 
                 <div>
                     <label class="block font-bold text-slate-300 mb-1">Lote (FEFO / Stock en Origen)</label>
-                    <select id="traslado-lote" required class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-mono">
+                    <select id="traslado-lote" required
+                        class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-mono">
                         <option value="">Seleccione primero un producto...</option>
                     </select>
                 </div>
@@ -713,26 +872,32 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block font-bold text-slate-300 mb-1">Cantidad a Trasladar</label>
-                        <input type="number" id="traslado-cantidad" required min="0.001" step="0.001" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-emerald-400 font-bold text-sm outline-none focus:border-emerald-500" placeholder="Ej. 10">
+                        <input type="number" id="traslado-cantidad" required min="0.001" step="0.001"
+                            class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-emerald-400 font-bold text-sm outline-none focus:border-emerald-500"
+                            placeholder="Ej. 10">
                     </div>
 
                     <div>
                         <label class="block font-bold text-slate-300 mb-1">Presentación / Unidad</label>
-                        <select id="traslado-presentacion" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-medium">
+                        <select id="traslado-presentacion"
+                            class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500 font-medium">
                             <option value="1">Unidad Base (1.000)</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="p-3 bg-forest-950/80 border border-slate-800 rounded-xl flex items-center justify-between text-xs font-semibold">
+                <div
+                    class="p-3 bg-forest-950/80 border border-slate-800 rounded-xl flex items-center justify-between text-xs font-semibold">
                     <span class="text-slate-400">Total equivalente en Unidad Base:</span>
                     <span id="preview-traslado-base" class="text-emerald-400 font-bold font-mono">0.000 lb</span>
                 </div>
 
                 <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
-                    <button type="button" id="btn-cerrar-modal-traslado" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition">Cancelar</button>
-                    <button type="submit" id="btn-ejecutar-traslado" class="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-900/40 transition flex items-center gap-1.5">
-                        <span>⚡ Confirmar Traslado Atómico</span>
+                    <button type="button" id="btn-cerrar-modal-traslado"
+                        class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition">Cancelar</button>
+                    <button type="submit" id="btn-ejecutar-traslado"
+                        class="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-900/40 transition flex items-center gap-1.5">
+                        <span>⚡ Confirmar Traslado </span>
                     </button>
                 </div>
             </form>
@@ -740,21 +905,26 @@
     </div>
 
     <!-- MODAL 5: HISTORIAL AUDITABLE DE TRASLADOS -->
-    <div id="modal-historial-traslados" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md items-center justify-center p-4 overflow-y-auto">
-        <div class="glass-panel rounded-3xl max-w-4xl w-full p-6 space-y-6 shadow-2xl border border-emerald-500/30 animate-pop-in max-h-[90vh] flex flex-col my-auto">
+    <div id="modal-historial-traslados"
+        class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-md items-center justify-center p-4 overflow-y-auto">
+        <div
+            class="glass-panel rounded-3xl max-w-4xl w-full p-6 space-y-6 shadow-2xl border border-emerald-500/30 animate-pop-in max-h-[90vh] flex flex-col my-auto">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3 shrink-0">
                 <div>
                     <h3 class="text-lg font-bold text-white flex items-center gap-2">
                         📜 Historial Auditable de Traslados de Inventario
                     </h3>
-                    <p class="text-xs text-slate-400 mt-0.5">Registro de movimientos atómicos entre Bodega Central y Área de Venta</p>
+                    <p class="text-xs text-slate-400 mt-0.5">Registro de movimientos atómicos entre Bodega Central y
+                        Área de Venta</p>
                 </div>
-                <button type="button" id="btn-cerrar-modal-historial-x" class="text-slate-400 hover:text-white font-bold text-lg">&times;</button>
+                <button type="button" id="btn-cerrar-modal-historial-x"
+                    class="text-slate-400 hover:text-white font-bold text-lg">&times;</button>
             </div>
 
             <div class="glass-card rounded-2xl overflow-hidden flex-1 overflow-y-auto">
                 <table class="w-full text-left border-collapse text-xs">
-                    <thead class="sticky top-0 bg-forest-950 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                    <thead
+                        class="sticky top-0 bg-forest-950 text-slate-400 uppercase tracking-wider border-b border-slate-800">
                         <tr>
                             <th class="p-3 font-semibold">Fecha / Hora</th>
                             <th class="p-3 font-semibold">Producto</th>
@@ -765,17 +935,22 @@
                         </tr>
                     </thead>
                     <tbody id="tabla-historial-traslados" class="divide-y divide-slate-800 text-slate-200">
-                        <tr><td colspan="6" class="p-4 text-center text-slate-400">Cargando historial de traslados...</td></tr>
+                        <tr>
+                            <td colspan="6" class="p-4 text-center text-slate-400">Cargando historial de traslados...
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
 
             <div class="flex justify-end pt-2 border-t border-slate-800 shrink-0">
-                <button type="button" id="btn-cerrar-modal-historial" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition">Cerrar</button>
+                <button type="button" id="btn-cerrar-modal-historial"
+                    class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition">Cerrar</button>
             </div>
         </div>
     </div>
 
     <script type="module" src="inventario.js"></script>
 </body>
+
 </html>

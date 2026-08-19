@@ -914,12 +914,18 @@ selectOrigen?.addEventListener('change', () => {
 
 async function cargarLotesOrigen(productoId) {
     if (!selectLoteTraslado) return
-    const origenId = selectOrigen?.value || '11111111-1111-1111-1111-111111111111'
+
+    // Normalizar origenId: si el select está vacío, usar Bodega Central por defecto
+    const origenIdRaw = selectOrigen?.value?.trim() || ''
+    const UUID_BODEGA  = '11111111-1111-1111-1111-111111111111'
+    const origenId     = origenIdRaw || UUID_BODEGA
+
+    console.log('[Traslado] cargarLotesOrigen →', { productoId, origenId, origenRaw: origenIdRaw })
 
     selectLoteTraslado.innerHTML = '<option value="">Cargando lotes disponibles...</option>'
 
-    // 1. Consultar vista de stock por lotes y ubicación
-    const { data: lotesUbic } = await supabase
+    // ── PASO 1: Consultar vista calculada de stock por lote y ubicación ──────────
+    const { data: lotesVista, error: errorVista } = await supabase
         .from('v_stock_lotes_ubicacion')
         .select('*')
         .eq('producto_id', productoId)
@@ -927,41 +933,88 @@ async function cargarLotesOrigen(productoId) {
         .gt('stock_actual', 0)
         .order('fecha_vencimiento', { ascending: true })
 
-    lotesOrigenCache = lotesUbic || []
+    console.log('[Traslado] v_stock_lotes_ubicacion →', { lotesVista, errorVista })
 
-    // 2. Fallback resiliente: Si el origen es Bodega Central y aún no existen filas de movimientos en la vista, consultar la tabla 'lotes' directamente
-    if (lotesOrigenCache.length === 0 && origenId === '11111111-1111-1111-1111-111111111111') {
-        const { data: lotesDirectos } = await supabase
+    lotesOrigenCache = lotesVista || []
+
+    // ── PASO 2: Fallback — consultar tabla lotes directamente si la vista no da ──
+    // Se activa para CUALQUIER origen (no solo Bodega Central) porque un lote
+    // recién creado sin movimientos de compra no aparece en la vista.
+    if (lotesOrigenCache.length === 0) {
+        const { data: lotesDirectos, error: errorDirectos } = await supabase
             .from('lotes')
             .select('*')
             .eq('producto_id', productoId)
             .gt('stock_actual', 0)
             .order('fecha_vencimiento', { ascending: true })
 
+        console.log('[Traslado] fallback lotes directos →', { lotesDirectos, errorDirectos })
+
         if (lotesDirectos && lotesDirectos.length > 0) {
             lotesOrigenCache = lotesDirectos.map(l => ({
-                lote_id: l.id,
-                numero_lote: l.numero_lote,
-                stock_actual: l.stock_actual,
+                lote_id:           l.id,
+                numero_lote:       l.numero_lote,
+                stock_actual:      l.stock_actual,
                 fecha_vencimiento: l.fecha_vencimiento
             }))
         }
     }
 
+    // ── PASO 3: Último recurso — lote "General/Inicial" desde stock_base del producto ──
+    // Aplica cuando el producto tiene stock en la tabla productos pero ningún lote
+    // registrado en movimientos_inventario ni en lotes (inventario inicial sin lote formal).
+    if (lotesOrigenCache.length === 0) {
+        const { data: prodData } = await supabase
+            .from('productos')
+            .select('stock_base, nombre')
+            .eq('id', productoId)
+            .single()
+
+        console.log('[Traslado] fallback stock_base del producto →', prodData)
+
+        if (prodData && Number(prodData.stock_base) > 0) {
+            // Generar lote virtual para permitir el traslado
+            lotesOrigenCache = [{
+                lote_id:           null,          // la RPC de traslado debe manejarlo
+                numero_lote:       'LOTE-GENERAL',
+                stock_actual:      Number(prodData.stock_base),
+                fecha_vencimiento: null
+            }]
+            console.warn('[Traslado] Se usó Lote General porque el producto tiene stock_base pero no lotes registrados. Considera registrar la compra inicial en módulo de Compras.')
+        }
+    }
+
+    // ── PASO 4: Renderizar opciones ───────────────────────────────────────────────
     selectLoteTraslado.innerHTML = ''
 
     if (lotesOrigenCache.length === 0) {
-        selectLoteTraslado.innerHTML = '<option value="">Sin lotes con stock en esta ubicación</option>'
+        selectLoteTraslado.innerHTML = '<option value="">Sin lotes con stock en esta ubicaci\u00f3n</option>'
+        console.warn('[Traslado] No se encontr\u00f3 stock para:', { productoId, origenId })
         return
     }
 
     lotesOrigenCache.forEach(l => {
-        selectLoteTraslado.innerHTML += `
-            <option value="${l.lote_id}">
-                Lote: ${l.numero_lote} | Stock Disp: ${Number(l.stock_actual).toFixed(2)} | Vence: ${l.fecha_vencimiento}
-            </option>
-        `
+        const vence = l.fecha_vencimiento
+            ? new Date(l.fecha_vencimiento).toLocaleDateString('es-GT')
+            : 'Sin vencimiento'
+        const stockFmt = Number(l.stock_actual).toFixed(2)
+
+        // Lote General (fallback): value expl\u00edcito no vac\u00edo para superar validaci\u00f3n HTML5 required
+        const esGeneral  = l.lote_id === null
+        const optionValue = esGeneral ? 'LOTE_GENERAL' : l.lote_id
+        const labelExtra  = esGeneral ? ' \u26a0\ufe0f Lote General (sin lote registrado)' : ''
+
+        const opt = document.createElement('option')
+        opt.value       = optionValue
+        opt.textContent = `${l.numero_lote}${labelExtra} | Disp: ${stockFmt} | Vence: ${vence}`
+        if (esGeneral) opt.selected = true   // preseleccionar el \u00fanico lote disponible
+        selectLoteTraslado.appendChild(opt)
     })
+
+    // Disparar change para sincronizar c\u00e1lculos y validaciones dependientes del select
+    selectLoteTraslado.dispatchEvent(new Event('change'))
+
+    console.log('[Traslado] Lotes cargados en select:', lotesOrigenCache)
 }
 
 function calcularBaseTraslado() {
@@ -979,12 +1032,17 @@ selectPresTraslado?.addEventListener('change', calcularBaseTraslado)
 
 formTraslado?.addEventListener('submit', async (e) => {
     e.preventDefault()
-    const origenId = selectOrigen.value
+    const origenId  = selectOrigen.value
     const destinoId = selectDestino.value
-    const prodId = selectProductoTraslado.value
-    const loteId = selectLoteTraslado.value
-    const cant = parseFloat(inputCantTraslado.value) || 0
-    const factor = parseFloat(selectPresTraslado.value) || 1
+    const prodId    = selectProductoTraslado.value
+    const cant      = parseFloat(inputCantTraslado.value) || 0
+    const factor    = parseFloat(selectPresTraslado.value) || 1
+
+    // Normalizar loteId: 'LOTE_GENERAL' es un sentinel del fallback → pasar null a la RPC
+    // (Postgres/Supabase rechazar\u00eda el string 'LOTE_GENERAL' como UUID)
+    const loteIdRaw = selectLoteTraslado.value
+    const loteId    = (loteIdRaw === '' || loteIdRaw === 'LOTE_GENERAL') ? null : loteIdRaw
+    console.log('[Traslado] submit →', { origenId, destinoId, prodId, loteIdRaw, loteId, cant, factor })
 
     if (origenId === destinoId) {
         alert("⚠️ La ubicación de origen y destino no pueden ser iguales.")
