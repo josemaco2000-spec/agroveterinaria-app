@@ -389,8 +389,10 @@ async function cargarInventario() {
                 </td>
                 <td class="p-3.5 text-center">
                     <div class="flex items-center justify-center gap-2">
-                        <button class="btn-abrir-presentaciones bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow transition inline-flex items-center gap-1" data-id="${prod.id}" data-nombre="${prod.nombre}">
-                            ⚙️ Presentaciones
+                        <button class="btn-abrir-presentaciones bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow transition inline-flex items-center gap-1"
+                                data-id="${prod.id}"
+                                data-nombre="${prod.nombre}"
+                                data-unidad="${prod.unidad_base || ''}">\n                            \u2699\ufe0f Presentaciones
                         </button>
                         <button class="btn-abrir-kardex bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow transition inline-flex items-center gap-1" data-id="${prod.id}" data-nombre="${prod.nombre}">
                             📋 Lotes / Kardex
@@ -403,7 +405,11 @@ async function cargarInventario() {
 
     tbody.querySelectorAll('.btn-abrir-presentaciones').forEach(btn => {
         btn.addEventListener('click', () => {
-            abrirModalPresentaciones(btn.getAttribute('data-id'), btn.getAttribute('data-nombre'))
+            abrirModalPresentaciones(
+                btn.getAttribute('data-id'),
+                btn.getAttribute('data-nombre'),
+                btn.getAttribute('data-unidad') || ''
+            )
         })
     })
 
@@ -426,6 +432,7 @@ async function cargarInventario() {
 // LÓGICA DEL MODAL DE PRESENTACIONES
 // ----------------------------------------------------
 let productoSeleccionadoId = null
+let productoUnidadBase = ''  // Unidad base del producto activo en el modal de presentaciones
 const modalPres = document.getElementById('modal-presentaciones')
 const btnCerrarPres = document.getElementById('btn-cerrar-modal-pres')
 const btnCerrarPresX = document.getElementById('btn-cerrar-modal-pres-x')
@@ -433,9 +440,44 @@ const presProductoNombre = document.getElementById('pres-producto-nombre')
 const formPresentacion = document.getElementById('form-presentacion')
 const tablaPresentaciones = document.getElementById('tabla-presentaciones')
 
-function abrirModalPresentaciones(id, nombre) {
+// ---  abrirModalPresentaciones  ---
+// Recibe la unidad base del producto para mostrarla en el modal y guiar el factor de conversión
+function abrirModalPresentaciones(id, nombre, unidadBase) {
     productoSeleccionadoId = id
+    productoUnidadBase = (unidadBase || '').trim()
+
+    // Nombre del producto
     presProductoNombre.textContent = nombre
+
+    // Badge unidad base
+    const badge = document.getElementById('pres-unidad-base-badge')
+    const badgeTexto = document.getElementById('pres-unidad-base-texto')
+    if (badge && badgeTexto) {
+        if (productoUnidadBase) {
+            badgeTexto.textContent = productoUnidadBase
+            badge.classList.remove('hidden')
+        } else {
+            badge.classList.add('hidden')
+        }
+    }
+
+    // Label y hint del campo Factor de Conversión
+    const labelFactor = document.getElementById('label-pres-factor')
+    const hintFactor = document.getElementById('pres-factor-hint')
+    if (labelFactor) {
+        labelFactor.textContent = productoUnidadBase
+            ? `Factor de conversión (¿Cuántas ${productoUnidadBase} contiene?)`
+            : 'Factor de conversión'
+    }
+    if (hintFactor) {
+        if (productoUnidadBase) {
+            hintFactor.textContent = `Ej: si el producto es "Quintal" y la unidad base es "${productoUnidadBase}", ingresa 100. Si es la unidad base exacta, ingresa 1.`
+            hintFactor.classList.remove('hidden')
+        } else {
+            hintFactor.classList.add('hidden')
+        }
+    }
+
     modalPres.classList.remove('hidden')
     cargarPresentaciones(id)
 }
@@ -650,7 +692,15 @@ formPresentacion?.addEventListener('submit', async (e) => {
     btnGuardarPres.disabled = true
 
     const nombrePresentacion = document.getElementById('pres-nombre').value.trim()
-    const factorConversion = parseFloat(document.getElementById('pres-factor').value) || 1
+
+    // --- REGLA DE FACTOR ---
+    // Si el nombre de presentación coincide (ignorando mayúsculas) con la unidad base del producto,
+    // forzar factor = 1 para evitar errores de configuración (ej. crear "Libra" con factor 100).
+    const esUnidadBase = productoUnidadBase &&
+        nombrePresentacion.toLowerCase() === productoUnidadBase.toLowerCase()
+    const factorConversion = esUnidadBase
+        ? 1
+        : (parseFloat(document.getElementById('pres-factor').value) || 1)
     const precioVenta = parseFloat(document.getElementById('pres-precio').value) || 0
 
     try {

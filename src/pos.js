@@ -948,7 +948,14 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
         const usuarioId = session?.user?.id || null
 
         for (const item of carrito) {
-            const cantidadBase = item.cantidad * item.factorConversion
+            // p_cantidad_base = presentaciones vendidas × factor de conversión a unidad base
+            // Ejemplo: 2 Quintales × 100 (Libras/Quintal) = 200 Libras
+            const factorConv = Number(item.factorConversion) || 1
+            const cantidadBase = Number(item.cantidad) * factorConv
+            console.debug(
+                `[FEFO] ${item.nombreProducto} | pres: ${item.nombrePresentacion}`,
+                `| cant: ${item.cantidad} | factor: ${factorConv} | base: ${cantidadBase} ${item.unidadBase}`
+            )
 
             const { error: errorFefo } = await supabase.rpc('procesar_salida_fefo', {
                 p_producto_id: item.productoId,
@@ -1106,9 +1113,14 @@ async function sincronizarVentasPendientes() {
 
             if (errorDetalle) throw errorDetalle
 
-            // 3. Procesar salida FEFO por cada ítem
+            // 3. Procesar salida FEFO por cada ítem (sincronización offline)
             for (const item of venta.carrito) {
-                const cantidadBase = item.cantidad * item.factorConversion
+                // p_cantidad_base = presentaciones × factor a unidad base
+                const factorConv = Number(item.factorConversion) || 1
+                const cantidadBase = Number(item.cantidad) * factorConv
+                console.debug(
+                    `[FEFO-sync] ${item.nombreProducto} | cant: ${item.cantidad} | factor: ${factorConv} | base: ${cantidadBase}`
+                )
                 await supabase.rpc('procesar_salida_fefo', {
                     p_producto_id: item.productoId,
                     p_cantidad_base: cantidadBase,

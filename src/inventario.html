@@ -549,6 +549,10 @@
                 <div>
                     <h3 class="text-lg font-bold text-white">Presentaciones de Venta</h3>
                     <p id="pres-producto-nombre" class="text-xs font-bold text-emerald-400 mt-0.5">Producto</p>
+                    <!-- Badge unidad base: se rellena dinámicamente desde inventario.js -->
+                    <p id="pres-unidad-base-badge" class="hidden mt-1 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-sky-500/15 text-sky-300 border border-sky-500/30 px-2.5 py-0.5 rounded-full">
+                        📐 Unidad Base: <span id="pres-unidad-base-texto"></span>
+                    </p>
                 </div>
                 <button type="button" id="btn-cerrar-modal-pres-x" class="text-slate-400 hover:text-white font-bold text-lg">&times;</button>
             </div>
@@ -562,8 +566,11 @@
                         <input type="text" id="pres-nombre" required class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500" placeholder="Ej. Frasco 1 Litro">
                     </div>
                     <div>
-                        <label class="block font-bold text-slate-300 mb-1">Factor Conversión</label>
-                        <input type="number" id="pres-factor" required min="0.01" step="0.01" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500" placeholder="Ej. 1000">
+                        <!-- El label se actualiza dinámicamente mostrando la unidad base del producto -->
+                        <label id="label-pres-factor" class="block font-bold text-slate-300 mb-1">Factor de Conversión</label>
+                        <input type="number" id="pres-factor" required min="0.01" step="0.01" class="w-full bg-forest-950 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-emerald-500" placeholder="Ej. 100">
+                        <!-- Hint dinámico: se muestra desde inventario.js -->
+                        <p id="pres-factor-hint" class="hidden mt-1 text-[10px] text-amber-400 leading-tight"></p>
                     </div>
                     <div>
                         <label class="block font-bold text-slate-300 mb-1">Precio Venta (Q)</label>
@@ -583,7 +590,7 @@
                     <thead class="sticky top-0 bg-forest-950 text-slate-400 uppercase tracking-wider border-b border-slate-800">
                         <tr>
                             <th class="p-3 font-semibold">Presentación</th>
-                            <th class="p-3 font-semibold">Factor</th>
+                            <th class="p-3 font-semibold" title="Cuántas unidades base contiene esta presentación">Factor (u.base)</th>
                             <th class="p-3 font-semibold">Precio Venta</th>
                             <th class="p-3 font-semibold text-center">Acciones</th>
                         </tr>

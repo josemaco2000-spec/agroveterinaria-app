@@ -30,7 +30,7 @@
 
 ## 🏛️ 3. Arquitectura de Base de Datos y Lógica de Negocio
 
-El modelo de datos y las funciones transaccionales se gestionan mediante migraciones SQL en [`supabase/`](./supabase):
+El modelo de datos y las funciones transaccionales se gestionan mediante migraciones SQL en [`supabase/`](../supabase):
 
 ```mermaid
 erDiagram
@@ -74,6 +74,8 @@ erDiagram
 agroveterinaria-app/
 │
 ├── README.md                            # Resumen técnico y documentación principal
+├── docs/
+│   └── RESUMEN_TECNICO.md               # Copia del resumen técnico para consulta rápida
 │
 ├── src/
 │   ├── index.html / app.js              # Inicio de sesión, autenticación y enrutamiento por rol
