@@ -14,6 +14,118 @@ let tipoPagoSeleccionado = 'EFECTIVO'
 let isSyncing = false
 let cajeroNombreCompleto = 'Usuario'
 
+// 0. Estado de Conexión + Auto-Sincronización de Ventas Offline
+function actualizarStatusConexionUI() {
+    const badge = document.getElementById('status-conexion')
+    if (badge) {
+        if (navigator.onLine) {
+            badge.innerHTML = '<span>🟢</span> <span>En Línea</span>'
+            badge.className = 'hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-extrabold'
+        } else {
+            badge.innerHTML = '<span>🔴</span> <span>Modo Offline</span>'
+            badge.className = 'hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-100 text-red-700 border border-red-200 text-xs font-extrabold animate-pulse'
+        }
+    }
+
+    if (navigator.onLine) {
+        sincronizarVentasPendientes()
+    }
+}
+
+window.addEventListener('online', actualizarStatusConexionUI)
+window.addEventListener('offline', actualizarStatusConexionUI)
+
+// Auto-Sincronización de Ventas Guardadas en Modo Offline
+async function sincronizarVentasPendientes() {
+    if (isSyncing || !navigator.onLine) return
+
+    const pendingSales = JSON.parse(localStorage.getItem('adnova_pending_sales') || '[]')
+    if (pendingSales.length === 0) return
+
+    isSyncing = true
+    console.log(`Iniciando auto-sincronización de ${pendingSales.length} venta(s) offline...`)
+
+    let successfulSyncs = 0
+
+    try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const usuarioId = session?.user?.id || null
+
+        for (const venta of pendingSales) {
+            // 1. Insertar venta
+            const { data: nuevaVenta, error: errorVenta } = await supabase
+                .from('ventas')
+                .insert([{
+                    total: venta.total,
+                    estado_factura: 'pendiente',
+                    cliente_id: venta.cliente_id,
+                    finca_id: venta.finca_id,
+                    tipo_pago: venta.tipo_pago
+                }])
+                .select()
+                .single()
+
+            if (errorVenta) throw errorVenta
+
+            // 2. Insertar detalles
+            const detalles = venta.carrito.map(item => ({
+                venta_id: nuevaVenta.id,
+                presentacion_id: item.presentacionId,
+                cantidad: item.cantidad,
+                subtotal: item.cantidad * item.precioVenta
+            }))
+
+            const { error: errorDetalle } = await supabase
+                .from('detalle_ventas')
+                .insert(detalles)
+
+            if (errorDetalle) throw errorDetalle
+
+            // 3. Procesar salida FEFO por cada ítem (sincronización offline)
+            for (const item of venta.carrito) {
+                const factorConv = Number(item.factorConversion) || 1
+                const cantidadBase = Number(item.cantidad) * factorConv
+                console.debug(
+                    `[FEFO-sync] ${item.nombreProducto} | cant: ${item.cantidad} | factor: ${factorConv} | base: ${cantidadBase}`
+                )
+                await supabase.rpc('procesar_salida_fefo', {
+                    p_producto_id: item.productoId,
+                    p_cantidad_base: cantidadBase,
+                    p_referencia_id: nuevaVenta.id,
+                    p_usuario_id: usuarioId
+                })
+            }
+
+            // 4. Si fue crédito, actualizar saldo_actual del cliente
+            if (venta.tipo_pago === 'CREDITO' && venta.cliente_id) {
+                const { data: cliData } = await supabase.from('clientes').select('saldo_actual').eq('id', venta.cliente_id).single()
+                const nuevoSaldo = (Number(cliData?.saldo_actual) || 0) + venta.total
+                await supabase.from('clientes').update({ saldo_actual: nuevoSaldo }).eq('id', venta.cliente_id)
+            }
+
+            successfulSyncs++
+        }
+
+        // Limpiar cola local
+        localStorage.setItem('adnova_pending_sales', '[]')
+        mostrarToast(`✅ Sincronización exitosa: ${successfulSyncs} venta(s) offline guardada(s) en la nube.`, 'success')
+
+        // Recargar datos frescos
+        await Promise.all([
+            cargarCatalogo(),
+            cargarClientesPOS()
+        ])
+
+    } catch (err) {
+        console.error("Error durante sincronización offline:", err)
+        // Mantener las restantes en cola
+        const remaining = pendingSales.slice(successfulSyncs)
+        localStorage.setItem('adnova_pending_sales', JSON.stringify(remaining))
+    } finally {
+        isSyncing = false
+    }
+}
+
 // 1. Guard de Autenticación y Rol Vendedor
 async function validarSesion() {
     try {
@@ -44,6 +156,8 @@ async function validarSesion() {
         if (cajeroEmailEl) {
             cajeroEmailEl.textContent = cajeroNombreCompleto
         }
+
+        actualizarStatusConexionUI()
 
         // Cargar datos del POS
         await Promise.all([
