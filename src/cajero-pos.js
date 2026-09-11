@@ -35,6 +35,15 @@ function actualizarStatusConexionUI() {
 window.addEventListener('online', actualizarStatusConexionUI)
 window.addEventListener('offline', actualizarStatusConexionUI)
 
+// Refrescar catálogo/stock al volver a esta pestaña (p.ej. después de que
+// un admin realice un traslado de inventario en otra pestaña/dispositivo),
+// para que el POS refleje el stock actualizado sin requerir recarga manual.
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && navigator.onLine) {
+        cargarCatalogo()
+    }
+})
+
 // Auto-Sincronización de Ventas Guardadas en Modo Offline
 async function sincronizarVentasPendientes() {
     if (isSyncing || !navigator.onLine) return
