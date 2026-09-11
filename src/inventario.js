@@ -132,7 +132,7 @@ document.addEventListener('keydown', (e) => {
 })
 
 // ----------------------------------------------------
-// GUARDAR EL PRODUCTO (Inserción Múltiple: productos, costos, lotes, movimientos)
+// GUARDAR EL PRODUCTO (vía RPC transaccional crear_producto_completo)
 // ----------------------------------------------------
 document.getElementById('form-producto')?.addEventListener('submit', async (e) => {
     e.preventDefault()
@@ -188,98 +188,28 @@ document.getElementById('form-producto')?.addEventListener('submit', async (e) =
 
         btnGuardar.textContent = 'Guardando producto...'
 
-        // 1. Guardar en la tabla de productos
-        const { data: nuevoProducto, error: errorProducto } = await supabase
-            .from('productos')
-            .insert([{ 
-                nombre: nombre, 
-                codigo_barras: codigo, 
-                categoria: categoria, 
-                unidad_base: unidad, 
-                stock_base: stock,
-                imagen_url: imagenUrl,
-                es_afecto_iva: esAfectoIva
-            }])
-            .select()
-            .single()
+        // Registro atómico: la RPC crea producto, costo, lote FEFO, movimiento
+        // de Kardex y presentación base en una sola transacción de base de
+        // datos. Si cualquier paso falla, Postgres revierte todo — nunca queda
+        // un producto a medio registrar.
+        const { error: errorRpc } = await supabase.rpc('crear_producto_completo', {
+            p_nombre: nombre,
+            p_unidad_base: unidad,
+            p_usuario_id: session?.user?.id || null,
+            p_codigo_barras: codigo,
+            p_categoria: categoria,
+            p_stock_base: stock,
+            p_precio_costo: costo,
+            p_precio_venta: precioVenta,
+            p_imagen_url: imagenUrl,
+            p_es_afecto_iva: esAfectoIva,
+            p_numero_lote: numeroLote || null,
+            p_fecha_vencimiento: fechaVencimiento
+        })
 
-        if (errorProducto) throw errorProducto
+        if (errorRpc) throw errorRpc
 
-        // Pasos 2-5 dependen del producto ya creado. Si alguno falla, el producto
-        // queda registrado igual (no hay transacción entre tablas desde el cliente),
-        // así que acumulamos las advertencias para mostrarlas al usuario en vez de
-        // ocultarlas en la consola.
-        const advertencias = []
-
-        // 2. Guardar el precio de costo en productos_costos
-        const { error: errorCosto } = await supabase
-            .from('productos_costos')
-            .insert([{
-                producto_id: nuevoProducto.id,
-                precio_costo: costo
-            }])
-
-        if (errorCosto) {
-            console.error("Error al registrar costo:", errorCosto)
-            advertencias.push('el precio de costo')
-        }
-
-        // 3. Guardar el primer lote con vencimiento (FEFO)
-        const { data: nuevoLote, error: errorLote } = await supabase
-            .from('lotes')
-            .insert([{
-                producto_id: nuevoProducto.id,
-                numero_lote: numeroLote,
-                fecha_vencimiento: fechaVencimiento,
-                stock_inicial: stock,
-                stock_actual: stock
-            }])
-            .select()
-            .single()
-
-        if (errorLote) {
-            console.error("Error al crear lote:", errorLote)
-            advertencias.push('el lote inicial (FEFO)')
-        }
-
-        // 4. Registrar movimiento de inventario en Kardex (ENTRADA_COMPRA en Bodega Central)
-        const { error: errorKardex } = await supabase
-            .from('movimientos_inventario')
-            .insert([{
-                producto_id: nuevoProducto.id,
-                lote_id: nuevoLote?.id || null,
-                ubicacion_id: '11111111-1111-1111-1111-111111111111',
-                tipo_movimiento: 'ENTRADA_COMPRA',
-                cantidad: stock,
-                usuario_id: session?.user?.id || null
-            }])
-
-        if (errorKardex) {
-            console.error("Error al registrar movimiento Kardex:", errorKardex)
-            advertencias.push('el movimiento de Kardex')
-        }
-
-        // 5. Crear la presentación base inicial para que aparezca de inmediato en el POS
-        const nombrePresentacionBase = unidad ? (unidad.charAt(0).toUpperCase() + unidad.slice(1)) : 'Unidad'
-        const { error: errorPres } = await supabase
-            .from('presentaciones')
-            .insert([{
-                producto_id: nuevoProducto.id,
-                nombre_presentacion: nombrePresentacionBase,
-                factor_conversion: 1,
-                precio_venta: precioVenta
-            }])
-
-        if (errorPres) {
-            console.error("Error al registrar presentación base para el POS:", errorPres)
-            advertencias.push('la presentación para el POS')
-        }
-
-        if (advertencias.length > 0) {
-            alert(`El producto se guardó, pero hubo un problema al registrar: ${advertencias.join(', ')}. Revisa el producto en el inventario.`)
-        } else {
-            alert('¡Producto, costo, presentación para el POS, lote inicial (FEFO) y Kardex registrados con éxito!')
-        }
+        alert('¡Producto, costo, presentación para el POS, lote inicial (FEFO) y Kardex registrados con éxito!')
         document.getElementById('form-producto').reset()
         resetPreviewImagen()
         cerrarModal()
