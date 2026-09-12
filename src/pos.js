@@ -339,6 +339,7 @@ function renderCatalogo(items) {
     })
 
     // 2. Renderizar una tarjeta por grupo
+    let gridHtml = ''
     grupos.forEach(({ prod, presentaciones }) => {
         const stockBase = Number(prod.stock_base) || 0
         const tieneVarias = presentaciones.length > 1
@@ -364,7 +365,7 @@ function renderCatalogo(items) {
             ? `<span class="text-sm leading-none">📦</span><span>Ver presentaciones</span>`
             : `<span class="text-sm leading-none">+</span><span>Agregar &mdash; Q${precio0Fmt}</span>`
 
-        grid.innerHTML += `
+        gridHtml += `
             <div class="glass-card rounded-2xl overflow-hidden flex flex-col justify-between border border-slate-200 dark:border-slate-800/80 hover:border-emerald-500/50 transition duration-300 group shadow-md hover:shadow-xl bg-white/80 dark:bg-slate-900/40"
                  data-producto-id="${prod.id}">
                 <!-- Imagen -->
@@ -401,6 +402,8 @@ function renderCatalogo(items) {
             </div>
         `
     })
+
+    grid.innerHTML = gridHtml
 
     // 3. Asignar eventos
     grid.querySelectorAll('.btn-agregar-carrito').forEach(btn => {
@@ -634,6 +637,7 @@ function renderCarrito() {
 
     let granTotal = 0
     let hayErrorStock = false
+    let listaHtml = ''
 
     carrito.forEach((item, index) => {
         const descPct = Number(item.descuentoPorcentaje) || 0
@@ -693,7 +697,7 @@ function renderCarrito() {
         const stockDisponibleStr = stockDisponibleRestante.toFixed(2)
         const unidadBaseText = item.unidadBase || 'unidad'
 
-        lista.innerHTML += `
+        listaHtml += `
             <div class="py-3 px-3.5 bg-white/90 dark:bg-forest-950/60 border ${excedeStock ? 'border-rose-500/80 bg-rose-500/10' : 'border-slate-200 dark:border-emerald-500/10'} rounded-2xl space-y-2.5 transition shadow-xs">
                 <!-- Fila Superior: Nombre, Presentación & Botón Max -->
                 <div class="flex items-center justify-between gap-2">
@@ -749,6 +753,8 @@ function renderCarrito() {
             </div>
         `
     })
+
+    lista.innerHTML = listaHtml
 
     const totalFormateado = granTotal.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     totalEl.textContent = `Q${totalFormateado}`

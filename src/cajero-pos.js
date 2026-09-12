@@ -283,6 +283,7 @@ function renderCatalogo(items) {
     })
 
     // 2. Renderizar una tarjeta por producto
+    let gridHtml = ''
     grupos.forEach(({ prod, presentaciones }) => {
         const stockBase   = Number(prod.stock_base) || 0
         const tieneVarias = presentaciones.length > 1
@@ -306,7 +307,7 @@ function renderCatalogo(items) {
             ? 'bg-sky-600 hover:bg-sky-500'
             : 'bg-emerald-600 hover:bg-emerald-500'
 
-        grid.innerHTML += `
+        gridHtml += `
             <div class="bg-white hover:bg-emerald-50/50 border-2 border-slate-200 hover:border-emerald-400 rounded-3xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-4 group"
                  data-producto-id="${prod.id}">
                 <div class="flex items-start gap-4">
@@ -332,6 +333,8 @@ function renderCatalogo(items) {
             </div>
         `
     })
+
+    grid.innerHTML = gridHtml
 
     // 3. Eventos
     grid.querySelectorAll('.btn-agregar-carrito').forEach(btn => {
@@ -549,6 +552,7 @@ function renderCarrito() {
 
     let granTotal = 0
     let hayErrorStock = false
+    let listaHtml = ''
 
     carrito.forEach((item, index) => {
         const desc = Number(item.descuentoPorcentaje) || 0
@@ -607,7 +611,7 @@ function renderCarrito() {
         const stockDisponibleStr = stockDisponibleRestante.toFixed(2)
         const unidadBaseText = item.unidadBase || 'unidad'
 
-        lista.innerHTML += `
+        listaHtml += `
             <div class="p-3 bg-slate-50 border-2 ${excedeStock ? 'border-rose-500 bg-rose-50' : 'border-slate-200 hover:border-emerald-300'} rounded-2xl space-y-2.5 transition">
                 <!-- Fila Superior -->
                 <div class="flex items-center justify-between gap-2">
@@ -661,6 +665,8 @@ function renderCarrito() {
             </div>
         `
     })
+
+    lista.innerHTML = listaHtml
 
     const totalFormateado = granTotal.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     totalEl.textContent = `Q${totalFormateado}`

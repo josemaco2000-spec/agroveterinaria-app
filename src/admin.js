@@ -305,13 +305,14 @@ function renderTablaCompras(compras) {
         return
     }
 
+    let comprasHtml = ''
     compras.forEach(c => {
         const fechaFormat = new Date(c.created_at).toLocaleString('es-GT', { dateStyle: 'short', timeStyle: 'short' })
         const provNombre = c.proveedores?.nombre || 'Proveedor General'
         const totalNum = Number(c.total) || 0
         const creditoIva = totalNum - (totalNum / 1.12)
 
-        tbody.innerHTML += `
+        comprasHtml += `
             <tr class="hover:bg-slate-100 dark:hover:bg-forest-950/60 transition">
                 <td class="p-3 text-slate-400">${fechaFormat}</td>
                 <td class="p-3 font-bold text-slate-200">${provNombre}</td>
@@ -321,6 +322,7 @@ function renderTablaCompras(compras) {
             </tr>
         `
     })
+    tbody.innerHTML = comprasHtml
 }
 
 // 7. Renderizar Tabla de Ventas Recientes
@@ -347,6 +349,7 @@ function renderTablaVentasRecientes(ventasProcesadas) {
     }
 
     const ultimasVentas = ventasProcesadas.slice(0, 15)
+    let tbodyHtml = ''
 
     ultimasVentas.forEach(v => {
         const shortId = v.id.substring(0, 8)
@@ -359,7 +362,7 @@ function renderTablaVentasRecientes(ventasProcesadas) {
             ? '<span class="inline-flex items-center gap-1 bg-amber-500/10 text-amber-300 border border-amber-500/20 text-[11px] px-3 py-1 rounded-full font-bold">⏳ Pendiente SAT</span>'
             : '<span class="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[11px] px-3 py-1 rounded-full font-bold">✓ Facturada</span>'
 
-        tbody.innerHTML += `
+        tbodyHtml += `
             <tr class="glass-panel glass-panel-hover rounded-2xl transition-all duration-200 shadow-sm text-slate-200 group">
                 <td class="py-4 pl-6 font-mono text-xs font-bold text-emerald-400 group-hover:text-emerald-300">#${shortId}</td>
                 <td class="py-4 text-xs font-medium text-slate-300">${fechaFormat}</td>
@@ -374,6 +377,7 @@ function renderTablaVentasRecientes(ventasProcesadas) {
             </tr>
         `
     })
+    tbody.innerHTML = tbodyHtml
 }
 
 // 8. Alerta de Stock Bajo (≤ 10)
