@@ -35,6 +35,15 @@ function actualizarStatusConexionUI() {
 window.addEventListener('online', actualizarStatusConexionUI)
 window.addEventListener('offline', actualizarStatusConexionUI)
 
+// Refrescar catálogo/stock al volver a esta pestaña (p.ej. después de que
+// un admin realice un traslado de inventario en otra pestaña/dispositivo),
+// para que el POS refleje el stock actualizado sin requerir recarga manual.
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && navigator.onLine) {
+        cargarCatalogo()
+    }
+})
+
 // Auto-Sincronización de Ventas Guardadas en Modo Offline
 async function sincronizarVentasPendientes() {
     if (isSyncing || !navigator.onLine) return
@@ -52,56 +61,38 @@ async function sincronizarVentasPendientes() {
         const usuarioId = session?.user?.id || null
 
         for (const venta of pendingSales) {
-            // 1. Insertar venta
-            const { data: nuevaVenta, error: errorVenta } = await supabase
-                .from('ventas')
-                .insert([{
-                    total: venta.total,
-                    estado_factura: 'pendiente',
-                    cliente_id: venta.cliente_id,
-                    finca_id: venta.finca_id,
-                    tipo_pago: venta.tipo_pago
-                }])
-                .select()
-                .single()
+            // Igual que la venta en línea: cabecera + detalle + descuento de stock FEFO en
+            // UNA SOLA transacción atómica en el servidor (registrar_venta_pos), en vez de
+            // 3 llamadas independientes que podían dejar una venta registrada sin el stock
+            // correspondiente descontado si la salida FEFO fallaba a mitad de camino.
+            const itemsPayload = venta.carrito.map(item => {
+                const presItem = catalogo.find(p => p.id === item.presentacionId)
+                const costoBaseObj = Array.isArray(presItem?.productos?.productos_costos)
+                    ? presItem?.productos?.productos_costos[0]
+                    : presItem?.productos?.productos_costos
+                const costoUnitarioBase = Number(costoBaseObj?.precio_costo) || 0
+                const factorConv = Number(item.factorConversion) || 1
+
+                return {
+                    presentacion_id: item.presentacionId,
+                    producto_id: item.productoId,
+                    cantidad: item.cantidad,
+                    precio_venta: item.precioVenta,
+                    descuento_porcentaje: Number(item.descuentoPorcentaje) || 0,
+                    factor_conversion: factorConv,
+                    costo_unitario: factorConv * costoUnitarioBase
+                }
+            })
+
+            const { error: errorVenta } = await supabase.rpc('registrar_venta_pos', {
+                p_items: itemsPayload,
+                p_cliente_id: venta.cliente_id || null,
+                p_finca_id: venta.finca_id || null,
+                p_tipo_pago: venta.tipo_pago,
+                p_usuario_id: usuarioId
+            })
 
             if (errorVenta) throw errorVenta
-
-            // 2. Insertar detalles
-            const detalles = venta.carrito.map(item => ({
-                venta_id: nuevaVenta.id,
-                presentacion_id: item.presentacionId,
-                cantidad: item.cantidad,
-                subtotal: item.cantidad * item.precioVenta
-            }))
-
-            const { error: errorDetalle } = await supabase
-                .from('detalle_ventas')
-                .insert(detalles)
-
-            if (errorDetalle) throw errorDetalle
-
-            // 3. Procesar salida FEFO por cada ítem (sincronización offline)
-            for (const item of venta.carrito) {
-                const factorConv = Number(item.factorConversion) || 1
-                const cantidadBase = Number(item.cantidad) * factorConv
-                console.debug(
-                    `[FEFO-sync] ${item.nombreProducto} | cant: ${item.cantidad} | factor: ${factorConv} | base: ${cantidadBase}`
-                )
-                await supabase.rpc('procesar_salida_fefo', {
-                    p_producto_id: item.productoId,
-                    p_cantidad_base: cantidadBase,
-                    p_referencia_id: nuevaVenta.id,
-                    p_usuario_id: usuarioId
-                })
-            }
-
-            // 4. Si fue crédito, actualizar saldo_actual del cliente
-            if (venta.tipo_pago === 'CREDITO' && venta.cliente_id) {
-                const { data: cliData } = await supabase.from('clientes').select('saldo_actual').eq('id', venta.cliente_id).single()
-                const nuevoSaldo = (Number(cliData?.saldo_actual) || 0) + venta.total
-                await supabase.from('clientes').update({ saldo_actual: nuevoSaldo }).eq('id', venta.cliente_id)
-            }
 
             successfulSyncs++
         }
@@ -970,111 +961,60 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
             return
         }
 
-        // VALIDACIÓN ONLINE DE CRÉDITO
-        if (tipoPagoSeleccionado === 'CREDITO') {
-            if (!activeClienteId) {
-                alert("⚠️ No se puede realizar una venta a crédito a Consumidor Final.")
-                btnCompletar.innerHTML = textoOriginal
-                btnCompletar.disabled = false
-                return
-            }
-
-            const { data: clienteFresh } = await supabase
-                .from('clientes')
-                .select('saldo_actual, limite_credito, nombre')
-                .eq('id', activeClienteId)
-                .single()
-
-            if (clienteFresh) {
-                const saldoActual = Number(clienteFresh.saldo_actual) || 0
-                const limiteCredito = Number(clienteFresh.limite_credito) || 0
-                if ((saldoActual + totalVenta) > limiteCredito) {
-                    const disponible = Math.max(0, limiteCredito - saldoActual)
-                    alert(`⚠️ Límite de crédito excedido para "${clienteFresh.nombre}". Crédito disponible: Q${disponible.toFixed(2)}.`)
-                    btnCompletar.innerHTML = textoOriginal
-                    btnCompletar.disabled = false
-                    return
-                }
-            }
+        // VALIDACIÓN RÁPIDA DE CRÉDITO EN CLIENTE (evita un viaje de red innecesario;
+        // la validación autoritativa de límite de crédito ocurre en el servidor dentro
+        // de la RPC, con bloqueo de fila para evitar sobregiros por ventas concurrentes)
+        if (tipoPagoSeleccionado === 'CREDITO' && !activeClienteId) {
+            alert("⚠️ No se puede realizar una venta a crédito a Consumidor Final.")
+            btnCompletar.innerHTML = textoOriginal
+            btnCompletar.disabled = false
+            return
         }
 
-        // 1. Insert en `ventas`
-        const { data: nuevaVenta, error: errorVenta } = await supabase
-            .from('ventas')
-            .insert([{
-                total: totalVenta,
-                estado_factura: 'pendiente',
-                cliente_id: activeClienteId || null,
-                finca_id: activeFincaId || null,
-                tipo_pago: tipoPagoSeleccionado
-            }])
-            .select()
-            .single()
-
-        if (errorVenta) throw errorVenta
-
-        if (tipoPagoSeleccionado === 'CREDITO' && activeClienteId) {
-            const { data: cliData } = await supabase.from('clientes').select('saldo_actual').eq('id', activeClienteId).single()
-            const nuevoSaldo = (Number(cliData?.saldo_actual) || 0) + totalVenta
-            await supabase.from('clientes').update({ saldo_actual: nuevoSaldo }).eq('id', activeClienteId)
-        }
-
-        // 2. Bulk INSERT en `detalle_ventas` (con Snapshot de Costo Histórico)
-        const detalles = carrito.map(item => {
-            const desc = Number(item.descuentoPorcentaje) || 0
-            const precioEfectivo = item.precioVenta * (1 - desc / 100)
-
-            const presItem = catalogo.find(p => p.id === item.presentacionId)
-            const costoBaseObj = Array.isArray(presItem?.productos?.productos_costos) 
-                ? presItem?.productos?.productos_costos[0] 
-                : presItem?.productos?.productos_costos
-            const costoUnitarioBase = Number(costoBaseObj?.precio_costo) || 0
-            const costoSnapshot = item.factorConversion * costoUnitarioBase
-
-            return {
-                venta_id: nuevaVenta.id,
-                presentacion_id: item.presentacionId,
-                cantidad: item.cantidad,
-                subtotal: item.cantidad * precioEfectivo,
-                costo_unitario: costoSnapshot
-            }
-        })
-
-        const { error: errorDetalle } = await supabase
-            .from('detalle_ventas')
-            .insert(detalles)
-
-        if (errorDetalle) throw errorDetalle
-
-        // 3. Salida FEFO por RPC
+        // Registrar la venta completa (cabecera + detalle + descuento de stock FEFO en el
+        // Área de Venta) en UNA SOLA transacción atómica del lado del servidor. Si cualquier
+        // ítem falla (p.ej. stock insuficiente), la RPC revierte TODO automáticamente — ya no
+        // pueden quedar ventas "fantasma" registradas sin el stock correspondiente descontado.
         const { data: { session } } = await supabase.auth.getSession()
         const usuarioId = session?.user?.id || null
 
-        for (const item of carrito) {
-            // p_cantidad_base = presentaciones vendidas × factor de conversión a unidad base
-            // Ejemplo: 2 Quintales × 100 (Libras/Quintal) = 200 Libras
+        const itemsPayload = carrito.map(item => {
+            const presItem = catalogo.find(p => p.id === item.presentacionId)
+            const costoBaseObj = Array.isArray(presItem?.productos?.productos_costos)
+                ? presItem?.productos?.productos_costos[0]
+                : presItem?.productos?.productos_costos
+            const costoUnitarioBase = Number(costoBaseObj?.precio_costo) || 0
             const factorConv = Number(item.factorConversion) || 1
-            const cantidadBase = Number(item.cantidad) * factorConv
-            console.debug(
-                `[FEFO] ${item.nombreProducto} | pres: ${item.nombrePresentacion}`,
-                `| cant: ${item.cantidad} | factor: ${factorConv} | base: ${cantidadBase} ${item.unidadBase || ''}`
-            )
-            await supabase.rpc('procesar_salida_fefo', {
-                p_producto_id: item.productoId,
-                p_cantidad_base: cantidadBase,
-                p_referencia_id: nuevaVenta.id,
-                p_usuario_id: usuarioId
-            })
-        }
 
-        // 4. Ticket y Éxito
-        renderizarTicket(nuevaVenta.id, [...carrito], totalVenta)
+            return {
+                presentacion_id: item.presentacionId,
+                producto_id: item.productoId,
+                cantidad: item.cantidad,
+                precio_venta: item.precioVenta,
+                descuento_porcentaje: Number(item.descuentoPorcentaje) || 0,
+                factor_conversion: factorConv,
+                costo_unitario: factorConv * costoUnitarioBase
+            }
+        })
+
+        const { data: nuevaVentaId, error: errorVenta } = await supabase.rpc('registrar_venta_pos', {
+            p_items: itemsPayload,
+            p_cliente_id: activeClienteId || null,
+            p_finca_id: activeFincaId || null,
+            p_tipo_pago: tipoPagoSeleccionado,
+            p_usuario_id: usuarioId
+        })
+
+        if (errorVenta) throw errorVenta
+
+        // Ticket y Éxito
+        renderizarTicket(nuevaVentaId, [...carrito], totalVenta)
         vaciarCarrito()
 
         const modalExito = document.getElementById('modal-exito')
         const detalleExito = document.getElementById('mensaje-exito-detalle')
         if (detalleExito) {
-            detalleExito.textContent = `Venta #${nuevaVenta.id.slice(0, 8)} completada exitosamente. Total: Q${totalVenta.toFixed(2)}.`
+            detalleExito.textContent = `Venta #${nuevaVentaId.slice(0, 8)} completada exitosamente. Total: Q${totalVenta.toFixed(2)}.`
         }
         modalExito?.classList.remove('hidden')
 
