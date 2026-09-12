@@ -67,9 +67,10 @@ async function cargarProveedores() {
             return
         }
 
+        let proveedoresHtml = ''
         listProveedores.forEach(p => {
             // Rellenar tabla
-            tbody.innerHTML += `
+            proveedoresHtml += `
                 <tr class="hover:bg-gray-50 border-b border-gray-100">
                     <td class="p-4 font-bold text-gray-800">${p.nombre}</td>
                     <td class="p-4 font-mono">${p.nit || 'CF'}</td>
@@ -87,6 +88,7 @@ async function cargarProveedores() {
                 selectProv.appendChild(opt)
             }
         })
+        tbody.innerHTML = proveedoresHtml
 
     } catch (err) {
         console.error("Error al cargar proveedores:", err)
@@ -156,11 +158,12 @@ async function cargarCompras() {
             return
         }
 
+        let comprasHtml = ''
         compras.forEach(c => {
             const fechaStr = new Date(c.created_at).toLocaleString('es-GT', { dateStyle: 'medium', timeStyle: 'short' })
             const totalFmt = (Number(c.total) || 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-            tbody.innerHTML += `
+            comprasHtml += `
                 <tr class="glass-panel glass-panel-hover rounded-2xl transition-all duration-200 shadow-sm text-slate-800 dark:text-slate-200 group">
                     <td class="p-3.5 pl-6 font-mono text-xs text-slate-600 dark:text-slate-300">${fechaStr}</td>
                     <td class="p-3.5 font-bold text-slate-900 dark:text-white">${c.proveedores?.nombre || 'Proveedor dado de baja'}</td>
@@ -174,6 +177,7 @@ async function cargarCompras() {
                 </tr>
             `
         })
+        tbody.innerHTML = comprasHtml
 
         // Event listener delegado
         tbody.querySelectorAll('.btn-ver-detalle').forEach(btn => {
@@ -304,9 +308,10 @@ async function abrirDetalleCompra(compraId) {
             return
         }
 
+        let detallesHtml = ''
         detalles.forEach(d => {
             const subtotal = Number(d.subtotal) || 0
-            tbody.innerHTML += `
+            detallesHtml += `
                 <tr class="hover:bg-gray-50">
                     <td class="p-3 font-semibold text-gray-800">${d.productos?.nombre || 'Producto eliminado'}</td>
                     <td class="p-3 font-mono font-bold text-gray-600">${d.lotes?.numero_lote || '--'}</td>
@@ -316,6 +321,7 @@ async function abrirDetalleCompra(compraId) {
                 </tr>
             `
         })
+        tbody.innerHTML = detallesHtml
 
     } catch (err) {
         console.error("Error al cargar detalles de la compra:", err.message || err, err)
@@ -486,10 +492,11 @@ function renderTablaItemsCompra() {
     }
 
     let total = 0
+    let itemsHtml = ''
 
     itemsCargadosCompra.forEach((item, idx) => {
         total += item.subtotal
-        tbody.innerHTML += `
+        itemsHtml += `
             <tr class="hover:bg-gray-50">
                 <td class="p-3 font-semibold text-gray-800">${item.nombre_producto}</td>
                 <td class="p-3 font-mono font-bold text-gray-600">${item.numero_lote}</td>
@@ -504,6 +511,7 @@ function renderTablaItemsCompra() {
         `
     })
 
+    tbody.innerHTML = itemsHtml
     labelTotal.textContent = `Q${total.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
     // Deletion Listeners

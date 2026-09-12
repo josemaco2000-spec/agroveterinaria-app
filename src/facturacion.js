@@ -115,6 +115,7 @@ function renderTabla() {
         return
     }
 
+    let tbodyHtml = ''
     listaFiltrada.forEach(venta => {
         const shortId = venta.id.substring(0, 8)
         const fechaFormat = new Date(venta.fecha_venta).toLocaleString('es-GT', {
@@ -142,7 +143,7 @@ function renderTabla() {
                 ✏️ Editar Factura
                </button>`
 
-        tbody.innerHTML += `
+        tbodyHtml += `
             <tr class="glass-panel glass-panel-hover rounded-2xl transition-all duration-200 shadow-sm text-slate-800 dark:text-slate-200 group">
                 <td class="p-3.5 pl-6 font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">#${shortId}</td>
                 <td class="p-3.5 text-xs font-medium text-slate-700 dark:text-slate-300">${fechaFormat}</td>
@@ -160,6 +161,8 @@ function renderTabla() {
             </tr>
         `
     })
+
+    tbody.innerHTML = tbodyHtml
 
     // Event listeners para los botones de las filas
     tbody.querySelectorAll('.btn-ver-detalle').forEach(btn => {
@@ -328,6 +331,7 @@ async function cargarDetalleItems(ventaId) {
             return
         }
 
+        let detallesHtml = ''
         detalles.forEach(item => {
             const pres = item.presentaciones
             const prodNombre = pres?.productos?.nombre || 'Producto'
@@ -335,7 +339,7 @@ async function cargarDetalleItems(ventaId) {
             const subtotalNum = Number(item.subtotal) || 0
             const subtotalFormateado = subtotalNum.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-            tbody.innerHTML += `
+            detallesHtml += `
                 <tr class="border-b border-gray-100 hover:bg-gray-50">
                     <td class="p-3">
                         <div class="font-bold text-gray-800 text-xs">${prodNombre}</div>
@@ -346,6 +350,7 @@ async function cargarDetalleItems(ventaId) {
                 </tr>
             `
         })
+        tbody.innerHTML = detallesHtml
 
     } catch (err) {
         console.error("Error al cargar detalle del ticket:", err)

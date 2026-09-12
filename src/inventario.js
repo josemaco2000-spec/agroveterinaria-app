@@ -369,6 +369,7 @@ async function cargarInventario() {
                 return
             }
 
+    let tbodyHtml = ''
     productos.forEach(prod => {
         const costoObj = Array.isArray(prod.productos_costos) ? prod.productos_costos[0] : prod.productos_costos
         const costoNum = costoObj && costoObj.precio_costo !== undefined ? Number(costoObj.precio_costo) : 0
@@ -386,7 +387,7 @@ async function cargarInventario() {
                 </svg>
                </div>`
 
-        tbody.innerHTML += `
+        tbodyHtml += `
             <tr class="glass-panel glass-panel-hover rounded-2xl transition-all duration-200 shadow-sm text-slate-800 dark:text-slate-200 group">
                 <td class="p-3.5 pl-6">${imgHtml}</td>
                 <td class="p-3.5">
@@ -429,6 +430,8 @@ async function cargarInventario() {
             </tr>
         `
     })
+
+    tbody.innerHTML = tbodyHtml
 
     tbody.querySelectorAll('.btn-abrir-presentaciones').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -580,6 +583,7 @@ async function cargarLotesDeProducto(productoId) {
         }
 
         const hoy = new Date()
+        let lotesHtml = ''
 
         lotes.forEach(lote => {
             const fechaVenc = new Date(lote.fecha_vencimiento)
@@ -590,7 +594,7 @@ async function cargarLotesDeProducto(productoId) {
                 ? '<span class="bg-green-100 text-green-800 text-[10px] font-bold px-2 py-0.5 rounded">✓ Activo FEFO</span>'
                 : '<span class="bg-gray-100 text-gray-600 text-[10px] font-medium px-2 py-0.5 rounded">Agotado</span>'
 
-            tablaLotesProducto.innerHTML += `
+            lotesHtml += `
                 <tr class="hover:bg-gray-50">
                     <td class="p-3 font-mono font-bold text-gray-800">${lote.numero_lote}</td>
                     <td class="p-3 font-medium text-gray-700">${lote.fecha_vencimiento}</td>
@@ -600,6 +604,7 @@ async function cargarLotesDeProducto(productoId) {
                 </tr>
             `
         })
+        tablaLotesProducto.innerHTML = lotesHtml
     } catch (err) {
         console.error("Error al cargar lotes:", err)
         tablaLotesProducto.innerHTML = `<tr><td colspan="5" class="p-3 text-center text-red-500">Error: ${err.message}</td></tr>`
@@ -631,6 +636,7 @@ async function cargarKardexDeProducto(productoId) {
             return
         }
 
+        let movsHtml = ''
         movs.forEach(m => {
             const fechaStr = new Date(m.created_at).toLocaleString('es-GT', { dateStyle: 'short', timeStyle: 'short' })
             const esEntrada = m.tipo_movimiento === 'ENTRADA_COMPRA'
@@ -640,7 +646,7 @@ async function cargarKardexDeProducto(productoId) {
 
             const numLote = m.lotes?.numero_lote || '--'
 
-            tablaMovimientosKardex.innerHTML += `
+            movsHtml += `
                 <tr class="hover:bg-gray-50">
                     <td class="p-3 text-gray-500 font-mono">${fechaStr}</td>
                     <td class="p-3">${badgeTipo}</td>
@@ -651,6 +657,7 @@ async function cargarKardexDeProducto(productoId) {
                 </tr>
             `
         })
+        tablaMovimientosKardex.innerHTML = movsHtml
     } catch (err) {
         console.error("Error al cargar Kardex:", err)
         tablaMovimientosKardex.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-red-500">Error: ${err.message}</td></tr>`
@@ -680,11 +687,12 @@ async function cargarPresentaciones(productoId) {
         return
     }
 
+    let presentacionesHtml = ''
     presentaciones.forEach(pres => {
         const precioNum = Number(pres.precio_venta) || 0
         const precioFormateado = precioNum.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-        tablaPresentaciones.innerHTML += `
+        presentacionesHtml += `
             <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
                 <td class="p-3 font-medium text-gray-800">${pres.nombre_presentacion}</td>
                 <td class="p-3 font-mono text-gray-600">${pres.factor_conversion}</td>
@@ -697,6 +705,8 @@ async function cargarPresentaciones(productoId) {
             </tr>
         `
     })
+
+    tablaPresentaciones.innerHTML = presentacionesHtml
 
     tablaPresentaciones.querySelectorAll('.btn-eliminar-pres').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -879,10 +889,11 @@ async function cargarProductosTraslado() {
     }
 
     productosTrasladoCache = data || []
-    selectProductoTraslado.innerHTML = '<option value="">-- Seleccionar producto --</option>'
+    let optionsHtml = '<option value="">-- Seleccionar producto --</option>'
     productosTrasladoCache.forEach(p => {
-        selectProductoTraslado.innerHTML += `<option value="${p.id}">${p.nombre} (${p.unidad_base})</option>`
+        optionsHtml += `<option value="${p.id}">${p.nombre} (${p.unidad_base})</option>`
     })
+    selectProductoTraslado.innerHTML = optionsHtml
 }
 
 selectProductoTraslado?.addEventListener('change', async (e) => {
@@ -896,12 +907,13 @@ selectProductoTraslado?.addEventListener('change', async (e) => {
 
     if (selectPresTraslado) {
         const prodObj = productosTrasladoCache.find(p => p.id === prodId)
-        selectPresTraslado.innerHTML = `<option value="1">Unidad Base (${prodObj?.unidad_base || 'unidad'}) x1</option>`
+        let optionsHtml = `<option value="1">Unidad Base (${prodObj?.unidad_base || 'unidad'}) x1</option>`
         if (presentaciones) {
             presentaciones.forEach(pres => {
-                selectPresTraslado.innerHTML += `<option value="${pres.factor_conversion}">${pres.nombre_presentacion} (x${pres.factor_conversion})</option>`
+                optionsHtml += `<option value="${pres.factor_conversion}">${pres.nombre_presentacion} (x${pres.factor_conversion})</option>`
             })
         }
+        selectPresTraslado.innerHTML = optionsHtml
     }
 
     cargarLotesOrigen(prodId)
@@ -1121,13 +1133,14 @@ async function cargarHistorialTraslados() {
         })
     }
 
+    let trasladosHtml = ''
     traslados.forEach(t => {
         const fechaStr = new Date(t.created_at).toLocaleString('es-GT', { dateStyle: 'short', timeStyle: 'short' })
         const origenNombre = t.ubicaciones?.nombre || 'Bodega Central'
         const destinoNombre = destinoMap[t.traslado_id] || 'Área de Venta'
         const cantFmt = Number(t.cantidad).toFixed(2)
 
-        tablaHistorialTraslados.innerHTML += `
+        trasladosHtml += `
             <tr class="hover:bg-slate-800/40 transition border-b border-slate-800/60">
                 <td class="p-3 text-slate-400 font-mono">${fechaStr}</td>
                 <td class="p-3 font-bold text-white">${t.productos?.nombre || '--'}</td>
@@ -1142,6 +1155,7 @@ async function cargarHistorialTraslados() {
             </tr>
         `
     })
+    tablaHistorialTraslados.innerHTML = trasladosHtml
 }
 
 validarAcceso()

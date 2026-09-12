@@ -135,6 +135,7 @@ async function cargarMovimientosKardex() {
 
         actualizarMetricasResumen(list)
 
+        let tbodyHtml = ''
         list.forEach(m => {
             const prod = m.productos
             const lote = m.lotes
@@ -187,7 +188,7 @@ async function cargarMovimientosKardex() {
                 ? `<span class="font-mono text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">Ref #${m.referencia_id.substring(0, 8)}</span>`
                 : '<span class="text-xs text-slate-400 dark:text-slate-500">Registro automático</span>'
 
-            tbody.innerHTML += `
+            tbodyHtml += `
                 <tr class="glass-panel glass-panel-hover rounded-2xl transition-all duration-200 shadow-sm text-slate-800 dark:text-slate-200 group">
                     <td class="p-3.5 pl-6 font-mono text-xs text-slate-600 dark:text-slate-300">${fechaStr}</td>
                     <td class="p-3.5 font-bold text-slate-900 dark:text-white">${prod?.nombre || 'Producto no encontrado'}</td>
@@ -200,6 +201,8 @@ async function cargarMovimientosKardex() {
                 </tr>
             `
         })
+
+        tbody.innerHTML = tbodyHtml
 
     } catch (err) {
         console.error("Error al cargar Kardex:", err)

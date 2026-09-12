@@ -88,13 +88,14 @@ function renderizarClientes(lista) {
         return
     }
 
+    let gridHtml = ''
     lista.forEach(cli => {
         const saldo = Number(cli.saldo_actual || 0)
         const limite = Number(cli.limite_credito || 0)
         const saldoFmt = saldo.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         const limiteFmt = limite.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-        grid.innerHTML += `
+        gridHtml += `
             <div class="bg-white hover:bg-slate-50 border-2 border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-5">
                 <div class="space-y-3">
                     <div class="flex items-start justify-between gap-3">
@@ -146,6 +147,8 @@ function renderizarClientes(lista) {
             </div>
         `
     })
+
+    grid.innerHTML = gridHtml
 
     // Listeners
     grid.querySelectorAll('.btn-abono-cliente').forEach(btn => {

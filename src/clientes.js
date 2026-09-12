@@ -96,6 +96,7 @@ function renderListaClientes(list) {
         return
     }
 
+    let listaHtml = ''
     filtrados.forEach(cli => {
         const esSeleccionado = cli.id === clienteSeleccionadoId
         const saldo = Number(cli.saldo_actual) || 0
@@ -113,7 +114,7 @@ function renderListaClientes(list) {
             ? 'glass-panel border-l-4 border-emerald-500 bg-emerald-500/10 text-emerald-400 font-bold shadow-md'
             : 'glass-card glass-panel-hover text-slate-800 dark:text-slate-200'
 
-        listaEl.innerHTML += `
+        listaHtml += `
             <div class="p-3.5 rounded-2xl transition cursor-pointer shadow-sm ${activeClass} btn-seleccionar-cliente" data-id="${cli.id}">
                 <div class="flex justify-between items-start mb-1">
                     <h3 class="font-bold text-slate-900 dark:text-white text-sm leading-snug truncate pr-2">${cli.nombre}</h3>
@@ -129,6 +130,8 @@ function renderListaClientes(list) {
             </div>
         `
     })
+
+    listaEl.innerHTML = listaHtml
 
     listaEl.querySelectorAll('.btn-seleccionar-cliente').forEach(el => {
         el.addEventListener('click', () => {
@@ -283,8 +286,9 @@ async function cargarFincasCliente(clienteId) {
             return
         }
 
+        let fincasHtml = ''
         fincas.forEach(f => {
-            tbody.innerHTML += `
+            fincasHtml += `
                 <tr class="hover:bg-gray-50">
                     <td class="p-3 font-bold text-gray-800">🏡 ${f.nombre_finca}</td>
                     <td class="p-3 text-gray-600">${f.ubicacion || 'Sin datos'}</td>
@@ -295,6 +299,7 @@ async function cargarFincasCliente(clienteId) {
                 </tr>
             `
         })
+        tbody.innerHTML = fincasHtml
     } catch (err) {
         console.error("Error al cargar fincas:", err)
     }
@@ -338,11 +343,12 @@ async function cargarComprasCliente(clienteId) {
             return
         }
 
+        let ventasHtml = ''
         ventas.forEach(v => {
             const fechaStr = new Date(v.fecha_venta).toLocaleString('es-GT', { dateStyle: 'short', timeStyle: 'short' })
             const totalFmt = (Number(v.total) || 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-            tbody.innerHTML += `
+            ventasHtml += `
                 <tr class="hover:bg-gray-50">
                     <td class="p-3 font-mono font-bold text-gray-700">#${v.id.substring(0, 8)}</td>
                     <td class="p-3 text-gray-600">${fechaStr}</td>
@@ -353,6 +359,7 @@ async function cargarComprasCliente(clienteId) {
                 </tr>
             `
         })
+        tbody.innerHTML = ventasHtml
     } catch (err) {
         console.error("Error cargando ventas:", err)
     }
@@ -396,11 +403,12 @@ async function cargarAbonosCliente(clienteId) {
             return
         }
 
+        let abonosHtml = ''
         abonos.forEach(a => {
             const fechaStr = new Date(a.created_at).toLocaleString('es-GT', { dateStyle: 'short', timeStyle: 'short' })
             const montoFmt = (Number(a.monto) || 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-            tbody.innerHTML += `
+            abonosHtml += `
                 <tr class="hover:bg-gray-50">
                     <td class="p-3 font-mono text-gray-600">${fechaStr}</td>
                     <td class="p-3"><span class="inline-block bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">${a.metodo_pago}</span></td>
@@ -409,6 +417,7 @@ async function cargarAbonosCliente(clienteId) {
                 </tr>
             `
         })
+        tbody.innerHTML = abonosHtml
     } catch (err) {
         console.error("Error al cargar abonos:", err)
     }
