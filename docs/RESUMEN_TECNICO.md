@@ -21,7 +21,7 @@
 | Componente | Tecnología | Descripción / Propósito |
 | :--- | :--- | :--- |
 | **Frontend Core** | HTML5 + JavaScript ES6+ (ESM) | Arquitectura modular nativa sin herramientas de compilación pesadas, facilitando mantenimiento y despliegues ligeros. |
-| **Estilos & UI** | Tailwind CSS (CDN) + Vanilla CSS | Sistema de diseño de alta gama con soporte para **Modo Oscuro / Modo Claro** con persistencia en `localStorage`, **Glassmorphism**, y paleta temática *Forest & Emerald*. |
+| **Estilos & UI** | Tailwind CSS (compilado localmente vía Tailwind CLI) + Vanilla CSS | Sistema de diseño de alta gama con soporte para **Modo Oscuro / Modo Claro** con persistencia en `localStorage`, **Glassmorphism**, y paleta temática *Forest & Emerald*. |
 | **BaaS / Backend** | Supabase (PostgreSQL 15+) | Base de datos relacional, autenticación de usuarios (Supabase Auth), Row Level Security (RLS), vistas materializadas y funciones almacenadas (PL/pgSQL). |
 | **Cliente de BD** | `@supabase/supabase-js` (v2 vía ESM CDN) | Comunicación asíncrona segura mediante tokens JWT. |
 | **Tipografía & Assets** | Google Fonts (`Plus Jakarta Sans`, `Inter`) | Tipografía moderna de alta legibilidad para terminales POS e interfaces administrativas. |
