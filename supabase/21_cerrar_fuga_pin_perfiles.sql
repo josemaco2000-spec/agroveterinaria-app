@@ -1,0 +1,35 @@
+-- =================================================================
+-- 21. FIX CRÍTICO: CERRAR FUGA DE pin_autorizacion EN perfiles
+-- =================================================================
+-- DIAGNÓSTICO (hallado en la reconciliación esquema real vs. repo):
+-- La política "Lectura de perfiles permitida a staff" (SELECT, qual=true)
+-- no existe en ninguna migración versionada — fue aplicada directo en
+-- producción. Permite que CUALQUIER autenticado lea la tabla perfiles
+-- completa, incluida la columna pin_autorizacion en texto plano.
+--
+-- Esto anula el propósito de la función validar_pin_supervisor(p_pin):
+-- en vez de que un supervisor real autorice una acción (p.ej. un
+-- descuento en el POS), cualquier cajero puede leer el PIN real de un
+-- admin directamente (`select pin_autorizacion from perfiles where
+-- rol='admin'`) y autorizarse a sí mismo. Es un bypass de control de
+-- autorización, no solo una fuga de datos.
+--
+-- VERIFICADO ANTES DE APLICAR:
+-- - Todas las páginas de cajero/admin leen su PROPIO perfil filtrando
+--   por `.eq('id', session.user.id)` (cajero-pos.js, pos.js, kardex.js,
+--   cierre.js, cajero-cierre.js, etc.) — ya cubierto por la política
+--   "Ver propio perfil o admin" (id = auth.uid() OR es_admin(auth.uid())),
+--   que si está documentada (08_fix_rls_recursion.sql) y se conserva.
+-- - La única pantalla que lista TODOS los perfiles es empleados.js, que
+--   es admin-only (redirige a pos.html si rol != 'admin') — también
+--   cubierta por la misma política vía la condición es_admin().
+-- - Ningún flujo de cajero necesita ver perfiles de otros usuarios.
+--
+-- CORRECCIÓN: eliminar la política permisiva. No se toca
+-- "Ver propio perfil o admin" ni "Admin puede actualizar perfiles"
+-- (esta última tampoco estaba documentada, pero es correcta y necesaria
+-- para que empleados.js pueda editar roles/PIN — se deja constancia
+-- aquí de su existencia real).
+-- =================================================================
+
+DROP POLICY IF EXISTS "Lectura de perfiles permitida a staff" ON perfiles;
