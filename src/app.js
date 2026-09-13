@@ -13,6 +13,34 @@ const inputPassword = document.getElementById('password')
 const mensajeError = document.getElementById('mensaje-error')
 const btnSubmit = document.getElementById('btn-submit')
 
+function redirigirPorRol(rol) {
+    if (rol === 'admin') {
+        window.location.href = 'admin.html'
+    } else if (rol === 'vendedor') {
+        window.location.href = 'cajero-home.html'
+    }
+}
+
+// Si ya hay una sesión válida (p. ej. se abrió el ícono instalado con el
+// login de Supabase todavía vigente), saltar directo al panel del rol en
+// vez de mostrar el formulario de login.
+async function redirigirSiYaHaySesion() {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+
+    const { data: perfilData, error } = await supabase
+        .from('perfiles')
+        .select('rol')
+        .eq('id', session.user.id)
+        .single()
+
+    if (error || !perfilData) return
+
+    redirigirPorRol(perfilData.rol)
+}
+
+redirigirSiYaHaySesion()
+
 // Escuchar el evento de envío del formulario
 formLogin.addEventListener('submit', async (e) => {
     e.preventDefault() // Evita que la página se recargue
@@ -45,12 +73,7 @@ formLogin.addEventListener('submit', async (e) => {
         if (perfilError) throw perfilError
 
         // 3. Redirigir según el rol
-        const rol = perfilData.rol
-        if (rol === 'admin') {
-            window.location.href = 'admin.html' 
-        } else if (rol === 'vendedor') {
-            window.location.href = 'cajero-home.html' 
-        }
+        redirigirPorRol(perfilData.rol)
 
     } catch (error) {
         // Mostrar mensaje de error si la contraseña está mal o no existe
