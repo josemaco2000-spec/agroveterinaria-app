@@ -8,3 +8,6 @@ node_modules/
 # Archivos del sistema operativo
 .DS_Store
 Thumbs.db
+
+# Backups de base de datos (contienen datos de clientes/ventas, nunca a git)
+backups/

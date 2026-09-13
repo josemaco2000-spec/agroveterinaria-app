@@ -1,17 +1,32 @@
--- ============================================================
--- 12. RPC TRANSACCIONAL: CREAR PRODUCTO COMPLETO
--- ------------------------------------------------------------
--- Reemplaza los 5 INSERT secuenciales que hacía el cliente
--- (productos → productos_costos → lotes → movimientos_inventario
--- → presentaciones) por una única función. Como todo el cuerpo de
--- una función plpgsql corre dentro de una sola transacción, si
--- cualquier paso falla (RAISE EXCEPTION o error de constraint),
--- Postgres revierte TODO automáticamente: nunca queda un producto
--- huérfano sin costo, sin Kardex o sin presentación para el POS.
--- ============================================================
+-- =================================================================
+-- 23. RPC TRANSACCIONAL: CREAR PRODUCTO COMPLETO
+-- =================================================================
+-- PROVENIENCIA: esta función YA ESTABA DESPLEGADA en producción antes
+-- de esta migración (verificado con pg_get_functiondef durante la
+-- reconciliación esquema real vs. repo — coincide byte a byte). El
+-- archivo fuente original vivía solo en un worktree de revisión de
+-- código que nunca se mergeó a main:
+--   .claude/worktrees/code-review-refactor-12d75d/supabase/14_rpc_crear_producto_atomico.sql
+-- Se renumera aquí como 23 (siguiente disponible en main) para que el
+-- historial de migraciones por fin coincida con la realidad.
+--
+-- Además del defasaje de versionado, esta RPC existía sin uso real:
+-- inventario.js seguía haciendo 5 INSERT secuenciales sin transacción
+-- para crear un producto (productos → productos_costos → lotes →
+-- movimientos_inventario → presentaciones), por lo que un fallo a
+-- mitad de camino podía dejar un producto con stock_base sin su
+-- respaldo correspondiente en el Kardex. Esta migración conecta esa
+-- pieza: inventario.js ahora llama a esta RPC.
+--
+-- Reemplaza los 5 INSERT sueltos por una única función. Como todo el
+-- cuerpo de una función plpgsql corre dentro de una sola transacción,
+-- si cualquier paso falla (RAISE EXCEPTION o error de constraint),
+-- Postgres revierte TODO automáticamente.
+-- =================================================================
 
 -- Columna que el frontend ya usaba pero no estaba en ninguna
--- migración rastreada; se agrega de forma defensiva e idempotente.
+-- migración rastreada; se agrega de forma defensiva e idempotente
+-- (ya existe en producción).
 ALTER TABLE productos
   ADD COLUMN IF NOT EXISTS imagen_url TEXT;
 

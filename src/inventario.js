@@ -162,14 +162,15 @@ document.getElementById('form-producto')?.addEventListener('submit', async (e) =
     try {
         const { data: { session } } = await supabase.auth.getSession()
 
-        // Upload imagen si existe
+        // Upload imagen si existe (Storage queda fuera de la RPC: es un recurso
+        // externo a Postgres, no algo que una transacción de base de datos pueda revertir)
         let imagenUrl = null
         const file = fileInput?.files?.[0]
         if (file) {
             btnGuardar.textContent = 'Subiendo imagen...'
             const cleanFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
             const filePath = `prod_${Date.now()}_${cleanFileName}`
-            
+
             const { data: storageData, error: storageError } = await supabase.storage
                 .from('productos-imagenes')
                 .upload(filePath, file)
@@ -204,7 +205,7 @@ document.getElementById('form-producto')?.addEventListener('submit', async (e) =
             p_imagen_url: imagenUrl,
             p_es_afecto_iva: esAfectoIva,
             p_numero_lote: numeroLote || null,
-            p_fecha_vencimiento: fechaVencimiento
+            p_fecha_vencimiento: fechaVencimiento || null
         })
 
         if (errorRpc) throw errorRpc
