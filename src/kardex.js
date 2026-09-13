@@ -4,6 +4,8 @@ const supabaseUrl = 'https://tioqayfuqigkrakxlecx.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpb3FheWZ1cWlna3Jha3hsZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNTE5NDksImV4cCI6MjEwMTcyNzk0OX0.HD_36_xe7Ms7_K0hefJ_H3vKx1SPnmvMeML55kcINUI'
 const supabase = createClient(supabaseUrl, supabaseKey)
 
+let currentUserId = null
+
 // 1. Guard de Autenticación (Solo Admin)
 async function validarAccesoAdmin() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -23,6 +25,8 @@ async function validarAccesoAdmin() {
         return
     }
 
+    currentUserId = session.user.id
+
     const nombreUsuario = perfil?.nombre_completo || session.user.email
     const userEmail = document.getElementById('user-email') || document.getElementById('admin-email') || document.getElementById('usuario-info')
     if (userEmail) {
@@ -35,10 +39,11 @@ async function validarAccesoAdmin() {
     ])
 }
 
-// 2. Poblar Dropdown de Productos
+// 2. Poblar Dropdown de Productos (filtro de kardex + selector del modal de ajuste)
 async function cargarProductosDropdown() {
     const selectProd = document.getElementById('filtro-producto')
-    if (!selectProd) return
+    const selectAjusteProd = document.getElementById('ajuste-producto')
+    if (!selectProd && !selectAjusteProd) return
 
     try {
         const { data: productos, error } = await supabase
@@ -49,10 +54,18 @@ async function cargarProductosDropdown() {
         if (error) throw error
 
         productos.forEach(prod => {
-            const opt = document.createElement('option')
-            opt.value = prod.id
-            opt.textContent = prod.nombre
-            selectProd.appendChild(opt)
+            if (selectProd) {
+                const opt = document.createElement('option')
+                opt.value = prod.id
+                opt.textContent = prod.nombre
+                selectProd.appendChild(opt)
+            }
+            if (selectAjusteProd) {
+                const optAjuste = document.createElement('option')
+                optAjuste.value = prod.id
+                optAjuste.textContent = prod.nombre
+                selectAjusteProd.appendChild(optAjuste)
+            }
         })
     } catch (err) {
         console.error("Error cargando lista de productos:", err)
@@ -184,9 +197,11 @@ async function cargarMovimientosKardex() {
                 ? `<div><strong class="font-mono text-slate-800 dark:text-slate-200">${lote.numero_lote}</strong></div><div class="text-[11px] text-slate-500 dark:text-slate-400">Venc: ${lote.fecha_vencimiento}</div>`
                 : '<span class="text-slate-400 dark:text-slate-500 italic">Sin lote asignado</span>'
 
-            const refDisplay = m.referencia_id 
-                ? `<span class="font-mono text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">Ref #${m.referencia_id.substring(0, 8)}</span>`
-                : '<span class="text-xs text-slate-400 dark:text-slate-500">Registro automático</span>'
+            const refDisplay = m.observaciones
+                ? `<span class="text-xs text-slate-600 dark:text-slate-300 italic">${m.observaciones}</span>`
+                : m.referencia_id
+                    ? `<span class="font-mono text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">Ref #${m.referencia_id.substring(0, 8)}</span>`
+                    : '<span class="text-xs text-slate-400 dark:text-slate-500">Registro automático</span>'
 
             tbodyHtml += `
                 <tr class="glass-panel glass-panel-hover rounded-2xl transition-all duration-200 shadow-sm text-slate-800 dark:text-slate-200 group">
@@ -236,6 +251,106 @@ function actualizarMetricasResumen(movimientos) {
 document.getElementById('form-filtros')?.addEventListener('submit', (e) => {
     e.preventDefault()
     cargarMovimientosKardex()
+})
+
+// ----------------------------------------------------
+// MODAL: REGISTRAR AJUSTE / MERMA DE INVENTARIO
+// ----------------------------------------------------
+const modalAjuste = document.getElementById('modal-ajuste')
+const formAjuste = document.getElementById('form-ajuste')
+const selectAjusteProducto = document.getElementById('ajuste-producto')
+const selectAjusteUbicacion = document.getElementById('ajuste-ubicacion')
+const selectAjusteLote = document.getElementById('ajuste-lote')
+
+function abrirModalAjuste() {
+    formAjuste?.reset()
+    modalAjuste?.classList.remove('hidden')
+    modalAjuste?.classList.add('flex')
+    cargarLotesParaAjuste()
+}
+
+function cerrarModalAjuste() {
+    modalAjuste?.classList.add('hidden')
+    modalAjuste?.classList.remove('flex')
+}
+
+document.getElementById('btn-abrir-ajuste')?.addEventListener('click', abrirModalAjuste)
+document.getElementById('btn-cerrar-ajuste')?.addEventListener('click', cerrarModalAjuste)
+document.getElementById('btn-cancelar-ajuste')?.addEventListener('click', cerrarModalAjuste)
+modalAjuste?.addEventListener('click', (e) => {
+    if (e.target === modalAjuste) cerrarModalAjuste()
+})
+
+// Recargar lotes del producto seleccionado (independiente de la ubicación:
+// el admin puede sumar/restar de un lote sin importar dónde está su stock
+// hoy — la RPC valida disponibilidad real antes de aplicar el ajuste).
+async function cargarLotesParaAjuste() {
+    if (!selectAjusteLote) return
+    selectAjusteLote.innerHTML = '<option value="">Sin lote específico</option>'
+
+    const productoId = selectAjusteProducto?.value
+    if (!productoId) return
+
+    try {
+        const { data: lotes, error } = await supabase
+            .from('lotes')
+            .select('id, numero_lote, fecha_vencimiento')
+            .eq('producto_id', productoId)
+            .order('fecha_vencimiento', { ascending: true })
+
+        if (error) throw error
+
+        lotes?.forEach(l => {
+            const opt = document.createElement('option')
+            opt.value = l.id
+            const vence = l.fecha_vencimiento ? new Date(l.fecha_vencimiento).toLocaleDateString('es-GT') : 'sin vencimiento'
+            opt.textContent = `${l.numero_lote} (vence: ${vence})`
+            selectAjusteLote.appendChild(opt)
+        })
+    } catch (err) {
+        console.error("Error cargando lotes para ajuste:", err)
+    }
+}
+
+selectAjusteProducto?.addEventListener('change', cargarLotesParaAjuste)
+
+formAjuste?.addEventListener('submit', async (e) => {
+    e.preventDefault()
+
+    const btnGuardar = document.getElementById('btn-guardar-ajuste')
+    const textoOriginal = btnGuardar.textContent
+    btnGuardar.textContent = 'Guardando...'
+    btnGuardar.disabled = true
+
+    const productoId = selectAjusteProducto.value
+    const ubicacionId = selectAjusteUbicacion.value
+    const loteId = selectAjusteLote.value || null
+    const tipoMovimiento = formAjuste.querySelector('input[name="ajuste-tipo"]:checked')?.value
+    const cantidad = parseFloat(document.getElementById('ajuste-cantidad').value)
+    const observaciones = document.getElementById('ajuste-observaciones').value.trim() || null
+
+    try {
+        const { error } = await supabase.rpc('registrar_ajuste_inventario', {
+            p_producto_id: productoId,
+            p_ubicacion_id: ubicacionId,
+            p_tipo_movimiento: tipoMovimiento,
+            p_cantidad: cantidad,
+            p_usuario_id: currentUserId,
+            p_lote_id: loteId,
+            p_observaciones: observaciones
+        })
+
+        if (error) throw error
+
+        cerrarModalAjuste()
+        await cargarMovimientosKardex()
+    } catch (err) {
+        console.error("Error al registrar ajuste de inventario:", err)
+        alert("Error al registrar el ajuste: " + (err.message || err))
+    } finally {
+        btnGuardar.textContent = textoOriginal
+        btnGuardar.disabled = false
+    }
 })
 
 // Logout
