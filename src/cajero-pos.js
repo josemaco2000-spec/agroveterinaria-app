@@ -27,8 +27,29 @@ function actualizarStatusConexionUI() {
         }
     }
 
+    actualizarBadgeVentasPendientes()
+
     if (navigator.onLine) {
         sincronizarVentasPendientes()
+    }
+}
+
+// Indicador visible de ventas offline aún sin sincronizar (no queda solo
+// en un console.error invisible: el cajero ve cuántas ventas están
+// pendientes en localStorage de ESTE dispositivo).
+function actualizarBadgeVentasPendientes() {
+    const badge = document.getElementById('badge-ventas-pendientes')
+    const texto = document.getElementById('badge-ventas-pendientes-texto')
+    if (!badge || !texto) return
+
+    const pendingSales = JSON.parse(localStorage.getItem('adnova_pending_sales') || '[]')
+    if (pendingSales.length > 0) {
+        texto.textContent = `${pendingSales.length} venta(s) pendiente(s) de sincronizar`
+        badge.classList.remove('hidden')
+        badge.classList.add('flex')
+    } else {
+        badge.classList.add('hidden')
+        badge.classList.remove('flex')
     }
 }
 
@@ -45,6 +66,18 @@ document.addEventListener('visibilitychange', () => {
 })
 
 // Auto-Sincronización de Ventas Guardadas en Modo Offline
+//
+// Cada venta pendiente se procesa de forma INDEPENDIENTE (no se aborta el
+// lote completo si una falla) y el resultado se clasifica en 3 grupos:
+//  - Sincronizada con éxito → se quita de la cola local.
+//  - Falla de RED (Supabase sigue sin responder) → se deja en la cola para
+//    reintentar en el próximo ciclo, no es un error real de la venta.
+//  - Falla REAL del servidor (p.ej. stock insuficiente, límite de crédito
+//    excedido) → NO tiene sentido reintentar el mismo carrito una y otra
+//    vez, así que se registra en `ventas_offline_fallidas` (server-side,
+//    visible para cualquier admin desde cualquier dispositivo) y se quita
+//    de la cola local. Antes, este caso quedaba atascado para siempre en
+//    el localStorage de este dispositivo sin ninguna alerta.
 async function sincronizarVentasPendientes() {
     if (isSyncing || !navigator.onLine) return
 
@@ -55,6 +88,8 @@ async function sincronizarVentasPendientes() {
     console.log(`Iniciando auto-sincronización de ${pendingSales.length} venta(s) offline...`)
 
     let successfulSyncs = 0
+    let failedForGood = 0
+    const stillPending = []
 
     try {
         const { data: { session } } = await supabase.auth.getSession()
@@ -92,14 +127,53 @@ async function sincronizarVentasPendientes() {
                 p_usuario_id: usuarioId
             })
 
-            if (errorVenta) throw errorVenta
+            if (!errorVenta) {
+                successfulSyncs++
+                continue
+            }
 
-            successfulSyncs++
+            // error.code presente = el servidor SÍ respondió (Postgrest/Postgres
+            // rechazó la operación con una razón concreta) → falla real, no de red.
+            const esFallaReal = !!errorVenta.code
+
+            if (!esFallaReal) {
+                console.warn("Fallo de red sincronizando venta offline, se reintentará:", errorVenta)
+                stillPending.push(venta)
+                continue
+            }
+
+            console.error("Venta offline rechazada por el servidor, requiere conciliación manual:", errorVenta)
+            failedForGood++
+
+            const { error: errorLog } = await supabase.from('ventas_offline_fallidas').insert([{
+                local_id: venta.id,
+                cliente_id: venta.cliente_id || null,
+                finca_id: venta.finca_id || null,
+                tipo_pago: venta.tipo_pago,
+                total: venta.total,
+                items: itemsPayload,
+                error_mensaje: errorVenta.message || String(errorVenta),
+                usuario_id: usuarioId
+            }])
+
+            if (errorLog) {
+                // Si ni siquiera se pudo registrar el fallo (p.ej. seguimos sin red
+                // real pese a navigator.onLine), no perder la venta: reintentar después.
+                console.error("No se pudo registrar la venta offline fallida para conciliación:", errorLog)
+                stillPending.push(venta)
+                failedForGood--
+            }
         }
 
-        // Limpiar cola local
-        localStorage.setItem('adnova_pending_sales', '[]')
-        mostrarToast(`✅ Sincronización exitosa: ${successfulSyncs} venta(s) offline guardada(s) en la nube.`, 'success')
+        localStorage.setItem('adnova_pending_sales', JSON.stringify(stillPending))
+        actualizarBadgeVentasPendientes()
+
+        if (successfulSyncs > 0) {
+            mostrarToast(`✅ Sincronización: ${successfulSyncs} venta(s) offline guardada(s) en la nube.`, 'success')
+        }
+        if (failedForGood > 0) {
+            mostrarToast(`⚠️ ${failedForGood} venta(s) offline NO se pudieron sincronizar (requieren revisión del administrador).`, 'error')
+        }
 
         // Recargar datos frescos
         await Promise.all([
@@ -108,10 +182,7 @@ async function sincronizarVentasPendientes() {
         ])
 
     } catch (err) {
-        console.error("Error durante sincronización offline:", err)
-        // Mantener las restantes en cola
-        const remaining = pendingSales.slice(successfulSyncs)
-        localStorage.setItem('adnova_pending_sales', JSON.stringify(remaining))
+        console.error("Error inesperado durante sincronización offline:", err)
     } finally {
         isSyncing = false
     }
@@ -952,6 +1023,7 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
                 carrito: [...carrito]
             })
             localStorage.setItem('adnova_pending_sales', JSON.stringify(pendingSales))
+            actualizarBadgeVentasPendientes()
 
             renderizarTicket(localId, [...carrito], totalVenta)
             vaciarCarrito()

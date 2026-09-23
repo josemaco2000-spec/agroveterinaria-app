@@ -50,7 +50,8 @@ async function validarAccesoAdmin() {
     await Promise.all([
         cargarVentasYGanancias(),
         cargarCompras(),
-        cargarAlertaStockBajo()
+        cargarAlertaStockBajo(),
+        cargarVentasOfflineFallidas()
     ])
 }
 
@@ -399,6 +400,94 @@ async function cargarAlertaStockBajo() {
     } catch (err) {
         console.error("Error al cargar alerta de stock bajo:", err)
         document.getElementById('stat-stock').textContent = "0 productos"
+    }
+}
+
+// 8b. Conciliación de Ventas Offline No Sincronizadas
+// Ventas cobradas sin conexión que el servidor rechazó al sincronizar
+// (stock insuficiente, crédito excedido, etc.). Antes quedaban atascadas
+// solo en el localStorage del dispositivo del cajero, invisibles para
+// cualquier otro admin — ver 27_conciliacion_ventas_offline.sql.
+async function cargarVentasOfflineFallidas() {
+    const panel = document.getElementById('panel-ventas-offline')
+    const tbody = document.getElementById('tabla-ventas-offline')
+    const badgeCount = document.getElementById('badge-offline-count')
+    if (!panel || !tbody) return
+
+    try {
+        const { data: pendientes, error } = await supabase
+            .from('ventas_offline_fallidas')
+            .select('*')
+            .eq('resuelto', false)
+            .order('created_at', { ascending: false })
+
+        if (error) throw error
+
+        const lista = pendientes || []
+
+        if (lista.length === 0) {
+            panel.classList.add('hidden')
+            return
+        }
+
+        panel.classList.remove('hidden')
+        if (badgeCount) badgeCount.textContent = `${lista.length} pendiente${lista.length === 1 ? '' : 's'}`
+
+        let filas = ''
+        lista.forEach(v => {
+            const fecha = new Date(v.created_at).toLocaleString('es-GT', { dateStyle: 'medium', timeStyle: 'short' })
+            const totalFmt = Number(v.total).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            const cantidadItems = Array.isArray(v.items) ? v.items.length : 0
+
+            filas += `
+                <tr class="glass-panel glass-panel-hover rounded-2xl transition-all duration-200 shadow-sm text-slate-800 dark:text-slate-200">
+                    <td class="p-3.5 pl-4 font-mono text-xs">${fecha}</td>
+                    <td class="p-3.5 font-extrabold text-amber-600 dark:text-amber-400">Q${totalFmt}</td>
+                    <td class="p-3.5 text-xs text-rose-600 dark:text-rose-300 max-w-xs">${v.error_mensaje}</td>
+                    <td class="p-3.5 text-xs">${cantidadItems} ítem(s)</td>
+                    <td class="p-3.5 text-center pr-4">
+                        <button class="btn-resolver-offline bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow transition" data-id="${v.id}">
+                            ✓ Marcar resuelta
+                        </button>
+                    </td>
+                </tr>
+            `
+        })
+        tbody.innerHTML = filas
+
+        tbody.querySelectorAll('.btn-resolver-offline').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.getAttribute('data-id')
+                if (!confirm('¿Confirmas que ya revisaste y resolviste esta venta offline (rehecha, descartada o ajustada)?')) return
+
+                btn.disabled = true
+                btn.textContent = 'Guardando...'
+
+                try {
+                    const { data: { session } } = await supabase.auth.getSession()
+                    const { error: errorUpdate } = await supabase
+                        .from('ventas_offline_fallidas')
+                        .update({
+                            resuelto: true,
+                            resuelto_por: session?.user?.id || null,
+                            resuelto_en: new Date().toISOString()
+                        })
+                        .eq('id', id)
+
+                    if (errorUpdate) throw errorUpdate
+
+                    await cargarVentasOfflineFallidas()
+                } catch (err) {
+                    console.error("Error al marcar venta offline como resuelta:", err)
+                    alert("No se pudo marcar como resuelta: " + (err.message || err))
+                    btn.disabled = false
+                    btn.textContent = '✓ Marcar resuelta'
+                }
+            })
+        })
+
+    } catch (err) {
+        console.error("Error al cargar ventas offline fallidas:", err)
     }
 }
 

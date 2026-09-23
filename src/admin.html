@@ -517,6 +517,35 @@
 
             </div>
 
+            <!-- PANEL: CONCILIACIÓN DE VENTAS OFFLINE NO SINCRONIZADAS -->
+            <div id="panel-ventas-offline" class="hidden glass-panel rounded-3xl p-6 shadow-2xl space-y-4 border-2 border-amber-500/40">
+                <div class="flex justify-between items-center border-b border-amber-500/20 pb-3">
+                    <h3 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                        ⚠️ Ventas Offline Sin Sincronizar
+                    </h3>
+                    <span id="badge-offline-count" class="text-xs font-bold px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                        0 pendientes
+                    </span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                    Estas ventas se cobraron en un dispositivo sin conexión y el servidor rechazó la sincronización (stock insuficiente, límite de crédito excedido, etc.). Requieren revisión manual: contactar al cliente, ajustar inventario o descartar.
+                </p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-separate border-spacing-y-2.5">
+                        <thead>
+                            <tr class="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-4">
+                                <th class="pb-2 pl-4">Fecha</th>
+                                <th class="pb-2">Total</th>
+                                <th class="pb-2">Motivo del Rechazo</th>
+                                <th class="pb-2">Ítems</th>
+                                <th class="pb-2 text-center pr-4">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-ventas-offline" class="text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- PANEL DE VISTAS FINANCIERAS & SAT GT (TRES CAPAS: GANANCIAS REALES, COMPRAS, IMPUESTOS) -->
             <div class="glass-panel rounded-3xl p-6 shadow-2xl space-y-6">
                 <!-- Header & Tabs selector -->
