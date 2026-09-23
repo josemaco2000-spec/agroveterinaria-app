@@ -1,4 +1,4 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+const { createClient } = window.supabase
 
 const supabaseUrl = 'https://tioqayfuqigkrakxlecx.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpb3FheWZ1cWlna3Jha3hsZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNTE5NDksImV4cCI6MjEwMTcyNzk0OX0.HD_36_xe7Ms7_K0hefJ_H3vKx1SPnmvMeML55kcINUI'
@@ -10,30 +10,17 @@ let sessionUsuario = null
 
 // 1. Guard de Autenticación y Verificación de Rol Admin
 async function validarAccesoAdmin() {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    const datos = await window.AuthGuard.requireSession(supabase, {
+        rolPermitido: 'admin',
+        redirectRolInvalido: 'pos.html',
+        alertaRolInvalido: 'Acceso denegado. Área exclusiva para administración.',
+    })
+    if (!datos) return
 
-    if (!session) {
-        window.location.href = 'index.html'
-        return
-    }
-
-    sessionUsuario = session.user
-
-    // Consultar perfil de administrador
-    const { data: perfilData, error: perfilError } = await supabase
-        .from('perfiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single()
-
-    if (perfilError || perfilData?.rol !== 'admin') {
-        alert("Acceso denegado. Área exclusiva para administración.")
-        window.location.href = 'pos.html'
-        return
-    }
+    sessionUsuario = { id: datos.user_id, email: datos.email }
 
     // Mostrar nombre del usuario e iniciales en el Header
-    const nombreUsuario = perfilData?.nombre_completo || session.user.email || 'Administrador'
+    const nombreUsuario = datos.nombre_completo || datos.email || 'Administrador'
     const userInfoEl = document.getElementById('usuario-info') || document.getElementById('user-email') || document.getElementById('admin-email') || document.getElementById('cajero-email')
     if (userInfoEl) {
         userInfoEl.textContent = nombreUsuario
@@ -342,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Logout
     document.getElementById('btn-logout')?.addEventListener('click', async () => {
-        await supabase.auth.signOut()
+        await window.AuthGuard.cerrarSesion(supabase)
         window.location.href = 'index.html'
     })
 })

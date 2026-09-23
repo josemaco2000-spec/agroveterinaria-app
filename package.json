@@ -5,9 +5,19 @@
   "description": "Sistema POS y de inventario Agrovet Campo Alto",
   "scripts": {
     "build:css": "tailwindcss -c tailwind.config.js -i ./src/styles/input.css -o ./src/styles/tailwind.css --minify",
-    "watch:css": "tailwindcss -c tailwind.config.js -i ./src/styles/input.css -o ./src/styles/tailwind.css --watch"
+    "watch:css": "tailwindcss -c tailwind.config.js -i ./src/styles/input.css -o ./src/styles/tailwind.css --watch",
+    "vendor:supabase": "node -e \"require('fs').copyFileSync('node_modules/@supabase/supabase-js/dist/umd/supabase.js','src/vendor/supabase.js')\"",
+    "vendor:dexie": "node -e \"require('fs').copyFileSync('node_modules/dexie/dist/dexie.min.js','src/vendor/dexie.js')\"",
+    "vendor": "npm run vendor:supabase && npm run vendor:dexie",
+    "build:sw": "node scripts/build-sw.js",
+    "build": "npm run build:css && npm run build:sw"
   },
   "devDependencies": {
+    "playwright": "^1.63.0",
     "tailwindcss": "^3.4.13"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.117.0",
+    "dexie": "4.4.6"
   }
 }

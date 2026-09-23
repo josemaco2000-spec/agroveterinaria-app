@@ -1,4 +1,4 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+const { createClient } = window.supabase
 
 const supabaseUrl = 'https://tioqayfuqigkrakxlecx.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpb3FheWZ1cWlna3Jha3hsZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNTE5NDksImV4cCI6MjEwMTcyNzk0OX0.HD_36_xe7Ms7_K0hefJ_H3vKx1SPnmvMeML55kcINUI'
@@ -7,26 +7,15 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 // Validar que sea el Dueño (Admin) el que está aquí
 async function validarAcceso() {
     try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session) {
-            window.location.href = 'index.html'
-            return
-        }
-
-        const { data: perfil, error } = await supabase
-            .from('perfiles')
-            .select('rol, nombre_completo')
-            .eq('id', session.user.id)
-            .single()
-
-        if (error || perfil?.rol !== 'admin') {
-            window.location.href = 'pos.html'
-            return
-        }
+        const datos = await window.AuthGuard.requireSession(supabase, {
+            rolPermitido: 'admin',
+            redirectRolInvalido: 'pos.html',
+        })
+        if (!datos) return
 
         const userInfoEl = document.getElementById('usuario-info') || document.getElementById('user-email')
         if (userInfoEl) {
-            userInfoEl.textContent = perfil?.nombre_completo || session.user.email || 'Usuario Campo Alto'
+            userInfoEl.textContent = datos.nombre_completo || datos.email || 'Usuario Campo Alto'
         }
 
         cargarInventario()

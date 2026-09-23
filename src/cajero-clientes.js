@@ -1,4 +1,4 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+const { createClient } = window.supabase
 
 const supabaseUrl = 'https://tioqayfuqigkrakxlecx.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpb3FheWZ1cWlna3Jha3hsZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNTE5NDksImV4cCI6MjEwMTcyNzk0OX0.HD_36_xe7Ms7_K0hefJ_H3vKx1SPnmvMeML55kcINUI'
@@ -8,37 +8,18 @@ let todosLosClientes = []
 
 // 1. Guard de Autenticación y Rol
 async function validarSesion() {
-    try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    const datos = await window.AuthGuard.requireSession(supabase, {
+        rolExcluido: 'admin',
+        redirectRolInvalido: 'admin.html',
+    })
+    if (!datos) return
 
-        if (sessionError || !session) {
-            window.location.href = 'index.html'
-            return
-        }
-
-        const { data: perfil, error: perfilError } = await supabase
-            .from('perfiles')
-            .select('rol, nombre_completo')
-            .eq('id', session.user.id)
-            .single()
-
-        if (perfilError) {
-            console.error("Error al obtener perfil:", perfilError.message)
-        } else if (perfil && perfil.rol === 'admin') {
-            window.location.href = 'admin.html'
-            return
-        }
-
-        const cajeroEmailEl = document.getElementById('cajero-email') || document.getElementById('user-email') || document.getElementById('admin-email') || document.getElementById('usuario-info')
-        if (cajeroEmailEl) {
-            cajeroEmailEl.textContent = perfil?.nombre_completo || session.user.email || 'Usuario'
-        }
-
-        await cargarClientes()
-    } catch (err) {
-        console.error("Error en autenticación de clientes:", err)
-        window.location.href = 'index.html'
+    const cajeroEmailEl = document.getElementById('cajero-email') || document.getElementById('user-email') || document.getElementById('admin-email') || document.getElementById('usuario-info')
+    if (cajeroEmailEl) {
+        cajeroEmailEl.textContent = datos.nombre_completo || datos.email || 'Usuario'
     }
+
+    await cargarClientes()
 }
 
 // 2. Cargar Lista de Clientes

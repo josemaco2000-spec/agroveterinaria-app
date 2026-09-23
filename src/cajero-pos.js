@@ -1,4 +1,4 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+const { createClient } = window.supabase
 
 const supabaseUrl = 'https://tioqayfuqigkrakxlecx.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpb3FheWZ1cWlna3Jha3hsZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNTE5NDksImV4cCI6MjEwMTcyNzk0OX0.HD_36_xe7Ms7_K0hefJ_H3vKx1SPnmvMeML55kcINUI'
@@ -11,10 +11,9 @@ let listaClientesPOS = []
 let clienteSeleccionadoId = ''
 let fincaSeleccionadaId = ''
 let tipoPagoSeleccionado = 'EFECTIVO'
-let isSyncing = false
 let cajeroNombreCompleto = 'Usuario'
 
-// 0. Estado de Conexión + Auto-Sincronización de Ventas Offline
+// 0. Estado de Conexión
 function actualizarStatusConexionUI() {
     const badge = document.getElementById('status-conexion')
     if (badge) {
@@ -28,23 +27,19 @@ function actualizarStatusConexionUI() {
     }
 
     actualizarBadgeVentasPendientes()
-
-    if (navigator.onLine) {
-        sincronizarVentasPendientes()
-    }
 }
 
 // Indicador visible de ventas offline aún sin sincronizar (no queda solo
 // en un console.error invisible: el cajero ve cuántas ventas están
-// pendientes en localStorage de ESTE dispositivo).
-function actualizarBadgeVentasPendientes() {
+// pendientes en la cola de ESTE dispositivo -- ver sync-queue.js).
+async function actualizarBadgeVentasPendientes() {
     const badge = document.getElementById('badge-ventas-pendientes')
     const texto = document.getElementById('badge-ventas-pendientes-texto')
     if (!badge || !texto) return
 
-    const pendingSales = JSON.parse(localStorage.getItem('adnova_pending_sales') || '[]')
-    if (pendingSales.length > 0) {
-        texto.textContent = `${pendingSales.length} venta(s) pendiente(s) de sincronizar`
+    const pendientes = await window.SyncQueue.contarPendientes()
+    if (pendientes > 0) {
+        texto.textContent = `${pendientes} venta(s) pendiente(s) de sincronizar`
         badge.classList.remove('hidden')
         badge.classList.add('flex')
     } else {
@@ -52,6 +47,19 @@ function actualizarBadgeVentasPendientes() {
         badge.classList.remove('flex')
     }
 }
+
+// sync-queue.js sincroniza solo (se carga en todas las páginas y se
+// dispara al reconectar); acá solo reaccionamos para refrescar esta UI.
+window.addEventListener('sync-queue:completado', async ({ detail }) => {
+    if (detail.procesadas > 0) {
+        mostrarToast(`✅ Sincronización: ${detail.procesadas} venta(s)/ajuste(s) offline guardado(s) en la nube.`, 'success')
+    }
+    if (detail.fallidasDefinitivas > 0) {
+        mostrarToast(`⚠️ ${detail.fallidasDefinitivas} operación(es) offline NO se pudieron sincronizar (requieren revisión del administrador).`, 'error')
+    }
+    actualizarBadgeVentasPendientes()
+    await Promise.all([cargarCatalogo(), cargarClientesPOS()])
+})
 
 window.addEventListener('online', actualizarStatusConexionUI)
 window.addEventListener('offline', actualizarStatusConexionUI)
@@ -65,154 +73,21 @@ document.addEventListener('visibilitychange', () => {
     }
 })
 
-// Auto-Sincronización de Ventas Guardadas en Modo Offline
-//
-// Cada venta pendiente se procesa de forma INDEPENDIENTE (no se aborta el
-// lote completo si una falla) y el resultado se clasifica en 3 grupos:
-//  - Sincronizada con éxito → se quita de la cola local.
-//  - Falla de RED (Supabase sigue sin responder) → se deja en la cola para
-//    reintentar en el próximo ciclo, no es un error real de la venta.
-//  - Falla REAL del servidor (p.ej. stock insuficiente, límite de crédito
-//    excedido) → NO tiene sentido reintentar el mismo carrito una y otra
-//    vez, así que se registra en `ventas_offline_fallidas` (server-side,
-//    visible para cualquier admin desde cualquier dispositivo) y se quita
-//    de la cola local. Antes, este caso quedaba atascado para siempre en
-//    el localStorage de este dispositivo sin ninguna alerta.
-async function sincronizarVentasPendientes() {
-    if (isSyncing || !navigator.onLine) return
-
-    const pendingSales = JSON.parse(localStorage.getItem('adnova_pending_sales') || '[]')
-    if (pendingSales.length === 0) return
-
-    isSyncing = true
-    console.log(`Iniciando auto-sincronización de ${pendingSales.length} venta(s) offline...`)
-
-    let successfulSyncs = 0
-    let failedForGood = 0
-    const stillPending = []
-
-    try {
-        const { data: { session } } = await supabase.auth.getSession()
-        const usuarioId = session?.user?.id || null
-
-        for (const venta of pendingSales) {
-            // Igual que la venta en línea: cabecera + detalle + descuento de stock FEFO en
-            // UNA SOLA transacción atómica en el servidor (registrar_venta_pos), en vez de
-            // 3 llamadas independientes que podían dejar una venta registrada sin el stock
-            // correspondiente descontado si la salida FEFO fallaba a mitad de camino.
-            const itemsPayload = venta.carrito.map(item => {
-                const presItem = catalogo.find(p => p.id === item.presentacionId)
-                const costoBaseObj = Array.isArray(presItem?.productos?.productos_costos)
-                    ? presItem?.productos?.productos_costos[0]
-                    : presItem?.productos?.productos_costos
-                const costoUnitarioBase = Number(costoBaseObj?.precio_costo) || 0
-                const factorConv = Number(item.factorConversion) || 1
-
-                return {
-                    presentacion_id: item.presentacionId,
-                    producto_id: item.productoId,
-                    cantidad: item.cantidad,
-                    precio_venta: item.precioVenta,
-                    descuento_porcentaje: Number(item.descuentoPorcentaje) || 0,
-                    factor_conversion: factorConv,
-                    costo_unitario: factorConv * costoUnitarioBase
-                }
-            })
-
-            const { error: errorVenta } = await supabase.rpc('registrar_venta_pos', {
-                p_items: itemsPayload,
-                p_cliente_id: venta.cliente_id || null,
-                p_finca_id: venta.finca_id || null,
-                p_tipo_pago: venta.tipo_pago,
-                p_usuario_id: usuarioId
-            })
-
-            if (!errorVenta) {
-                successfulSyncs++
-                continue
-            }
-
-            // error.code presente = el servidor SÍ respondió (Postgrest/Postgres
-            // rechazó la operación con una razón concreta) → falla real, no de red.
-            const esFallaReal = !!errorVenta.code
-
-            if (!esFallaReal) {
-                console.warn("Fallo de red sincronizando venta offline, se reintentará:", errorVenta)
-                stillPending.push(venta)
-                continue
-            }
-
-            console.error("Venta offline rechazada por el servidor, requiere conciliación manual:", errorVenta)
-            failedForGood++
-
-            const { error: errorLog } = await supabase.from('ventas_offline_fallidas').insert([{
-                local_id: venta.id,
-                cliente_id: venta.cliente_id || null,
-                finca_id: venta.finca_id || null,
-                tipo_pago: venta.tipo_pago,
-                total: venta.total,
-                items: itemsPayload,
-                error_mensaje: errorVenta.message || String(errorVenta),
-                usuario_id: usuarioId
-            }])
-
-            if (errorLog) {
-                // Si ni siquiera se pudo registrar el fallo (p.ej. seguimos sin red
-                // real pese a navigator.onLine), no perder la venta: reintentar después.
-                console.error("No se pudo registrar la venta offline fallida para conciliación:", errorLog)
-                stillPending.push(venta)
-                failedForGood--
-            }
-        }
-
-        localStorage.setItem('adnova_pending_sales', JSON.stringify(stillPending))
-        actualizarBadgeVentasPendientes()
-
-        if (successfulSyncs > 0) {
-            mostrarToast(`✅ Sincronización: ${successfulSyncs} venta(s) offline guardada(s) en la nube.`, 'success')
-        }
-        if (failedForGood > 0) {
-            mostrarToast(`⚠️ ${failedForGood} venta(s) offline NO se pudieron sincronizar (requieren revisión del administrador).`, 'error')
-        }
-
-        // Recargar datos frescos
-        await Promise.all([
-            cargarCatalogo(),
-            cargarClientesPOS()
-        ])
-
-    } catch (err) {
-        console.error("Error inesperado durante sincronización offline:", err)
-    } finally {
-        isSyncing = false
-    }
-}
+// La sincronización de ventas/ajustes pendientes ahora vive en
+// sync-queue.js (Fase 4) -- se dispara sola al reconectar en cualquier
+// página, no solo en el POS. El listener de 'sync-queue:completado' más
+// arriba se encarga de refrescar esta UI cuando termina.
 
 // 1. Guard de Autenticación y Rol Vendedor
 async function validarSesion() {
     try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        const datos = await window.AuthGuard.requireSession(supabase, {
+            rolExcluido: 'admin',
+            redirectRolInvalido: 'admin.html',
+        })
+        if (!datos) return
 
-        if (sessionError || !session) {
-            window.location.href = 'index.html'
-            return
-        }
-
-        // Verificar rol y nombre_completo en perfiles
-        const { data: perfil, error: perfilError } = await supabase
-            .from('perfiles')
-            .select('rol, nombre_completo')
-            .eq('id', session.user.id)
-            .single()
-
-        if (perfilError) {
-            console.error("Error al verificar perfil:", perfilError.message)
-        } else if (perfil && perfil.rol === 'admin') {
-            window.location.href = 'admin.html'
-            return
-        }
-
-        cajeroNombreCompleto = perfil?.nombre_completo || session.user.email || 'Usuario'
+        cajeroNombreCompleto = datos.nombre_completo || datos.email || 'Usuario'
 
         const cajeroEmailEl = document.getElementById('cajero-email') || document.getElementById('user-email') || document.getElementById('admin-email') || document.getElementById('usuario-info')
         if (cajeroEmailEl) {
@@ -233,6 +108,20 @@ async function validarSesion() {
     }
 }
 
+// Sincroniza presentaciones+stock+clientes contra Supabase (Fase 3, ver
+// sync-catalogo.js) una sola vez aunque cargarCatalogo() y
+// cargarClientesPOS() se disparen juntos (Promise.all).
+let sincronizacionEnCurso = null
+function garantizarCatalogoSincronizado() {
+    if (!navigator.onLine) return Promise.resolve()
+    if (!sincronizacionEnCurso) {
+        sincronizacionEnCurso = window.SyncCatalogo.sincronizarCatalogo(supabase).finally(() => {
+            sincronizacionEnCurso = null
+        })
+    }
+    return sincronizacionEnCurso
+}
+
 // 2. Cargar Catálogo de Productos y Presentaciones
 async function cargarCatalogo() {
     const grid = document.getElementById('grid-productos')
@@ -244,86 +133,9 @@ async function cargarCatalogo() {
         </div>
     `
 
-    try {
-        if (!navigator.onLine) {
-            cargarCatalogodesdeCache()
-            return
-        }
-
-        // Consultar stock específico del Área de Venta (POS)
-        const { data: stockVenta } = await supabase
-            .from('v_stock_productos_ubicacion')
-            .select('*')
-            .eq('ubicacion_id', '22222222-2222-2222-2222-222222222222')
-
-        const stockMap = {}
-        if (stockVenta) {
-            stockVenta.forEach(s => {
-                stockMap[s.producto_id] = Number(s.stock_disponible) || 0
-            })
-        }
-
-        const { data: presentaciones, error } = await supabase
-            .from('presentaciones')
-            .select(`
-                *,
-                productos!inner (
-                    id,
-                    nombre,
-                    codigo_barras,
-                    categoria,
-                    unidad_base,
-                    stock_base,
-                    imagen_url
-                )
-            `)
-            .order('nombre_presentacion', { ascending: true })
-
-        if (error) throw error
-
-        catalogo = (presentaciones || []).map(p => {
-            const stockPos = stockMap[p.productos.id] ?? Number(p.productos.stock_base)
-            return {
-                ...p,
-                productos: {
-                    ...p.productos,
-                    stock_base: stockPos
-                }
-            }
-        }).filter(p => p.productos && Number(p.productos.stock_base) > 0)
-
-        actualizarCacheCatalogoLocal()
-        renderCatalogo(catalogo)
-
-    } catch (err) {
-        console.error("Error al cargar catálogo:", err)
-        cargarCatalogodesdeCache()
-    }
-}
-
-function cargarCatalogodesdeCache() {
-    const cachedData = localStorage.getItem('adnova_catalogo_cache')
-    if (cachedData) {
-        try {
-            catalogo = JSON.parse(cachedData)
-            renderCatalogo(catalogo)
-            return
-        } catch (e) {
-            console.error("Error parsing cached catalog:", e)
-        }
-    }
-    const grid = document.getElementById('grid-productos')
-    if (grid) {
-        grid.innerHTML = `
-            <div class="col-span-full bg-white rounded-3xl p-12 text-center text-rose-500 font-bold border border-slate-200 shadow-sm">
-                ❌ Sin conexión a internet y sin catálogo en caché.
-            </div>
-        `
-    }
-}
-
-function actualizarCacheCatalogoLocal() {
-    localStorage.setItem('adnova_catalogo_cache', JSON.stringify(catalogo))
+    await garantizarCatalogoSincronizado()
+    catalogo = await window.SyncCatalogo.obtenerCatalogoLocal()
+    renderCatalogo(catalogo)
 }
 
 // 3. Renderizar Catálogo de Tarjetas Gran Formato
@@ -835,22 +647,13 @@ let listaFincasCliente = []
 async function cargarClientesPOS() {
     const datalistClientes = document.getElementById('datalist-clientes')
 
-    try {
-        const { data: clientes, error } = await supabase
-            .from('clientes')
-            .select('*')
-            .order('nombre', { ascending: true })
+    await garantizarCatalogoSincronizado()
+    listaClientesPOS = await window.SyncCatalogo.obtenerClientesLocal()
 
-        if (error) throw error
-
-        listaClientesPOS = clientes || []
-        if (datalistClientes) {
-            datalistClientes.innerHTML = listaClientesPOS.map(cli => 
-                `<option value="${cli.nombre}">${cli.nit ? `NIT: ${cli.nit}` : 'CF'}</option>`
-            ).join('')
-        }
-    } catch (err) {
-        console.error("Error al cargar clientes en POS:", err)
+    if (datalistClientes) {
+        datalistClientes.innerHTML = listaClientesPOS.map(cli =>
+            `<option value="${cli.nombre}">${cli.nit ? `NIT: ${cli.nit}` : 'CF'}</option>`
+        ).join('')
     }
 }
 
@@ -1003,26 +806,43 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
             }
 
             const localId = 'local-' + crypto.randomUUID()
-            carrito.forEach(item => {
+            for (const item of carrito) {
                 const pres = catalogo.find(p => p.id === item.presentacionId)
                 if (pres && pres.productos) {
-                    pres.productos.stock_base = Math.max(0, Number(pres.productos.stock_base) - (item.cantidad * item.factorConversion))
+                    const cantidadBase = item.cantidad * item.factorConversion
+                    pres.productos.stock_base = Math.max(0, Number(pres.productos.stock_base) - cantidadBase)
+                    await window.SyncCatalogo.descontarStockLocal(pres.productos.id, cantidadBase)
+                }
+            }
+
+            renderCatalogo(catalogo)
+
+            const itemsPayload = carrito.map(item => {
+                const presItem = catalogo.find(p => p.id === item.presentacionId)
+                const costoBaseObj = Array.isArray(presItem?.productos?.productos_costos)
+                    ? presItem?.productos?.productos_costos[0]
+                    : presItem?.productos?.productos_costos
+                const costoUnitarioBase = Number(costoBaseObj?.precio_costo) || 0
+                const factorConv = Number(item.factorConversion) || 1
+
+                return {
+                    presentacion_id: item.presentacionId,
+                    producto_id: item.productoId,
+                    cantidad: item.cantidad,
+                    precio_venta: item.precioVenta,
+                    descuento_porcentaje: Number(item.descuentoPorcentaje) || 0,
+                    factor_conversion: factorConv,
+                    costo_unitario: factorConv * costoUnitarioBase
                 }
             })
 
-            actualizarCacheCatalogoLocal()
-            renderCatalogo(catalogo)
-
-            const pendingSales = JSON.parse(localStorage.getItem('adnova_pending_sales') || '[]')
-            pendingSales.push({
-                id: localId,
-                total: totalVenta,
+            await window.SyncQueue.encolar('venta', {
+                items: itemsPayload,
                 cliente_id: activeClienteId || null,
                 finca_id: activeFincaId || null,
                 tipo_pago: tipoPagoSeleccionado,
-                carrito: [...carrito]
+                total: totalVenta
             })
-            localStorage.setItem('adnova_pending_sales', JSON.stringify(pendingSales))
             actualizarBadgeVentasPendientes()
 
             renderizarTicket(localId, [...carrito], totalVenta)
