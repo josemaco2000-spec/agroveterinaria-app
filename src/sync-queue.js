@@ -23,6 +23,15 @@ const supabaseQueue = window.supabase.createClient(supabaseUrl, supabaseKey)
 const TABLA_FALLIDOS = {
   venta: 'ventas_offline_fallidas',
   ajuste_inventario: 'movimientos_offline_fallidos',
+  // cierre_caja no tiene tabla de conciliación propia: la política RLS de
+  // cierres_caja es "cualquier autenticado puede insertar" sin ninguna
+  // regla de negocio que lo rechace (a diferencia de stock o límite de
+  // crédito), así que un rechazo REAL del servidor es prácticamente
+  // inalcanzable hoy. Si llegara a pasar, registrarFalloDefinitivo
+  // devuelve { ok: false } (ver abajo) y el ítem simplemente se queda
+  // pendiente en la cola en vez de perderse — no amerita una tabla server
+  // side + panel de admin para un caso que no puede ocurrir con el
+  // esquema actual.
 }
 
 let procesando = false
@@ -82,9 +91,21 @@ function sincronizarAjuste(item, usuarioId) {
   return llamarRpcConFallback('registrar_ajuste_inventario', { ...base, p_local_id: item.local_id }, base)
 }
 
+// cierres_caja se llena con un INSERT directo (no hay RPC ni columna
+// local_id) -- no necesita el patrón de idempotencia de ventas/ajustes
+// porque un cierre se hace una sola vez por turno, muy baja frecuencia,
+// y un eventual duplicado por la carrera "el servidor confirmó pero la
+// respuesta se perdió" sería fácil de detectar a simple vista en el
+// panel de cierres (dos filas del mismo usuario el mismo día) y de
+// borrar a mano -- no justifica otra migración de esquema.
+function sincronizarCierre(item) {
+  return supabaseQueue.from('cierres_caja').insert([item.payload])
+}
+
 const SINCRONIZADORES = {
   venta: sincronizarVenta,
   ajuste_inventario: sincronizarAjuste,
+  cierre_caja: sincronizarCierre,
 }
 
 async function registrarFalloDefinitivo(item, usuarioId, mensaje) {

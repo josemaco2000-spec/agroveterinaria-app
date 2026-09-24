@@ -62,18 +62,28 @@ if (formCierreCiego) {
 
         try {
             const { totalReal, breakdown } = calcularMontoReal()
+            const payloadCierre = {
+                usuario_id: currentUserId,
+                monto_real: totalReal,
+                observaciones: `Arqueo Ciego: ${breakdown}`
+            }
 
-            // Insertar en cierres_caja
-            const { error } = await supabase
-                .from('cierres_caja')
-                .insert([{
-                    usuario_id: currentUserId,
-                    monto_real: totalReal,
-                    observaciones: `Arqueo Ciego: ${breakdown}`
-                }])
+            // Si hay red, intentar guardar directo; si falla por cualquier
+            // motivo (o no hay red desde el inicio), encolar en vez de
+            // perder el conteo de caja -- antes, un error acá se
+            // registraba en consola pero igual se mostraba "éxito" sin
+            // haber guardado nada.
+            let guardadoDirecto = false
+            if (navigator.onLine) {
+                const { error } = await supabase.from('cierres_caja').insert([payloadCierre])
+                guardadoDirecto = !error
+                if (error) {
+                    console.warn("No se pudo guardar el cierre en línea, se encola para reintentar:", error)
+                }
+            }
 
-            if (error) {
-                console.error("Error al insertar cierre de caja:", error)
+            if (!guardadoDirecto) {
+                await window.SyncQueue.encolar('cierre_caja', payloadCierre)
             }
 
             // Mostrar modal de éxito

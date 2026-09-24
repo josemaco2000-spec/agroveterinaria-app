@@ -142,21 +142,31 @@ document.getElementById('btn-guardar-cierre')?.addEventListener('click', async (
     const observaciones = document.getElementById('observaciones').value.trim()
 
     try {
-        // Intentar guardar en la tabla `cierres_caja`
-        const { error } = await supabase
-            .from('cierres_caja')
-            .insert([{
-                usuario_id: currentUserId,
-                monto_inicial: montoInicial,
-                ventas_efectivo: ventasEfectivoTotal,
-                monto_esperado: montoEsperado,
-                monto_real: montoReal,
-                diferencia: diferencia,
-                observaciones: observaciones || null
-            }])
+        const payloadCierre = {
+            usuario_id: currentUserId,
+            monto_inicial: montoInicial,
+            ventas_efectivo: ventasEfectivoTotal,
+            monto_esperado: montoEsperado,
+            monto_real: montoReal,
+            diferencia: diferencia,
+            observaciones: observaciones || null
+        }
 
-        if (error) {
-            console.error("Aviso al insertar en cierres_caja:", error)
+        // Si hay red, intentar guardar directo; si falla por cualquier
+        // motivo (o no hay red desde el inicio), encolar en vez de perder
+        // el cierre -- antes, un error acá quedaba solo en consola pero
+        // igual se mostraba el ticket de "éxito" sin haber guardado nada.
+        let guardadoDirecto = false
+        if (navigator.onLine) {
+            const { error } = await supabase.from('cierres_caja').insert([payloadCierre])
+            guardadoDirecto = !error
+            if (error) {
+                console.warn("No se pudo guardar el cierre en línea, se encola para reintentar:", error)
+            }
+        }
+
+        if (!guardadoDirecto) {
+            await window.SyncQueue.encolar('cierre_caja', payloadCierre)
         }
 
         // Llenar resumen en ticket modal de éxito

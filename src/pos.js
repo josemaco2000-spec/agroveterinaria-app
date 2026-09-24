@@ -37,7 +37,7 @@ async function actualizarBadgeVentasPendientes() {
 
     const pendientes = await window.SyncQueue.contarPendientes()
     if (pendientes > 0) {
-        texto.textContent = `${pendientes} venta(s) pendientes`
+        texto.textContent = `${pendientes} operación(es) pendiente(s)`
         badge.classList.remove('hidden')
     } else {
         badge.classList.add('hidden')

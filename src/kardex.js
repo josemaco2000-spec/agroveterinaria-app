@@ -29,12 +29,51 @@ async function validarAccesoAdmin() {
 }
 
 // 2. Poblar Dropdown de Productos (filtro de kardex + selector del modal de ajuste)
+function poblarDropdownsProductos(productos, selectProd, selectAjusteProd) {
+    productos.forEach(prod => {
+        if (selectProd) {
+            const opt = document.createElement('option')
+            opt.value = prod.id
+            opt.textContent = prod.nombre
+            selectProd.appendChild(opt)
+        }
+        if (selectAjusteProd) {
+            const optAjuste = document.createElement('option')
+            optAjuste.value = prod.id
+            optAjuste.textContent = prod.nombre
+            selectAjusteProd.appendChild(optAjuste)
+        }
+    })
+}
+
+// Sin red, no hay ninguna consulta directa a `productos` que funcione --
+// como fallback, se arma la lista a partir del catálogo que pos.js ya
+// haya sincronizado a IndexedDB (Fase 3). Si esta laptop nunca abrió el
+// POS con conexión, la lista queda vacía (no hay de dónde sacarla), pero
+// al menos no se pierde la posibilidad de ajustar cuando sí hay algo
+// cacheado.
+async function cargarProductosDesdeCacheLocal(selectProd, selectAjusteProd) {
+    const presentaciones = await window.CampoAltoDB.presentaciones.toArray()
+    const vistos = new Map()
+    presentaciones.forEach(p => {
+        if (p.productos?.id && !vistos.has(p.productos.id)) {
+            vistos.set(p.productos.id, p.productos.nombre)
+        }
+    })
+    const productosLocal = [...vistos.entries()]
+        .map(([id, nombre]) => ({ id, nombre }))
+        .sort((a, b) => a.nombre.localeCompare(b.nombre))
+    poblarDropdownsProductos(productosLocal, selectProd, selectAjusteProd)
+}
+
 async function cargarProductosDropdown() {
     const selectProd = document.getElementById('filtro-producto')
     const selectAjusteProd = document.getElementById('ajuste-producto')
     if (!selectProd && !selectAjusteProd) return
 
     try {
+        if (!navigator.onLine) throw new Error('offline')
+
         const { data: productos, error } = await supabase
             .from('productos')
             .select('id, nombre')
@@ -42,22 +81,10 @@ async function cargarProductosDropdown() {
 
         if (error) throw error
 
-        productos.forEach(prod => {
-            if (selectProd) {
-                const opt = document.createElement('option')
-                opt.value = prod.id
-                opt.textContent = prod.nombre
-                selectProd.appendChild(opt)
-            }
-            if (selectAjusteProd) {
-                const optAjuste = document.createElement('option')
-                optAjuste.value = prod.id
-                optAjuste.textContent = prod.nombre
-                selectAjusteProd.appendChild(optAjuste)
-            }
-        })
+        poblarDropdownsProductos(productos, selectProd, selectAjusteProd)
     } catch (err) {
-        console.error("Error cargando lista de productos:", err)
+        console.warn("No se pudo cargar productos por red, usando catálogo local si existe:", err)
+        await cargarProductosDesdeCacheLocal(selectProd, selectAjusteProd)
     }
 }
 
