@@ -181,7 +181,6 @@
     <meta name="application-name" content="Campo Alto">
     <meta name="msapplication-TileColor" content="#051810">
     <meta name="msapplication-TileImage" content="assets/icons/icon-192.png">
-    <script defer src="pwa-register.js"></script>
 </head>
 <body class="bg-forest-950 text-slate-100 font-sans min-h-screen flex overflow-x-hidden antialiased bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-forest-900/30 via-forest-950 to-[#010403] selection:bg-emerald-500 selection:text-white">
 
@@ -557,6 +556,13 @@
         </div>
     </div>
 
+    <script src="./pwa-register.js"></script>
+    <script src="./vendor/supabase.js"></script>
+    <script src="./vendor/dexie.js"></script>
+    <script src="./db.js"></script>
+    <script src="./auth-local.js"></script>
+    <script src="./auth-guard.js"></script>
+    <script src="./sync-queue.js"></script>
     <script type="module" src="clientes.js"></script>
 </body>
 </html>

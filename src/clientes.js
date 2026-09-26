@@ -1,4 +1,4 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+const { createClient } = window.supabase
 
 const supabaseUrl = 'https://tioqayfuqigkrakxlecx.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpb3FheWZ1cWlna3Jha3hsZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNTE5NDksImV4cCI6MjEwMTcyNzk0OX0.HD_36_xe7Ms7_K0hefJ_H3vKx1SPnmvMeML55kcINUI'
@@ -11,19 +11,10 @@ let pestanaActivaDetalle = 'fincas'
 
 // 1. Guard de Autenticación
 async function validarSesion() {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-        window.location.href = 'index.html'
-        return
-    }
+    const datos = await window.AuthGuard.requireSession(supabase)
+    if (!datos) return
 
-    const { data: perfil } = await supabase
-        .from('perfiles')
-        .select('nombre_completo')
-        .eq('id', session.user.id)
-        .single()
-
-    const nombreUsuario = perfil?.nombre_completo || session.user.email
+    const nombreUsuario = datos.nombre_completo || datos.email
     const userEmail = document.getElementById('user-email') || document.getElementById('usuario-info') || document.getElementById('admin-email') || document.getElementById('cajero-email')
     if (userEmail) {
         userEmail.textContent = nombreUsuario
@@ -586,7 +577,7 @@ document.addEventListener('keydown', (e) => {
 
 // Logout
 document.getElementById('btn-logout')?.addEventListener('click', async () => {
-    await supabase.auth.signOut()
+    await window.AuthGuard.cerrarSesion(supabase)
     window.location.href = 'index.html'
 })
 

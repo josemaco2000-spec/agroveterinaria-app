@@ -1,4 +1,4 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+const { createClient } = window.supabase
 
 const supabaseUrl = 'https://tioqayfuqigkrakxlecx.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpb3FheWZ1cWlna3Jha3hsZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNTE5NDksImV4cCI6MjEwMTcyNzk0OX0.HD_36_xe7Ms7_K0hefJ_H3vKx1SPnmvMeML55kcINUI'
@@ -8,26 +8,15 @@ let currentUserId = null
 
 // 1. Guard de Autenticación (Solo Admin)
 async function validarAccesoAdmin() {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-        window.location.href = 'index.html'
-        return
-    }
+    const datos = await window.AuthGuard.requireSession(supabase, {
+        rolPermitido: 'admin',
+        redirectRolInvalido: 'pos.html',
+    })
+    if (!datos) return
 
-    const { data: perfil, error } = await supabase
-        .from('perfiles')
-        .select('rol, nombre_completo')
-        .eq('id', session.user.id)
-        .single()
+    currentUserId = datos.user_id
 
-    if (error || perfil?.rol !== 'admin') {
-        window.location.href = 'pos.html'
-        return
-    }
-
-    currentUserId = session.user.id
-
-    const nombreUsuario = perfil?.nombre_completo || session.user.email
+    const nombreUsuario = datos.nombre_completo || datos.email
     const userEmail = document.getElementById('user-email') || document.getElementById('admin-email') || document.getElementById('usuario-info')
     if (userEmail) {
         userEmail.textContent = nombreUsuario
@@ -40,12 +29,51 @@ async function validarAccesoAdmin() {
 }
 
 // 2. Poblar Dropdown de Productos (filtro de kardex + selector del modal de ajuste)
+function poblarDropdownsProductos(productos, selectProd, selectAjusteProd) {
+    productos.forEach(prod => {
+        if (selectProd) {
+            const opt = document.createElement('option')
+            opt.value = prod.id
+            opt.textContent = prod.nombre
+            selectProd.appendChild(opt)
+        }
+        if (selectAjusteProd) {
+            const optAjuste = document.createElement('option')
+            optAjuste.value = prod.id
+            optAjuste.textContent = prod.nombre
+            selectAjusteProd.appendChild(optAjuste)
+        }
+    })
+}
+
+// Sin red, no hay ninguna consulta directa a `productos` que funcione --
+// como fallback, se arma la lista a partir del catálogo que pos.js ya
+// haya sincronizado a IndexedDB (Fase 3). Si esta laptop nunca abrió el
+// POS con conexión, la lista queda vacía (no hay de dónde sacarla), pero
+// al menos no se pierde la posibilidad de ajustar cuando sí hay algo
+// cacheado.
+async function cargarProductosDesdeCacheLocal(selectProd, selectAjusteProd) {
+    const presentaciones = await window.CampoAltoDB.presentaciones.toArray()
+    const vistos = new Map()
+    presentaciones.forEach(p => {
+        if (p.productos?.id && !vistos.has(p.productos.id)) {
+            vistos.set(p.productos.id, p.productos.nombre)
+        }
+    })
+    const productosLocal = [...vistos.entries()]
+        .map(([id, nombre]) => ({ id, nombre }))
+        .sort((a, b) => a.nombre.localeCompare(b.nombre))
+    poblarDropdownsProductos(productosLocal, selectProd, selectAjusteProd)
+}
+
 async function cargarProductosDropdown() {
     const selectProd = document.getElementById('filtro-producto')
     const selectAjusteProd = document.getElementById('ajuste-producto')
     if (!selectProd && !selectAjusteProd) return
 
     try {
+        if (!navigator.onLine) throw new Error('offline')
+
         const { data: productos, error } = await supabase
             .from('productos')
             .select('id, nombre')
@@ -53,22 +81,10 @@ async function cargarProductosDropdown() {
 
         if (error) throw error
 
-        productos.forEach(prod => {
-            if (selectProd) {
-                const opt = document.createElement('option')
-                opt.value = prod.id
-                opt.textContent = prod.nombre
-                selectProd.appendChild(opt)
-            }
-            if (selectAjusteProd) {
-                const optAjuste = document.createElement('option')
-                optAjuste.value = prod.id
-                optAjuste.textContent = prod.nombre
-                selectAjusteProd.appendChild(optAjuste)
-            }
-        })
+        poblarDropdownsProductos(productos, selectProd, selectAjusteProd)
     } catch (err) {
-        console.error("Error cargando lista de productos:", err)
+        console.warn("No se pudo cargar productos por red, usando catálogo local si existe:", err)
+        await cargarProductosDesdeCacheLocal(selectProd, selectAjusteProd)
     }
 }
 
@@ -330,6 +346,26 @@ formAjuste?.addEventListener('submit', async (e) => {
     const observaciones = document.getElementById('ajuste-observaciones').value.trim() || null
 
     try {
+        if (!navigator.onLine) {
+            // Sin red: encolar el ajuste (ver sync-queue.js, Fase 4) en vez
+            // de fallar. El servidor vuelve a validar el stock disponible
+            // al sincronizar -- si para entonces ya no alcanza, el ajuste
+            // cae en movimientos_offline_fallidos para que el admin lo
+            // revise, en vez de perderse o registrarse igual sin validar.
+            await window.SyncQueue.encolar('ajuste_inventario', {
+                producto_id: productoId,
+                ubicacion_id: ubicacionId,
+                tipo_movimiento: tipoMovimiento,
+                cantidad: cantidad,
+                lote_id: loteId,
+                observaciones: observaciones
+            })
+
+            cerrarModalAjuste()
+            alert('Sin conexión: el ajuste se guardó localmente y se sincronizará automáticamente al recuperar internet.')
+            return
+        }
+
         const { error } = await supabase.rpc('registrar_ajuste_inventario', {
             p_producto_id: productoId,
             p_ubicacion_id: ubicacionId,
@@ -353,9 +389,19 @@ formAjuste?.addEventListener('submit', async (e) => {
     }
 })
 
+window.addEventListener('sync-queue:completado', async ({ detail }) => {
+    if (detail.procesadas > 0) {
+        alert(`✅ Sincronización: ${detail.procesadas} venta(s)/ajuste(s) offline guardado(s) en la nube.`)
+    }
+    if (detail.fallidasDefinitivas > 0) {
+        alert(`⚠️ ${detail.fallidasDefinitivas} operación(es) offline NO se pudieron sincronizar (requieren revisión del administrador).`)
+    }
+    await cargarMovimientosKardex()
+})
+
 // Logout
 document.getElementById('btn-logout')?.addEventListener('click', async () => {
-    await supabase.auth.signOut()
+    await window.AuthGuard.cerrarSesion(supabase)
     window.location.href = 'index.html'
 })
 

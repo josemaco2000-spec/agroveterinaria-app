@@ -1,4 +1,4 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+const { createClient } = window.supabase
 
 const supabaseUrl = 'https://tioqayfuqigkrakxlecx.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpb3FheWZ1cWlna3Jha3hsZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNTE5NDksImV4cCI6MjEwMTcyNzk0OX0.HD_36_xe7Ms7_K0hefJ_H3vKx1SPnmvMeML55kcINUI'
@@ -10,21 +10,12 @@ let ventasEfectivoTotal = 0
 
 // 1. Guard de Autenticación
 async function validarSesion() {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-        window.location.href = 'index.html'
-        return
-    }
+    const datos = await window.AuthGuard.requireSession(supabase)
+    if (!datos) return
 
-    currentUserId = session.user.id
+    currentUserId = datos.user_id
 
-    const { data: perfil } = await supabase
-        .from('perfiles')
-        .select('nombre_completo')
-        .eq('id', session.user.id)
-        .single()
-
-    const nombreUsuario = perfil?.nombre_completo || session.user.email
+    const nombreUsuario = datos.nombre_completo || datos.email
     const cajeroEmail = document.getElementById('cajero-email') || document.getElementById('user-email') || document.getElementById('admin-email') || document.getElementById('usuario-info')
     if (cajeroEmail) {
         cajeroEmail.textContent = nombreUsuario
@@ -151,21 +142,31 @@ document.getElementById('btn-guardar-cierre')?.addEventListener('click', async (
     const observaciones = document.getElementById('observaciones').value.trim()
 
     try {
-        // Intentar guardar en la tabla `cierres_caja`
-        const { error } = await supabase
-            .from('cierres_caja')
-            .insert([{
-                usuario_id: currentUserId,
-                monto_inicial: montoInicial,
-                ventas_efectivo: ventasEfectivoTotal,
-                monto_esperado: montoEsperado,
-                monto_real: montoReal,
-                diferencia: diferencia,
-                observaciones: observaciones || null
-            }])
+        const payloadCierre = {
+            usuario_id: currentUserId,
+            monto_inicial: montoInicial,
+            ventas_efectivo: ventasEfectivoTotal,
+            monto_esperado: montoEsperado,
+            monto_real: montoReal,
+            diferencia: diferencia,
+            observaciones: observaciones || null
+        }
 
-        if (error) {
-            console.error("Aviso al insertar en cierres_caja:", error)
+        // Si hay red, intentar guardar directo; si falla por cualquier
+        // motivo (o no hay red desde el inicio), encolar en vez de perder
+        // el cierre -- antes, un error acá quedaba solo en consola pero
+        // igual se mostraba el ticket de "éxito" sin haber guardado nada.
+        let guardadoDirecto = false
+        if (navigator.onLine) {
+            const { error } = await supabase.from('cierres_caja').insert([payloadCierre])
+            guardadoDirecto = !error
+            if (error) {
+                console.warn("No se pudo guardar el cierre en línea, se encola para reintentar:", error)
+            }
+        }
+
+        if (!guardadoDirecto) {
+            await window.SyncQueue.encolar('cierre_caja', payloadCierre)
         }
 
         // Llenar resumen en ticket modal de éxito

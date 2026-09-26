@@ -28,7 +28,6 @@
     <meta name="application-name" content="Campo Alto">
     <meta name="msapplication-TileColor" content="#051810">
     <meta name="msapplication-TileImage" content="assets/icons/icon-192.png">
-    <script defer src="pwa-register.js"></script>
 </head>
 <body class="bg-gradient-to-br from-emerald-50 via-teal-50 to-green-100 min-h-screen text-slate-800 font-sans antialiased flex flex-col justify-between selection:bg-emerald-200">
 
@@ -140,6 +139,13 @@
     </div>
 
     <!-- Script de Funcionalidad -->
+    <script src="./pwa-register.js"></script>
+    <script src="./vendor/supabase.js"></script>
+    <script src="./vendor/dexie.js"></script>
+    <script src="./db.js"></script>
+    <script src="./auth-local.js"></script>
+    <script src="./auth-guard.js"></script>
+    <script src="./sync-queue.js"></script>
     <script type="module" src="cajero-home.js"></script>
 </body>
 </html>

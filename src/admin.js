@@ -1,4 +1,4 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+const { createClient } = window.supabase
 
 const supabaseUrl = 'https://tioqayfuqigkrakxlecx.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpb3FheWZ1cWlna3Jha3hsZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNTE5NDksImV4cCI6MjEwMTcyNzk0OX0.HD_36_xe7Ms7_K0hefJ_H3vKx1SPnmvMeML55kcINUI'
@@ -10,30 +10,15 @@ let todasLasCompras = []
 
 // 1. Guard de Autenticación y Verificación de Rol Admin
 async function validarAccesoAdmin() {
-    const { data: { session } } = await supabase.auth.getSession()
-
-    if (!session) {
-        window.location.href = 'index.html'
-        return
-    }
-
-    const userId = session.user.id
-
-    // Consultar perfil de administrador
-    const { data: perfilData, error: perfilError } = await supabase
-        .from('perfiles')
-        .select('rol, nombre_completo')
-        .eq('id', userId)
-        .single()
-
-    if (perfilError || perfilData?.rol !== 'admin') {
-        alert("Acceso denegado. Área exclusiva para administración.")
-        window.location.href = 'pos.html'
-        return
-    }
+    const datos = await window.AuthGuard.requireSession(supabase, {
+        rolPermitido: 'admin',
+        redirectRolInvalido: 'pos.html',
+        alertaRolInvalido: 'Acceso denegado. Área exclusiva para administración.',
+    })
+    if (!datos) return
 
     // Mostrar nombre del usuario e iniciales
-    const nombreUsuario = perfilData?.nombre_completo || session.user.email || 'Usuario'
+    const nombreUsuario = datos.nombre_completo || datos.email || 'Usuario'
     const userInfoEl = document.getElementById('usuario-info') || document.getElementById('user-email') || document.getElementById('admin-email')
     if (userInfoEl) userInfoEl.textContent = nombreUsuario
 
@@ -50,7 +35,9 @@ async function validarAccesoAdmin() {
     await Promise.all([
         cargarVentasYGanancias(),
         cargarCompras(),
-        cargarAlertaStockBajo()
+        cargarAlertaStockBajo(),
+        cargarVentasOfflineFallidas(),
+        cargarAjustesOfflineFallidos()
     ])
 }
 
@@ -402,6 +389,176 @@ async function cargarAlertaStockBajo() {
     }
 }
 
+// 8b. Conciliación de Ventas Offline No Sincronizadas
+// Ventas cobradas sin conexión que el servidor rechazó al sincronizar
+// (stock insuficiente, crédito excedido, etc.). Antes quedaban atascadas
+// solo en el localStorage del dispositivo del cajero, invisibles para
+// cualquier otro admin — ver 27_conciliacion_ventas_offline.sql.
+async function cargarVentasOfflineFallidas() {
+    const panel = document.getElementById('panel-ventas-offline')
+    const tbody = document.getElementById('tabla-ventas-offline')
+    const badgeCount = document.getElementById('badge-offline-count')
+    if (!panel || !tbody) return
+
+    try {
+        const { data: pendientes, error } = await supabase
+            .from('ventas_offline_fallidas')
+            .select('*')
+            .eq('resuelto', false)
+            .order('created_at', { ascending: false })
+
+        if (error) throw error
+
+        const lista = pendientes || []
+
+        if (lista.length === 0) {
+            panel.classList.add('hidden')
+            return
+        }
+
+        panel.classList.remove('hidden')
+        if (badgeCount) badgeCount.textContent = `${lista.length} pendiente${lista.length === 1 ? '' : 's'}`
+
+        let filas = ''
+        lista.forEach(v => {
+            const fecha = new Date(v.created_at).toLocaleString('es-GT', { dateStyle: 'medium', timeStyle: 'short' })
+            const totalFmt = Number(v.total).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            const cantidadItems = Array.isArray(v.items) ? v.items.length : 0
+
+            filas += `
+                <tr class="glass-panel glass-panel-hover rounded-2xl transition-all duration-200 shadow-sm text-slate-800 dark:text-slate-200">
+                    <td class="p-3.5 pl-4 font-mono text-xs">${fecha}</td>
+                    <td class="p-3.5 font-extrabold text-amber-600 dark:text-amber-400">Q${totalFmt}</td>
+                    <td class="p-3.5 text-xs text-rose-600 dark:text-rose-300 max-w-xs">${v.error_mensaje}</td>
+                    <td class="p-3.5 text-xs">${cantidadItems} ítem(s)</td>
+                    <td class="p-3.5 text-center pr-4">
+                        <button class="btn-resolver-offline bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow transition" data-id="${v.id}">
+                            ✓ Marcar resuelta
+                        </button>
+                    </td>
+                </tr>
+            `
+        })
+        tbody.innerHTML = filas
+
+        tbody.querySelectorAll('.btn-resolver-offline').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.getAttribute('data-id')
+                if (!confirm('¿Confirmas que ya revisaste y resolviste esta venta offline (rehecha, descartada o ajustada)?')) return
+
+                btn.disabled = true
+                btn.textContent = 'Guardando...'
+
+                try {
+                    const { data: { session } } = await supabase.auth.getSession()
+                    const { error: errorUpdate } = await supabase
+                        .from('ventas_offline_fallidas')
+                        .update({
+                            resuelto: true,
+                            resuelto_por: session?.user?.id || null,
+                            resuelto_en: new Date().toISOString()
+                        })
+                        .eq('id', id)
+
+                    if (errorUpdate) throw errorUpdate
+
+                    await cargarVentasOfflineFallidas()
+                } catch (err) {
+                    console.error("Error al marcar venta offline como resuelta:", err)
+                    alert("No se pudo marcar como resuelta: " + (err.message || err))
+                    btn.disabled = false
+                    btn.textContent = '✓ Marcar resuelta'
+                }
+            })
+        })
+
+    } catch (err) {
+        console.error("Error al cargar ventas offline fallidas:", err)
+    }
+}
+
+async function cargarAjustesOfflineFallidos() {
+    const panel = document.getElementById('panel-ajustes-offline')
+    const tbody = document.getElementById('tabla-ajustes-offline')
+    const badgeCount = document.getElementById('badge-ajustes-offline-count')
+    if (!panel || !tbody) return
+
+    try {
+        const { data: pendientes, error } = await supabase
+            .from('movimientos_offline_fallidos')
+            .select('*')
+            .eq('resuelto', false)
+            .order('created_at', { ascending: false })
+
+        if (error) throw error
+
+        const lista = pendientes || []
+
+        if (lista.length === 0) {
+            panel.classList.add('hidden')
+            return
+        }
+
+        panel.classList.remove('hidden')
+        if (badgeCount) badgeCount.textContent = `${lista.length} pendiente${lista.length === 1 ? '' : 's'}`
+
+        let filas = ''
+        lista.forEach(m => {
+            const fecha = new Date(m.created_at).toLocaleString('es-GT', { dateStyle: 'medium', timeStyle: 'short' })
+            const cantidadFmt = Number(m.cantidad).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+            filas += `
+                <tr class="glass-panel glass-panel-hover rounded-2xl transition-all duration-200 shadow-sm text-slate-800 dark:text-slate-200">
+                    <td class="p-3.5 pl-4 font-mono text-xs">${fecha}</td>
+                    <td class="p-3.5 text-xs font-bold">${m.tipo_movimiento}</td>
+                    <td class="p-3.5 font-extrabold text-amber-600 dark:text-amber-400">${cantidadFmt}</td>
+                    <td class="p-3.5 text-xs text-rose-600 dark:text-rose-300 max-w-xs">${m.error_mensaje}</td>
+                    <td class="p-3.5 text-center pr-4">
+                        <button class="btn-resolver-ajuste-offline bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow transition" data-id="${m.id}">
+                            ✓ Marcar resuelta
+                        </button>
+                    </td>
+                </tr>
+            `
+        })
+        tbody.innerHTML = filas
+
+        tbody.querySelectorAll('.btn-resolver-ajuste-offline').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.getAttribute('data-id')
+                if (!confirm('¿Confirmas que ya revisaste y resolviste este ajuste offline (rehecho, descartado o corregido)?')) return
+
+                btn.disabled = true
+                btn.textContent = 'Guardando...'
+
+                try {
+                    const { data: { session } } = await supabase.auth.getSession()
+                    const { error: errorUpdate } = await supabase
+                        .from('movimientos_offline_fallidos')
+                        .update({
+                            resuelto: true,
+                            resuelto_por: session?.user?.id || null,
+                            resuelto_en: new Date().toISOString()
+                        })
+                        .eq('id', id)
+
+                    if (errorUpdate) throw errorUpdate
+
+                    await cargarAjustesOfflineFallidos()
+                } catch (err) {
+                    console.error("Error al marcar ajuste offline como resuelto:", err)
+                    alert("No se pudo marcar como resuelto: " + (err.message || err))
+                    btn.disabled = false
+                    btn.textContent = '✓ Marcar resuelta'
+                }
+            })
+        })
+
+    } catch (err) {
+        console.error("Error al cargar ajustes offline fallidos:", err)
+    }
+}
+
 // 9. Manejo de Sub-Vistas Financieras
 const btnGanancias = document.getElementById('btn-vista-ganancias')
 const btnCompras = document.getElementById('btn-vista-compras')
@@ -464,8 +621,15 @@ document.getElementById('select-rango')?.addEventListener('change', () => {
 })
 
 document.getElementById('btn-logout')?.addEventListener('click', async () => {
-    await supabase.auth.signOut()
+    await window.AuthGuard.cerrarSesion(supabase)
     window.location.href = 'index.html'
+})
+
+// Si esta pantalla queda abierta cuando la laptop recupera conexión (p.ej.
+// al conectarla en casa), refrescar los paneles de conciliación offline.
+window.addEventListener('sync-queue:completado', () => {
+    cargarVentasOfflineFallidas()
+    cargarAjustesOfflineFallidos()
 })
 
 // Inicializar la validación al cargar la página

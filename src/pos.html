@@ -206,7 +206,6 @@
     <meta name="application-name" content="Campo Alto">
     <meta name="msapplication-TileColor" content="#051810">
     <meta name="msapplication-TileImage" content="assets/icons/icon-192.png">
-    <script defer src="pwa-register.js"></script>
 </head>
 <body class="bg-forest-950 text-slate-100 font-sans min-h-screen flex overflow-x-hidden antialiased bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-forest-900/30 via-forest-950 to-[#010403] selection:bg-emerald-500 selection:text-white">
 
@@ -362,6 +361,7 @@
                         </span>
                         <span class="text-xs text-slate-500">•</span>
                         <span id="status-conexion" class="text-xs text-emerald-400 font-semibold">🟢 En Línea</span>
+                        <span id="badge-ventas-pendientes" class="hidden text-xs text-amber-500 font-bold animate-pulse">🕓 <span id="badge-ventas-pendientes-texto">0 ventas pendientes</span></span>
                     </div>
                     <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Caja Registradora POS</h1>
                 </div>
@@ -577,6 +577,14 @@
     <!-- Contenedor de Toast Notifications -->
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
+    <script src="./pwa-register.js"></script>
+    <script src="./vendor/supabase.js"></script>
+    <script src="./vendor/dexie.js"></script>
+    <script src="./db.js"></script>
+    <script src="./auth-local.js"></script>
+    <script src="./auth-guard.js"></script>
+    <script src="./sync-queue.js"></script>
+    <script src="./sync-catalogo.js"></script>
     <script type="module" src="pos.js"></script>
 </body>
 </html>

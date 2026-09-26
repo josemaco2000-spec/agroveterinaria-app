@@ -1,4 +1,4 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+const { createClient } = window.supabase
 
 const supabaseUrl = 'https://tioqayfuqigkrakxlecx.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpb3FheWZ1cWlna3Jha3hsZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNTE5NDksImV4cCI6MjEwMTcyNzk0OX0.HD_36_xe7Ms7_K0hefJ_H3vKx1SPnmvMeML55kcINUI'
@@ -8,36 +8,17 @@ let currentUserId = null
 
 // 1. Guard de Autenticación y Rol
 async function validarSesion() {
-    try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    const datos = await window.AuthGuard.requireSession(supabase, {
+        rolExcluido: 'admin',
+        redirectRolInvalido: 'admin.html',
+    })
+    if (!datos) return
 
-        if (sessionError || !session) {
-            window.location.href = 'index.html'
-            return
-        }
+    currentUserId = datos.user_id
 
-        currentUserId = session.user.id
-
-        const { data: perfil, error: perfilError } = await supabase
-            .from('perfiles')
-            .select('rol, nombre_completo')
-            .eq('id', session.user.id)
-            .single()
-
-        if (perfilError) {
-            console.error("Error al verificar perfil:", perfilError.message)
-        } else if (perfil && perfil.rol === 'admin') {
-            window.location.href = 'admin.html'
-            return
-        }
-
-        const cajeroEmailEl = document.getElementById('cajero-email') || document.getElementById('user-email') || document.getElementById('admin-email') || document.getElementById('usuario-info')
-        if (cajeroEmailEl) {
-            cajeroEmailEl.textContent = perfil?.nombre_completo || session.user.email || 'Usuario'
-        }
-    } catch (err) {
-        console.error("Error en sesión de cierre de caja:", err)
-        window.location.href = 'index.html'
+    const cajeroEmailEl = document.getElementById('cajero-email') || document.getElementById('user-email') || document.getElementById('admin-email') || document.getElementById('usuario-info')
+    if (cajeroEmailEl) {
+        cajeroEmailEl.textContent = datos.nombre_completo || datos.email || 'Usuario'
     }
 }
 
@@ -81,18 +62,28 @@ if (formCierreCiego) {
 
         try {
             const { totalReal, breakdown } = calcularMontoReal()
+            const payloadCierre = {
+                usuario_id: currentUserId,
+                monto_real: totalReal,
+                observaciones: `Arqueo Ciego: ${breakdown}`
+            }
 
-            // Insertar en cierres_caja
-            const { error } = await supabase
-                .from('cierres_caja')
-                .insert([{
-                    usuario_id: currentUserId,
-                    monto_real: totalReal,
-                    observaciones: `Arqueo Ciego: ${breakdown}`
-                }])
+            // Si hay red, intentar guardar directo; si falla por cualquier
+            // motivo (o no hay red desde el inicio), encolar en vez de
+            // perder el conteo de caja -- antes, un error acá se
+            // registraba en consola pero igual se mostraba "éxito" sin
+            // haber guardado nada.
+            let guardadoDirecto = false
+            if (navigator.onLine) {
+                const { error } = await supabase.from('cierres_caja').insert([payloadCierre])
+                guardadoDirecto = !error
+                if (error) {
+                    console.warn("No se pudo guardar el cierre en línea, se encola para reintentar:", error)
+                }
+            }
 
-            if (error) {
-                console.error("Error al insertar cierre de caja:", error)
+            if (!guardadoDirecto) {
+                await window.SyncQueue.encolar('cierre_caja', payloadCierre)
             }
 
             // Mostrar modal de éxito
@@ -113,7 +104,7 @@ if (formCierreCiego) {
 // 4. Salir y signOut
 document.getElementById('btn-salir-cierre')?.addEventListener('click', async () => {
     try {
-        await supabase.auth.signOut()
+        await window.AuthGuard.cerrarSesion(supabase)
     } catch (e) {
         console.error("Error al cerrar sesión:", e)
     }

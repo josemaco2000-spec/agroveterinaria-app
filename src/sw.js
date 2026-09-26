@@ -1,55 +1,135 @@
-// Service Worker del shell de la app (cachea páginas/JS/CSS propios para que
-// abrir el ícono instalado funcione aunque el wifi tarde en conectar).
-//
-// A propósito NO cachea nada del backend: cualquier request a Supabase
-// (auth, REST, storage, realtime) es de otro origen y se ignora explícitamente
-// más abajo, y cualquier request que no sea GET (los INSERT/UPDATE que hacen
-// las pantallas de venta) tampoco se toca. La cola de ventas offline sigue
-// viviendo exclusivamente en localStorage (adnova_pending_sales), tal como
-// ya la maneja pos.js / cajero-pos.js — este Service Worker no la lee ni la
-// escribe, solo cachea los archivos estáticos de la interfaz.
+// Service Worker del app shell de Agrovet Campo Alto.
+// CACHE_VERSION se genera automáticamente con `npm run build` (ver
+// scripts/build-sw.js) a partir de un hash del contenido real de
+// SHELL_ASSETS. No lo edites a mano: se sobreescribe en cada build.
+const CACHE_VERSION = '4f5225eed3';
+const SHELL_CACHE = `campo-alto-shell-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `campo-alto-runtime-${CACHE_VERSION}`;
 
-const CACHE_NAME = 'campo-alto-shell-v1'
-const OFFLINE_FALLBACK_URL = 'index.html'
+const SHELL_ASSETS = [
+  './index.html',
+  './app.js',
+  './admin.html',
+  './admin.js',
+  './pos.html',
+  './pos.js',
+  './inventario.html',
+  './inventario.js',
+  './kardex.html',
+  './kardex.js',
+  './compras.html',
+  './compras.js',
+  './clientes.html',
+  './clientes.js',
+  './cierre.html',
+  './cierre.js',
+  './facturacion.html',
+  './facturacion.js',
+  './empleados.html',
+  './empleados.js',
+  './cajero-home.html',
+  './cajero-home.js',
+  './cajero-pos.html',
+  './cajero-pos.js',
+  './cajero-clientes.html',
+  './cajero-clientes.js',
+  './cajero-cierre.html',
+  './cajero-cierre.js',
+  './pwa-register.js',
+  './vendor/supabase.js',
+  './vendor/dexie.js',
+  './db.js',
+  './auth-local.js',
+  './auth-guard.js',
+  './sync-queue.js',
+  './sync-catalogo.js',
+  './assets/logo-campo-alto.png',
+  './styles/tailwind.css',
+  './manifest.json',
+  './assets/icons/favicon.ico',
+  './assets/icons/favicon-16.png',
+  './assets/icons/favicon-32.png',
+  './assets/icons/favicon-48.png',
+  './assets/icons/icon-192.png',
+  './assets/icons/icon-512.png',
+  './assets/icons/icon-maskable-192.png',
+  './assets/icons/icon-maskable-512.png',
+  './assets/icons/apple-touch-icon.png',
+];
 
-self.addEventListener('install', () => {
-  self.skipWaiting()
-})
+const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches
+      .open(SHELL_CACHE)
+      .then((cache) => cache.addAll(SHELL_ASSETS))
+      .then(() => self.skipWaiting())
+  );
+});
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      ))
+    caches
+      .keys()
+      .then((names) =>
+        Promise.all(
+          names
+            .filter((name) => name !== SHELL_CACHE && name !== RUNTIME_CACHE)
+            .map((name) => caches.delete(name))
+        )
+      )
       .then(() => self.clients.claim())
-  )
-})
+  );
+});
+
+function staleWhileRevalidate(request, cacheName) {
+  return caches.open(cacheName).then((cache) =>
+    cache.match(request).then((cached) => {
+      const fetchPromise = fetch(request)
+        .then((response) => {
+          cache.put(request, response.clone());
+          return response;
+        })
+        .catch(() => cached);
+      return cached || fetchPromise;
+    })
+  );
+}
 
 self.addEventListener('fetch', (event) => {
-  const { request } = event
-  const url = new URL(request.url)
+  const { request } = event;
+  if (request.method !== 'GET') return;
 
-  // Solo interceptamos GET del mismo origen (páginas, JS, íconos, manifest).
-  // Todo lo demás (Supabase, fuentes de Google, Tailwind CDN, POST/PATCH/DELETE)
-  // sigue su camino normal, sin pasar por este cache.
-  if (request.method !== 'GET' || url.origin !== self.location.origin) {
-    return
+  const url = new URL(request.url);
+
+  // Nunca interceptar llamadas a Supabase (u otro origen que no sean las
+  // fuentes de Google): deben ir directo a la red, o fallar tal cual si no
+  // hay conexión — de eso se encarga la cola de sincronización de la app,
+  // no el Service Worker.
+  if (url.origin !== self.location.origin && !FONT_HOSTS.includes(url.hostname)) {
+    return;
+  }
+
+  if (FONT_HOSTS.includes(url.hostname)) {
+    event.respondWith(staleWhileRevalidate(request, RUNTIME_CACHE));
+    return;
   }
 
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        const copia = response.clone()
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, copia))
-        return response
-      })
-      .catch(() =>
-        caches.match(request).then((cacheada) => {
-          if (cacheada) return cacheada
-          if (request.mode === 'navigate') return caches.match(OFFLINE_FALLBACK_URL)
-          return Response.error()
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+      return fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(SHELL_CACHE).then((cache) => cache.put(request, clone));
+          }
+          return response;
         })
-      )
-  )
-})
+        .catch(() => {
+          if (request.mode === 'navigate') return caches.match('./index.html');
+        });
+    })
+  );
+});
