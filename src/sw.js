@@ -2,7 +2,7 @@
 // CACHE_VERSION se genera automáticamente con `npm run build` (ver
 // scripts/build-sw.js) a partir de un hash del contenido real de
 // SHELL_ASSETS. No lo edites a mano: se sobreescribe en cada build.
-const CACHE_VERSION = '45f076d1cb';
+const CACHE_VERSION = '4f5225eed3';
 const SHELL_CACHE = `campo-alto-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `campo-alto-runtime-${CACHE_VERSION}`;
 
@@ -49,10 +49,11 @@ const SHELL_ASSETS = [
   './assets/icons/favicon.ico',
   './assets/icons/favicon-16.png',
   './assets/icons/favicon-32.png',
+  './assets/icons/favicon-48.png',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',
-  './assets/icons/icon-192-maskable.png',
-  './assets/icons/icon-512-maskable.png',
+  './assets/icons/icon-maskable-192.png',
+  './assets/icons/icon-maskable-512.png',
   './assets/icons/apple-touch-icon.png',
 ];
 

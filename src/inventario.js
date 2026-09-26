@@ -4,6 +4,18 @@ const supabaseUrl = 'https://tioqayfuqigkrakxlecx.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpb3FheWZ1cWlna3Jha3hsZWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxNTE5NDksImV4cCI6MjEwMTcyNzk0OX0.HD_36_xe7Ms7_K0hefJ_H3vKx1SPnmvMeML55kcINUI'
 const supabase = createClient(supabaseUrl, supabaseKey)
 
+// Escapa texto antes de insertarlo en innerHTML (previene XSS almacenado)
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[c])
+}
+
+// Formato de moneda consistente (Q0.00) reutilizado en toda la vista
+function formatMoney(valor) {
+    return (Number(valor) || 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
 // Validar que sea el Dueño (Admin) el que está aquí
 async function validarAcceso() {
     try {
@@ -109,7 +121,7 @@ document.addEventListener('keydown', (e) => {
 })
 
 // ----------------------------------------------------
-// GUARDAR EL PRODUCTO (RPC atómica: crear_producto_completo)
+// GUARDAR EL PRODUCTO (vía RPC transaccional crear_producto_completo)
 // ----------------------------------------------------
 document.getElementById('form-producto')?.addEventListener('submit', async (e) => {
     e.preventDefault()
@@ -127,7 +139,14 @@ document.getElementById('form-producto')?.addEventListener('submit', async (e) =
     const precioVenta = parseFloat(document.getElementById('prod-precio-venta')?.value) || 0
     const esAfectoIva = document.getElementById('prod-afecto-iva')?.value !== 'false'
     const numeroLote = document.getElementById('prod-lote').value.trim()
-    const fechaVencimiento = document.getElementById('prod-vencimiento').value
+    const fechaVencimiento = document.getElementById('prod-vencimiento').value || null
+
+    if (!nombre) {
+        alert('El nombre del producto es obligatorio.')
+        btnGuardar.textContent = textoOriginal
+        btnGuardar.disabled = false
+        return
+    }
 
     try {
         const { data: { session } } = await supabase.auth.getSession()
@@ -159,10 +178,10 @@ document.getElementById('form-producto')?.addEventListener('submit', async (e) =
 
         btnGuardar.textContent = 'Guardando producto...'
 
-        // Producto + costo + lote inicial (si aplica) + movimiento Kardex +
-        // presentación base, todo en UNA sola transacción del lado del servidor.
-        // Si cualquier paso falla, Postgres revierte TODO: nunca queda un
-        // producto con stock_base sin su respaldo correspondiente en el Kardex.
+        // Registro atómico: la RPC crea producto, costo, lote FEFO, movimiento
+        // de Kardex y presentación base en una sola transacción de base de
+        // datos. Si cualquier paso falla, Postgres revierte todo — nunca queda
+        // un producto a medio registrar.
         const { error: errorRpc } = await supabase.rpc('crear_producto_completo', {
             p_nombre: nombre,
             p_unidad_base: unidad,
@@ -311,38 +330,41 @@ async function cargarInventario() {
                 return
             }
 
-    let tbodyHtml = ''
-    productos.forEach(prod => {
+    const filasHtml = productos.map(prod => {
         const costoObj = Array.isArray(prod.productos_costos) ? prod.productos_costos[0] : prod.productos_costos
         const costoNum = costoObj && costoObj.precio_costo !== undefined ? Number(costoObj.precio_costo) : 0
-        const costoFormateado = costoNum.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        const costoFormateado = formatMoney(costoNum)
 
         const stockTotal = Number(prod.stock_base) || 0
         const stockPos = ubicacionesMap[prod.id]?.['Área de Venta'] ?? 0
         const stockBodega = Math.max(0, stockTotal - stockPos)
 
-        const imgHtml = prod.imagen_url 
-            ? `<img src="${prod.imagen_url}" alt="${prod.nombre}" class="w-10 h-10 object-cover rounded-xl border border-slate-700/80 shadow-sm shrink-0">`
+        const nombreSeguro = escapeHtml(prod.nombre)
+        const categoriaSeguro = escapeHtml(prod.categoria || 'General')
+        const unidadSeguro = escapeHtml(prod.unidad_base || '')
+
+        const imgHtml = prod.imagen_url
+            ? `<img src="${escapeHtml(prod.imagen_url)}" alt="${nombreSeguro}" class="w-10 h-10 object-cover rounded-xl border border-slate-700/80 shadow-sm shrink-0">`
             : `<div class="w-10 h-10 rounded-xl bg-forest-950 border border-slate-800 flex items-center justify-center text-slate-500 shrink-0" title="Sin imagen">
                 <svg class="w-5 h-5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                 </svg>
                </div>`
 
-        tbodyHtml += `
+        return `
             <tr class="glass-panel glass-panel-hover rounded-2xl transition-all duration-200 shadow-sm text-slate-800 dark:text-slate-200 group">
                 <td class="p-3.5 pl-6">${imgHtml}</td>
                 <td class="p-3.5">
-                    <div class="font-bold text-slate-900 dark:text-white">${prod.nombre}</div>
-                    <div class="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">${prod.codigo_barras ? '📦 ' + prod.codigo_barras : 'Sin código'}</div>
+                    <div class="font-bold text-slate-900 dark:text-white">${nombreSeguro}</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">${prod.codigo_barras ? '📦 ' + escapeHtml(prod.codigo_barras) : 'Sin código'}</div>
                 </td>
                 <td class="p-3.5">
-                    <span class="inline-block bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20 text-xs px-2.5 py-1 rounded-full font-bold">${prod.categoria || 'General'}</span>
+                    <span class="inline-block bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/20 text-xs px-2.5 py-1 rounded-full font-bold">${categoriaSeguro}</span>
                 </td>
                 <td class="p-3.5 font-semibold text-slate-700 dark:text-slate-200">
                     <!-- Stock total: convierte lb→qq si aplica; tooltip muestra valor raw -->
                     <div class="font-bold text-slate-900 dark:text-white"
-                         title="${stockTotal.toFixed(2)} ${prod.unidad_base}">
+                         title="${stockTotal.toFixed(2)} ${unidadSeguro}">
                         ${formatearPeso(stockTotal, prod.unidad_base)}
                     </div>
                     <div class="flex items-center gap-1.5 flex-wrap mt-1 text-[10px]">
@@ -361,10 +383,11 @@ async function cargarInventario() {
                     <div class="flex items-center justify-center gap-2">
                         <button class="btn-abrir-presentaciones bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow transition inline-flex items-center gap-1"
                                 data-id="${prod.id}"
-                                data-nombre="${prod.nombre}"
-                                data-unidad="${prod.unidad_base || ''}">\n                            \u2699\ufe0f Presentaciones
+                                data-nombre="${nombreSeguro}"
+                                data-unidad="${unidadSeguro}">
+                            ⚙️ Presentaciones
                         </button>
-                        <button class="btn-abrir-kardex bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow transition inline-flex items-center gap-1" data-id="${prod.id}" data-nombre="${prod.nombre}">
+                        <button class="btn-abrir-kardex bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow transition inline-flex items-center gap-1" data-id="${prod.id}" data-nombre="${nombreSeguro}">
                             📋 Lotes / Kardex
                         </button>
                     </div>
@@ -373,7 +396,7 @@ async function cargarInventario() {
         `
     })
 
-    tbody.innerHTML = tbodyHtml
+    tbody.innerHTML = filasHtml.join('')
 
     tbody.querySelectorAll('.btn-abrir-presentaciones').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -525,28 +548,26 @@ async function cargarLotesDeProducto(productoId) {
         }
 
         const hoy = new Date()
-        let lotesHtml = ''
 
-        lotes.forEach(lote => {
+        tablaLotesProducto.innerHTML = lotes.map(lote => {
             const fechaVenc = new Date(lote.fecha_vencimiento)
             const esVencido = fechaVenc < hoy
-            const badgeEstado = esVencido 
+            const badgeEstado = esVencido
                 ? '<span class="bg-red-100 text-red-800 text-[10px] font-bold px-2 py-0.5 rounded">⚠️ Vencido</span>'
                 : Number(lote.stock_actual) > 0
                 ? '<span class="bg-green-100 text-green-800 text-[10px] font-bold px-2 py-0.5 rounded">✓ Activo FEFO</span>'
                 : '<span class="bg-gray-100 text-gray-600 text-[10px] font-medium px-2 py-0.5 rounded">Agotado</span>'
 
-            lotesHtml += `
+            return `
                 <tr class="hover:bg-gray-50">
-                    <td class="p-3 font-mono font-bold text-gray-800">${lote.numero_lote}</td>
-                    <td class="p-3 font-medium text-gray-700">${lote.fecha_vencimiento}</td>
+                    <td class="p-3 font-mono font-bold text-gray-800">${escapeHtml(lote.numero_lote)}</td>
+                    <td class="p-3 font-medium text-gray-700">${escapeHtml(lote.fecha_vencimiento)}</td>
                     <td class="p-3 font-medium text-gray-600">${lote.stock_inicial}</td>
                     <td class="p-3 font-bold ${Number(lote.stock_actual) > 0 ? 'text-green-700' : 'text-gray-400'}">${lote.stock_actual}</td>
                     <td class="p-3">${badgeEstado}</td>
                 </tr>
             `
-        })
-        tablaLotesProducto.innerHTML = lotesHtml
+        }).join('')
     } catch (err) {
         console.error("Error al cargar lotes:", err)
         tablaLotesProducto.innerHTML = `<tr><td colspan="5" class="p-3 text-center text-red-500">Error: ${err.message}</td></tr>`
@@ -578,17 +599,16 @@ async function cargarKardexDeProducto(productoId) {
             return
         }
 
-        let movsHtml = ''
-        movs.forEach(m => {
+        tablaMovimientosKardex.innerHTML = movs.map(m => {
             const fechaStr = new Date(m.created_at).toLocaleString('es-GT', { dateStyle: 'short', timeStyle: 'short' })
             const esEntrada = m.tipo_movimiento === 'ENTRADA_COMPRA'
-            const badgeTipo = esEntrada 
+            const badgeTipo = esEntrada
                 ? '<span class="text-green-700 font-bold">📥 ENTRADA COMPRA</span>'
                 : '<span class="text-red-600 font-bold">📤 SALIDA VENTA (FEFO)</span>'
 
-            const numLote = m.lotes?.numero_lote || '--'
+            const numLote = escapeHtml(m.lotes?.numero_lote || '--')
 
-            movsHtml += `
+            return `
                 <tr class="hover:bg-gray-50">
                     <td class="p-3 text-gray-500 font-mono">${fechaStr}</td>
                     <td class="p-3">${badgeTipo}</td>
@@ -598,8 +618,7 @@ async function cargarKardexDeProducto(productoId) {
                     </td>
                 </tr>
             `
-        })
-        tablaMovimientosKardex.innerHTML = movsHtml
+        }).join('')
     } catch (err) {
         console.error("Error al cargar Kardex:", err)
         tablaMovimientosKardex.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-red-500">Error: ${err.message}</td></tr>`
@@ -629,14 +648,12 @@ async function cargarPresentaciones(productoId) {
         return
     }
 
-    let presentacionesHtml = ''
-    presentaciones.forEach(pres => {
-        const precioNum = Number(pres.precio_venta) || 0
-        const precioFormateado = precioNum.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    tablaPresentaciones.innerHTML = presentaciones.map(pres => {
+        const precioFormateado = formatMoney(pres.precio_venta)
 
-        presentacionesHtml += `
+        return `
             <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
-                <td class="p-3 font-medium text-gray-800">${pres.nombre_presentacion}</td>
+                <td class="p-3 font-medium text-gray-800">${escapeHtml(pres.nombre_presentacion)}</td>
                 <td class="p-3 font-mono text-gray-600">${pres.factor_conversion}</td>
                 <td class="p-3 font-bold text-green-700">Q${precioFormateado}</td>
                 <td class="p-3 text-center">
@@ -646,9 +663,7 @@ async function cargarPresentaciones(productoId) {
                 </td>
             </tr>
         `
-    })
-
-    tablaPresentaciones.innerHTML = presentacionesHtml
+    }).join('')
 
     tablaPresentaciones.querySelectorAll('.btn-eliminar-pres').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -831,11 +846,10 @@ async function cargarProductosTraslado() {
     }
 
     productosTrasladoCache = data || []
-    let optionsHtml = '<option value="">-- Seleccionar producto --</option>'
-    productosTrasladoCache.forEach(p => {
-        optionsHtml += `<option value="${p.id}">${p.nombre} (${p.unidad_base})</option>`
-    })
-    selectProductoTraslado.innerHTML = optionsHtml
+    const opciones = productosTrasladoCache.map(p =>
+        `<option value="${p.id}">${escapeHtml(p.nombre)} (${escapeHtml(p.unidad_base)})</option>`
+    ).join('')
+    selectProductoTraslado.innerHTML = '<option value="">-- Seleccionar producto --</option>' + opciones
 }
 
 selectProductoTraslado?.addEventListener('change', async (e) => {
@@ -849,13 +863,10 @@ selectProductoTraslado?.addEventListener('change', async (e) => {
 
     if (selectPresTraslado) {
         const prodObj = productosTrasladoCache.find(p => p.id === prodId)
-        let optionsHtml = `<option value="1">Unidad Base (${prodObj?.unidad_base || 'unidad'}) x1</option>`
-        if (presentaciones) {
-            presentaciones.forEach(pres => {
-                optionsHtml += `<option value="${pres.factor_conversion}">${pres.nombre_presentacion} (x${pres.factor_conversion})</option>`
-            })
-        }
-        selectPresTraslado.innerHTML = optionsHtml
+        const opcionesPres = (presentaciones || []).map(pres =>
+            `<option value="${pres.factor_conversion}">${escapeHtml(pres.nombre_presentacion)} (x${pres.factor_conversion})</option>`
+        ).join('')
+        selectPresTraslado.innerHTML = `<option value="1">Unidad Base (${escapeHtml(prodObj?.unidad_base || 'unidad')}) x1</option>` + opcionesPres
     }
 
     cargarLotesOrigen(prodId)
@@ -874,8 +885,6 @@ async function cargarLotesOrigen(productoId) {
     const UUID_BODEGA  = '11111111-1111-1111-1111-111111111111'
     const origenId     = origenIdRaw || UUID_BODEGA
 
-    console.log('[Traslado] cargarLotesOrigen →', { productoId, origenId, origenRaw: origenIdRaw })
-
     selectLoteTraslado.innerHTML = '<option value="">Cargando lotes disponibles...</option>'
 
     // ── PASO 1: Consultar vista calculada de stock por lote y ubicación ──────────
@@ -887,7 +896,7 @@ async function cargarLotesOrigen(productoId) {
         .gt('stock_actual', 0)
         .order('fecha_vencimiento', { ascending: true })
 
-    console.log('[Traslado] v_stock_lotes_ubicacion →', { lotesVista, errorVista })
+    if (errorVista) console.error("Error al consultar v_stock_lotes_ubicacion:", errorVista)
 
     lotesOrigenCache = lotesVista || []
 
@@ -902,7 +911,7 @@ async function cargarLotesOrigen(productoId) {
             .gt('stock_actual', 0)
             .order('fecha_vencimiento', { ascending: true })
 
-        console.log('[Traslado] fallback lotes directos →', { lotesDirectos, errorDirectos })
+        if (errorDirectos) console.error("Error al consultar lotes directos:", errorDirectos)
 
         if (lotesDirectos && lotesDirectos.length > 0) {
             lotesOrigenCache = lotesDirectos.map(l => ({
@@ -923,8 +932,6 @@ async function cargarLotesOrigen(productoId) {
             .select('stock_base, nombre')
             .eq('id', productoId)
             .single()
-
-        console.log('[Traslado] fallback stock_base del producto →', prodData)
 
         if (prodData && Number(prodData.stock_base) > 0) {
             // Generar lote virtual para permitir el traslado
@@ -967,8 +974,6 @@ async function cargarLotesOrigen(productoId) {
 
     // Disparar change para sincronizar c\u00e1lculos y validaciones dependientes del select
     selectLoteTraslado.dispatchEvent(new Event('change'))
-
-    console.log('[Traslado] Lotes cargados en select:', lotesOrigenCache)
 }
 
 function calcularBaseTraslado() {
@@ -996,7 +1001,6 @@ formTraslado?.addEventListener('submit', async (e) => {
     // (Postgres/Supabase rechazar\u00eda el string 'LOTE_GENERAL' como UUID)
     const loteIdRaw = selectLoteTraslado.value
     const loteId    = (loteIdRaw === '' || loteIdRaw === 'LOTE_GENERAL') ? null : loteIdRaw
-    console.log('[Traslado] submit →', { origenId, destinoId, prodId, loteIdRaw, loteId, cant, factor })
 
     if (origenId === destinoId) {
         alert("⚠️ La ubicación de origen y destino no pueden ser iguales.")
@@ -1062,42 +1066,44 @@ async function cargarHistorialTraslados() {
     }
 
     const trasladoIds = traslados.map(t => t.traslado_id).filter(Boolean)
-    const { data: entradasDestino } = await supabase
-        .from('movimientos_inventario')
-        .select('traslado_id, ubicaciones(nombre)')
-        .eq('tipo_movimiento', 'TRASLADO_ENTRADA')
-        .in('traslado_id', trasladoIds)
 
-    const destinoMap = {}
-    if (entradasDestino) {
-        entradasDestino.forEach(e => {
-            destinoMap[e.traslado_id] = e.ubicaciones?.nombre || 'Destino'
-        })
+    // .in() con un array vacío no está garantizado por PostgREST; se omite la consulta si no hay IDs.
+    let entradasDestino = []
+    if (trasladoIds.length > 0) {
+        const { data } = await supabase
+            .from('movimientos_inventario')
+            .select('traslado_id, ubicaciones(nombre)')
+            .eq('tipo_movimiento', 'TRASLADO_ENTRADA')
+            .in('traslado_id', trasladoIds)
+        entradasDestino = data || []
     }
 
-    let trasladosHtml = ''
-    traslados.forEach(t => {
+    const destinoMap = {}
+    entradasDestino.forEach(e => {
+        destinoMap[e.traslado_id] = e.ubicaciones?.nombre || 'Destino'
+    })
+
+    tablaHistorialTraslados.innerHTML = traslados.map(t => {
         const fechaStr = new Date(t.created_at).toLocaleString('es-GT', { dateStyle: 'short', timeStyle: 'short' })
-        const origenNombre = t.ubicaciones?.nombre || 'Bodega Central'
-        const destinoNombre = destinoMap[t.traslado_id] || 'Área de Venta'
+        const origenNombre = escapeHtml(t.ubicaciones?.nombre || 'Bodega Central')
+        const destinoNombre = escapeHtml(destinoMap[t.traslado_id] || 'Área de Venta')
         const cantFmt = Number(t.cantidad).toFixed(2)
 
-        trasladosHtml += `
+        return `
             <tr class="hover:bg-slate-800/40 transition border-b border-slate-800/60">
                 <td class="p-3 text-slate-400 font-mono">${fechaStr}</td>
-                <td class="p-3 font-bold text-white">${t.productos?.nombre || '--'}</td>
-                <td class="p-3 font-mono text-emerald-400 font-medium">${t.lotes?.numero_lote || '--'}</td>
+                <td class="p-3 font-bold text-white">${escapeHtml(t.productos?.nombre || '--')}</td>
+                <td class="p-3 font-mono text-emerald-400 font-medium">${escapeHtml(t.lotes?.numero_lote || '--')}</td>
                 <td class="p-3 font-semibold text-slate-300">
                     <span class="text-amber-400">${origenNombre}</span> ➔ <span class="text-emerald-400">${destinoNombre}</span>
                 </td>
                 <td class="p-3 text-right font-extrabold text-emerald-400 font-mono">
-                    -${cantFmt} ${t.productos?.unidad_base || ''}
+                    -${cantFmt} ${escapeHtml(t.productos?.unidad_base || '')}
                 </td>
                 <td class="p-3 text-center text-slate-400">Administración</td>
             </tr>
         `
-    })
-    tablaHistorialTraslados.innerHTML = trasladosHtml
+    }).join('')
 }
 
 validarAcceso()

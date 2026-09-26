@@ -23,6 +23,19 @@ function redirigirPorRol(rol) {
     }
 }
 
+// Si ya hay una sesión válida (Supabase en línea, o la sesión local
+// respaldada por AuthGuard cuando no hay red), saltar directo al panel
+// del rol en vez de mostrar el formulario de login — p. ej. al abrir el
+// ícono instalado con un login previo todavía vigente.
+async function redirigirSiYaHaySesion() {
+    const datos = await window.AuthGuard.obtenerSesionActiva(supabase)
+    if (!datos || !datos.rol) return
+
+    redirigirPorRol(datos.rol)
+}
+
+redirigirSiYaHaySesion()
+
 // Intenta el login normal contra Supabase Auth. Si la contraseña llegó a
 // verificarse en el servidor (éxito o rechazo explícito), cachea el hash
 // localmente para que el mismo usuario pueda entrar sin red la próxima vez.

@@ -3,72 +3,37 @@
   "short_name": "Campo Alto",
   "description": "Sistema integral de Punto de Venta (POS), control de lotes FEFO e inventario multi-ubicación para Agroveterinaria Campo Alto.",
   "id": "/index.html",
-  "start_url": "/index.html",
-  "scope": "/",
+  "start_url": "index.html",
+  "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "lang": "es-GT",
   "dir": "ltr",
-  "background_color": "#020906",
+  "background_color": "#051810",
   "theme_color": "#051810",
+  "lang": "es-GT",
   "categories": ["business", "productivity", "utilities"],
   "icons": [
-    {
-      "src": "assets/icons/favicon-16.png",
-      "sizes": "16x16",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "assets/icons/favicon-32.png",
-      "sizes": "32x32",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "assets/icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "assets/icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "assets/icons/icon-192-maskable.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "assets/icons/icon-512-maskable.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "assets/icons/apple-touch-icon.png",
-      "sizes": "180x180",
-      "type": "image/png",
-      "purpose": "any"
-    }
+    { "src": "assets/icons/favicon-16.png", "sizes": "16x16", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/favicon-32.png", "sizes": "32x32", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "assets/icons/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
   ],
   "shortcuts": [
     {
       "name": "Punto de Venta",
       "short_name": "POS",
       "description": "Abrir la terminal de venta",
-      "url": "/pos.html",
+      "url": "pos.html",
       "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Caja - Vendedor",
       "short_name": "Caja",
       "description": "Abrir la terminal de caja del vendedor",
-      "url": "/cajero-pos.html",
+      "url": "cajero-pos.html",
       "icons": [{ "src": "assets/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
