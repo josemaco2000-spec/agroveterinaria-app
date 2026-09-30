@@ -129,10 +129,10 @@ async function abrir(contexto, base, sinLocks = false) {
   return pagina
 }
 
-function iniciarSesionLocal(pagina, userId) {
-  return pagina.evaluate((id) => {
-    localStorage.setItem('campo_alto_session', JSON.stringify({ user_id: id, rol: 'vendedor', expira_en: Date.now() + 3600000 }))
-  }, userId)
+function iniciarSesionLocal(pagina, userId, rol = 'vendedor') {
+  return pagina.evaluate(([id, r]) => {
+    localStorage.setItem('campo_alto_session', JSON.stringify({ user_id: id, rol: r, expira_en: Date.now() + 3600000 }))
+  }, [userId, rol])
 }
 
 const leerCola = (pagina) => pagina.evaluate(() => window.CampoAltoDB.sync_queue.toArray())
@@ -246,6 +246,7 @@ async function main() {
       ], ayer)
       await p.waitForTimeout(30)
       // Un admin inicia sesión después y la cola se vacía con SU sesión.
+      await iniciarSesionLocal(p, 'usuario-admin-b', 'admin')
       await p.evaluate(() => { window.__sesionUsuario = 'usuario-admin-b' })
       const r = await p.evaluate(() => window.SyncQueue.procesarCola())
       const cola = await leerCola(p)

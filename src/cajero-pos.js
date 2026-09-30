@@ -796,6 +796,17 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
             }
         }
 
+        // La venta se arma UNA vez, igual con o sin red (ver venta-offline.js):
+        // un solo local_id para ticket, cola y servidor; precio cobrado; lotes
+        // FEFO locales. Si algún lote está vencido se advierte (no se bloquea).
+        const venta = await window.VentaOffline.construirVenta({
+            carrito,
+            clienteId: activeClienteId,
+            fincaId: activeFincaId,
+            tipoPago: tipoPagoSeleccionado
+        })
+        if (!window.VentaOffline.confirmarAdvertencias(venta)) return
+
         // FALLBACK MODO OFFLINE
         if (!navigator.onLine) {
             if (tipoPagoSeleccionado === 'CREDITO' && !activeClienteId) {
@@ -826,7 +837,7 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
                 }
             }
 
-            const localId = 'local-' + crypto.randomUUID()
+            const localId = venta.local_id
             for (const item of carrito) {
                 const pres = catalogo.find(p => p.id === item.presentacionId)
                 if (pres && pres.productos) {
@@ -838,32 +849,9 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
 
             renderCatalogo(catalogo)
 
-            const itemsPayload = carrito.map(item => {
-                const presItem = catalogo.find(p => p.id === item.presentacionId)
-                const costoBaseObj = Array.isArray(presItem?.productos?.productos_costos)
-                    ? presItem?.productos?.productos_costos[0]
-                    : presItem?.productos?.productos_costos
-                const costoUnitarioBase = Number(costoBaseObj?.precio_costo) || 0
-                const factorConv = Number(item.factorConversion) || 1
-
-                return {
-                    presentacion_id: item.presentacionId,
-                    producto_id: item.productoId,
-                    cantidad: item.cantidad,
-                    precio_venta: item.precioVenta,
-                    descuento_porcentaje: Number(item.descuentoPorcentaje) || 0,
-                    factor_conversion: factorConv,
-                    costo_unitario: factorConv * costoUnitarioBase
-                }
-            })
-
-            await window.SyncQueue.encolar('venta', {
-                items: itemsPayload,
-                cliente_id: activeClienteId || null,
-                finca_id: activeFincaId || null,
-                tipo_pago: tipoPagoSeleccionado,
-                total: totalVenta
-            })
+            // Encolar la venta completa (ver sync-queue.js) con el mismo
+            // local_id del ticket.
+            await window.VentaOffline.encolarVenta(venta)
             actualizarBadgeVentasPendientes()
 
             renderizarTicket(localId, [...carrito], totalVenta)
@@ -897,32 +885,7 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
         const { data: { session } } = await supabase.auth.getSession()
         const usuarioId = session?.user?.id || null
 
-        const itemsPayload = carrito.map(item => {
-            const presItem = catalogo.find(p => p.id === item.presentacionId)
-            const costoBaseObj = Array.isArray(presItem?.productos?.productos_costos)
-                ? presItem?.productos?.productos_costos[0]
-                : presItem?.productos?.productos_costos
-            const costoUnitarioBase = Number(costoBaseObj?.precio_costo) || 0
-            const factorConv = Number(item.factorConversion) || 1
-
-            return {
-                presentacion_id: item.presentacionId,
-                producto_id: item.productoId,
-                cantidad: item.cantidad,
-                precio_venta: item.precioVenta,
-                descuento_porcentaje: Number(item.descuentoPorcentaje) || 0,
-                factor_conversion: factorConv,
-                costo_unitario: factorConv * costoUnitarioBase
-            }
-        })
-
-        const { data: nuevaVentaId, error: errorVenta } = await supabase.rpc('registrar_venta_pos', {
-            p_items: itemsPayload,
-            p_cliente_id: activeClienteId || null,
-            p_finca_id: activeFincaId || null,
-            p_tipo_pago: tipoPagoSeleccionado,
-            p_usuario_id: usuarioId
-        })
+        const { data: nuevaVentaId, error: errorVenta } = await window.VentaOffline.registrarVentaEnLinea(venta, usuarioId)
 
         if (errorVenta) throw errorVenta
 

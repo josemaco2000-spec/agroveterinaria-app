@@ -84,6 +84,21 @@ db.version(4).stores({
   });
 });
 
+// Fase 1 (ventas offline): stock por lote y ubicación (copia de
+// v_stock_lotes_ubicacion, solo saldos > 0) para que el POS pueda elegir
+// lotes por FEFO y advertir vencidos sin red. lote_id es null para el
+// stock sin lote ("Lote General"), por eso la clave es autoincremental.
+// No trae costos: la tabla lotes no tiene ninguno.
+db.version(5).stores({
+  usuarios_cache: 'user_id, email',
+  presentaciones: 'id, producto_id, nombre_presentacion',
+  stock_ubicacion: '[producto_id+ubicacion_id], producto_id, ubicacion_id',
+  stock_lotes: '++id, [producto_id+ubicacion_id], lote_id',
+  clientes: 'id, nombre, nit',
+  meta_sync: 'clave',
+  sync_queue: '++id, &local_id, tipo, estado, created_at, device_id',
+});
+
 // Promesa memorizada: todas las llamadas de esta pestaña reciben el mismo
 // id. La transacción rw serializa contra otras pestañas que arranquen al
 // mismo tiempo, así que nunca nacen dos ids distintos en un dispositivo.

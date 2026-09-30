@@ -19,7 +19,7 @@ async function sincronizarCatalogo(supabase) {
   }
 
   try {
-    const [presentacionesRes, stockRes, clientesRes] = await Promise.all([
+    const [presentacionesRes, stockRes, clientesRes, lotesRes] = await Promise.all([
       supabase.from('presentaciones').select(`
         id, producto_id, nombre_presentacion, factor_conversion, precio_venta,
         usable_en_compra, usable_en_venta,
@@ -27,19 +27,27 @@ async function sincronizarCatalogo(supabase) {
       `),
       supabase.from('v_stock_productos_ubicacion').select('producto_id, ubicacion_id, stock_disponible'),
       supabase.from('clientes').select('*'),
+      // Fase 1: lotes con saldo, para FEFO y advertencia de vencidos offline.
+      supabase.from('v_stock_lotes_ubicacion')
+        .select('lote_id, numero_lote, fecha_vencimiento, producto_id, ubicacion_id, stock_actual')
+        .gt('stock_actual', 0),
     ]);
 
     if (presentacionesRes.error) throw presentacionesRes.error;
     if (stockRes.error) throw stockRes.error;
     if (clientesRes.error) throw clientesRes.error;
+    if (lotesRes.error) throw lotesRes.error;
 
     const db = window.CampoAltoDB;
-    await db.transaction('rw', db.presentaciones, db.stock_ubicacion, db.clientes, db.meta_sync, async () => {
+    await db.transaction('rw', db.presentaciones, db.stock_ubicacion, db.stock_lotes, db.clientes, db.meta_sync, async () => {
       await db.presentaciones.clear();
       await db.presentaciones.bulkPut(presentacionesRes.data || []);
 
       await db.stock_ubicacion.clear();
       await db.stock_ubicacion.bulkPut(stockRes.data || []);
+
+      await db.stock_lotes.clear();
+      await db.stock_lotes.bulkAdd(lotesRes.data || []);
 
       await db.clientes.clear();
       await db.clientes.bulkPut(clientesRes.data || []);
@@ -95,6 +103,32 @@ async function descontarStockLocal(productoId, cantidadBase, ubicacionId = UBICA
   });
 }
 
+// Lotes con saldo de un producto en una ubicación, tal como quedaron en
+// la última sincronización (menos lo ya vendido offline en este
+// dispositivo, ver descontarLotesLocal).
+async function obtenerLotesLocal(productoId, ubicacionId = UBICACION_AREA_VENTA) {
+  const db = window.CampoAltoDB;
+  const filas = await db.stock_lotes.where('[producto_id+ubicacion_id]').equals([productoId, ubicacionId]).toArray();
+  return filas.filter((f) => Number(f.stock_actual) > 0);
+}
+
+// Descuenta de la caché local lo que una venta offline tomó de cada lote,
+// para que la siguiente venta sin red en este dispositivo no vuelva a
+// asignar el mismo saldo. asignaciones: [{ producto_id, lote_id, cantidad_base }].
+async function descontarLotesLocal(asignaciones, ubicacionId = UBICACION_AREA_VENTA) {
+  const db = window.CampoAltoDB;
+  await db.transaction('rw', db.stock_lotes, async () => {
+    for (const a of asignaciones) {
+      const filas = await db.stock_lotes.where('[producto_id+ubicacion_id]').equals([a.producto_id, ubicacionId]).toArray();
+      const fila = filas.find((f) => (f.lote_id || null) === (a.lote_id || null));
+      if (!fila) continue;
+      await db.stock_lotes.update(fila.id, {
+        stock_actual: Math.max(0, (Number(fila.stock_actual) || 0) - (Number(a.cantidad_base) || 0)),
+      });
+    }
+  });
+}
+
 async function obtenerClientesLocal() {
   const db = window.CampoAltoDB;
   const clientes = await db.clientes.toArray();
@@ -112,6 +146,8 @@ window.SyncCatalogo = {
   sincronizarCatalogo,
   obtenerCatalogoLocal,
   descontarStockLocal,
+  obtenerLotesLocal,
+  descontarLotesLocal,
   obtenerClientesLocal,
   obtenerUltimaSincronizacion,
 };

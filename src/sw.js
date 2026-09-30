@@ -2,7 +2,7 @@
 // CACHE_VERSION se genera automáticamente con `npm run build` (ver
 // scripts/build-sw.js) a partir de un hash del contenido real de
 // SHELL_ASSETS. No lo edites a mano: se sobreescribe en cada build.
-const CACHE_VERSION = '1e6e926ffd';
+const CACHE_VERSION = '366bd3b949';
 const SHELL_CACHE = `campo-alto-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `campo-alto-runtime-${CACHE_VERSION}`;
 
@@ -43,6 +43,7 @@ const SHELL_ASSETS = [
   './auth-guard.js',
   './sync-queue.js',
   './sync-catalogo.js',
+  './venta-offline.js',
   './assets/logo-campo-alto.png',
   './styles/tailwind.css',
   './manifest.json',

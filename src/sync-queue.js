@@ -235,28 +235,60 @@ function registroDeError(item, mensaje) {
   return { errores: errores.slice(-MAX_ERRORES_GUARDADOS), ultimo_error: mensaje }
 }
 
-async function llamarRpcConFallback(nombreRpc, paramsConLocalId, paramsSinLocalId) {
-  const primero = await supabaseQueue.rpc(nombreRpc, paramsConLocalId)
-  if (!primero.error) return primero
-
-  if (primero.error.code === 'PGRST202') {
-    console.warn(`${nombreRpc}: falta aplicar supabase/28_idempotencia_ventas_ajustes.sql (p_local_id no existe todavía). Sincronizando sin idempotencia.`)
-    return supabaseQueue.rpc(nombreRpc, paramsSinLocalId)
+// Prueba cada juego de parámetros en orden y pasa al siguiente solo si
+// PostgREST responde PGRST202 ("no existe una función con esa firma"):
+// permite desplegar el frontend antes de aplicar una migración que agrega
+// parámetros (35: autor/dispositivo/fecha; 28: p_local_id) sin romper la
+// sincronización -- se pierde lo que la firma vieja no acepta, pero la
+// operación se registra igual que antes.
+async function llamarRpcConVariantes(nombreRpc, variantes) {
+  let resultado = null
+  for (let i = 0; i < variantes.length; i++) {
+    resultado = await supabaseQueue.rpc(nombreRpc, variantes[i])
+    if (!resultado.error || resultado.error.code !== 'PGRST202') return resultado
+    if (i < variantes.length - 1) {
+      console.warn(`${nombreRpc}: el servidor no acepta la firma #${i + 1} (¿falta aplicar una migración?). Probando la anterior.`)
+    }
   }
-
-  return primero
+  return resultado
 }
 
-function sincronizarVenta(item, usuarioId) {
+async function sincronizarVenta(item, usuarioId) {
   const p = item.payload
-  const base = {
+  const legado = {
     p_items: p.items,
     p_cliente_id: p.cliente_id || null,
     p_finca_id: p.finca_id || null,
     p_tipo_pago: p.tipo_pago,
     p_usuario_id: usuarioId,
   }
-  return llamarRpcConFallback('registrar_venta_pos', { ...base, p_local_id: item.local_id }, base)
+  const conLocalId = { ...legado, p_local_id: item.local_id }
+  // Migración 35: la venta se registra como lo que es -- una operación
+  // ya ocurrida, de su autor, en su dispositivo y a su hora, con el
+  // precio que se cobró. Los ítems encolados antes de la Fase 1 no traen
+  // ubicación (usan el Área de Venta por defecto) ni autor (null = la
+  // sesión que sincroniza, como antes).
+  const completo = {
+    ...conLocalId,
+    p_device_id: item.device_id || null,
+    p_usuario_origen_id: item.usuario_id || null,
+    p_fecha_operacion: item.fecha_operacion || null,
+    p_origen: 'offline',
+  }
+  if (p.ubicacion_id) completo.p_ubicacion_id = p.ubicacion_id
+
+  const resultado = await llamarRpcConVariantes('registrar_venta_pos', [completo, conLocalId, legado])
+  if (resultado.error || typeof resultado.data !== 'string') return resultado
+
+  // ¿Quedó con conflicto de stock? Solo informativo para el estado local:
+  // si la consulta falla (red, o columna aún inexistente) la venta ya está
+  // registrada y se marca sincronizada igual.
+  try {
+    const { data } = await supabaseQueue.from('ventas').select('conflicto_stock').eq('id', resultado.data).maybeSingle()
+    return { ...resultado, conflicto: data?.conflicto_stock === true }
+  } catch (e) {
+    return resultado
+  }
 }
 
 function sincronizarAjuste(item, usuarioId) {
@@ -270,7 +302,7 @@ function sincronizarAjuste(item, usuarioId) {
     p_lote_id: p.lote_id || null,
     p_observaciones: p.observaciones || null,
   }
-  return llamarRpcConFallback('registrar_ajuste_inventario', { ...base, p_local_id: item.local_id }, base)
+  return llamarRpcConVariantes('registrar_ajuste_inventario', [{ ...base, p_local_id: item.local_id }, base])
 }
 
 // cierres_caja se llena con un INSERT directo (no hay RPC ni columna
@@ -318,7 +350,18 @@ async function registrarFalloDefinitivo(item, usuarioId, mensaje) {
         usuario_id: usuarioId,
       }
 
-  const { error } = await supabaseQueue.from(tabla).insert([fila])
+  // Trazabilidad del autor/dispositivo/fecha original (migración 34). Si
+  // esas columnas aún no existen (PGRST204), se registra sin ellas antes
+  // que dejar el fallo sin constancia.
+  const auditoria = {
+    device_id: item.device_id || null,
+    usuario_origen_id: item.usuario_id || null,
+    fecha_operacion: item.fecha_operacion || null,
+  }
+  let { error } = await supabaseQueue.from(tabla).insert([{ ...fila, ...auditoria }])
+  if (error?.code === 'PGRST204') {
+    ({ error } = await supabaseQueue.from(tabla).insert([fila]))
+  }
   return { ok: !error, error }
 }
 
@@ -357,12 +400,25 @@ async function procesarCola() {
   return procesarColaConCandado()
 }
 
+// Rol de quien tiene la sesión de Supabase, según la sesión local que
+// guarda auth-guard.js (null si no coinciden o no se sabe).
+function rolDeSesion(usuarioId) {
+  const local = window.AuthGuard?.leerSesionLocal?.()
+  return local?.user_id === usuarioId ? local.rol || null : null
+}
+
+function puedeSincronizarComo(item, usuarioId, rolSesion) {
+  if (item.tipo !== 'venta' || !item.usuario_id) return true
+  return item.usuario_id === usuarioId || rolSesion === 'admin'
+}
+
 async function procesarColaConCandado() {
   if (procesando) return { procesadas: 0, fallidasDefinitivas: 0 }
   procesando = true
 
   let procesadas = 0
   let fallidasDefinitivas = 0
+  let conflictos = 0
 
   try {
     // Incluye 'procesando': si una pestaña murió con un ítem reclamado,
@@ -378,8 +434,13 @@ async function procesarColaConCandado() {
     // Sin sesión las RPC rechazan la llamada (migración 33): esperar a
     // que alguien inicie sesión en vez de gastar intentos inútiles.
     if (!usuarioId) return { procesadas: 0, fallidasDefinitivas: 0 }
+    const rolSesion = rolDeSesion(usuarioId)
 
     for (const candidato of candidatos) {
+      // Una venta ajena solo la sincroniza su autor o un admin (el servidor
+      // lo exige igual, migración 35): se deja esperando sin gastar intentos.
+      if (!puedeSincronizarComo(candidato, usuarioId, rolSesion)) continue
+
       const item = await reclamarItem(candidato.id)
       if (!item) continue
 
@@ -404,21 +465,25 @@ async function procesarColaConCandado() {
 
       if (!error) {
         // sincronizado_por = quien tenía la sesión al sincronizar; el autor
-        // de la operación sigue siendo item.usuario_id.
+        // de la operación sigue siendo item.usuario_id. CONFLICTO = quedó
+        // registrada en el servidor, pero con faltante de stock a conciliar.
         await finalizarItem(item, {
-          estado: ESTADOS.SINCRONIZADO,
+          estado: resultado.conflicto ? ESTADOS.CONFLICTO : ESTADOS.SINCRONIZADO,
           sincronizado_en: new Date().toISOString(),
           sincronizado_por: usuarioId,
           remote_id: typeof data === 'string' ? data : null,
         })
         procesadas++
+        if (resultado.conflicto) conflictos++
         continue
       }
 
       // error.code presente (y no PGRST202, ya manejado en el fallback) =
       // el servidor SÍ respondió y rechazó la operación por una razón
       // real → no es un problema de red, no tiene caso reintentar solo.
-      const esFallaReal = !!error.code && error.code !== 'PGRST202'
+      // 42501 = la sesión actual no puede registrar en nombre del autor:
+      // no es un rechazo de la venta, espera a otra sesión.
+      const esFallaReal = !!error.code && error.code !== 'PGRST202' && error.code !== '42501'
       const mensaje = error.message || String(error)
 
       if (!esFallaReal) {
@@ -452,8 +517,8 @@ async function procesarColaConCandado() {
   }
 
   if (procesadas > 0 || fallidasDefinitivas > 0) {
-    window.dispatchEvent(new CustomEvent('sync-queue:completado', { detail: { procesadas, fallidasDefinitivas } }))
-    notificarCambio({ evento: 'procesado', procesadas, fallidasDefinitivas })
+    window.dispatchEvent(new CustomEvent('sync-queue:completado', { detail: { procesadas, fallidasDefinitivas, conflictos } }))
+    notificarCambio({ evento: 'procesado', procesadas, fallidasDefinitivas, conflictos })
   }
 
   return { procesadas, fallidasDefinitivas }
@@ -479,4 +544,5 @@ window.SyncQueue = {
   contarPendientes,
   reclamarItem,
   finalizarItem,
+  llamarRpcConVariantes,
 }

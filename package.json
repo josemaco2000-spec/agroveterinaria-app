@@ -11,9 +11,10 @@
     "vendor": "npm run vendor:supabase && npm run vendor:dexie",
     "build:sw": "node scripts/build-sw.js",
     "build": "npm run build:css && npm run build:sw",
-    "test": "node src/test_stock_validation.js && node src/test_traslados_multi_ubicacion.js && node tests/fase0-offline.test.js"
+    "test": "node src/test_stock_validation.js && node src/test_traslados_multi_ubicacion.js && node tests/fase0-offline.test.js && node tests/fase1-rpc-ventas.test.js && node tests/fase1-pos-offline.test.js"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "playwright": "^1.63.0",
     "tailwindcss": "^3.4.13"
   },
