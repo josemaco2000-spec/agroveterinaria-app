@@ -805,6 +805,27 @@ document.getElementById('btn-completar-venta')?.addEventListener('click', async 
                 return
             }
 
+            // Validar límite de crédito con el saldo cacheado localmente: sin
+            // esto la venta se cobraba y recién al sincronizar la RPC la
+            // rechazaba por límite excedido (ya con la mercadería entregada).
+            if (tipoPagoSeleccionado === 'CREDITO') {
+                const cliLocal = listaClientesPOS.find(c => c.id === activeClienteId)
+                if (cliLocal) {
+                    const saldoActual = Number(cliLocal.saldo_actual) || 0
+                    const limiteCredito = Number(cliLocal.limite_credito) || 0
+
+                    if ((saldoActual + totalVenta) > limiteCredito) {
+                        const disponible = Math.max(0, limiteCredito - saldoActual)
+                        alert(`⚠️ Límite de crédito excedido para "${cliLocal.nombre}". Crédito disponible: Q${disponible.toFixed(2)}.`)
+                        btnCompletar.innerHTML = textoOriginal
+                        btnCompletar.disabled = false
+                        return
+                    }
+                    // Reservar el crédito localmente para la siguiente venta offline
+                    cliLocal.saldo_actual = saldoActual + totalVenta
+                }
+            }
+
             const localId = 'local-' + crypto.randomUUID()
             for (const item of carrito) {
                 const pres = catalogo.find(p => p.id === item.presentacionId)

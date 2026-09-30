@@ -994,16 +994,18 @@ function renderizarTicket(ventaId, cartItems, totalAmount) {
 
     let filasItemsHtml = ''
     cartItems.forEach(item => {
-        const subtotal = item.cantidad * item.precioVenta
+        const desc = Number(item.descuentoPorcentaje) || 0
+        const precioEfectivo = item.precioVenta * (1 - desc / 100)
+        const subtotal = item.cantidad * precioEfectivo
         const subtotalForm = subtotal.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-        
+
         filasItemsHtml += `
             <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
                 <span style="font-weight: bold;">${item.cantidad}x ${item.nombreProducto}</span>
                 <span>Q${subtotalForm}</span>
             </div>
             <div style="font-size: 10px; color: #333; margin-bottom: 5px; padding-left: 10px;">
-                ${item.nombrePresentacion} @ Q${item.precioVenta.toFixed(2)} c/u
+                ${item.nombrePresentacion} @ Q${precioEfectivo.toFixed(2)} c/u
             </div>
         `
     })

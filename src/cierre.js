@@ -30,10 +30,14 @@ async function cargarVentasDelDia() {
         const ahora = new Date()
         const inicioHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).toISOString()
 
+        // Solo EFECTIVO entra a la gaveta: crédito y transferencia no se
+        // cuentan en billetes y generaban un faltante falso en el cierre.
+        // tipo_pago NULL = ventas anteriores a la columna (default EFECTIVO).
         const { data: ventas, error } = await supabase
             .from('ventas')
             .select('total')
             .gte('fecha_venta', inicioHoy)
+            .or('tipo_pago.eq.EFECTIVO,tipo_pago.is.null')
 
         if (error) throw error
 

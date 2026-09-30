@@ -10,7 +10,8 @@
     "vendor:dexie": "node -e \"require('fs').copyFileSync('node_modules/dexie/dist/dexie.min.js','src/vendor/dexie.js')\"",
     "vendor": "npm run vendor:supabase && npm run vendor:dexie",
     "build:sw": "node scripts/build-sw.js",
-    "build": "npm run build:css && npm run build:sw"
+    "build": "npm run build:css && npm run build:sw",
+    "test": "node src/test_stock_validation.js && node src/test_traslados_multi_ubicacion.js && node tests/fase0-offline.test.js"
   },
   "devDependencies": {
     "playwright": "^1.63.0",
